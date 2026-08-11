@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Da Minha Vó Massas Afetivas</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+        <div class="header-content">
+
+            <img
+                src="assets/logo.png"
+                alt="Logo"
+                class="logo">
+
+            <div class="store-info">
+
+                <h1 id="storeName">
+                    Da Minha Vó Massas Afetivas
+                </h1>
+
+                <p id="storeHours">
+					<div id="storeStatus" class="store-status"></div>
+                		
+                </p>
+
+            </div>
+
+        </div>
+
+    </header>
+
+    <!-- CATEGORIAS -->
+
+    <section class="categories" id="categoriesContainer">
+		<!-- Categorias carregadas pelo JavaScript -->
+	</section>
+
+    <!-- PRODUTOS -->
+
+    <main id="productsContainer"></main>
+
+        <!-- carregado pelo JavaScript -->
+
+    </main>
+
+    <!-- BOTÃO CARRINHO -->
+
+    <button id="cartButton">
+
+        🛒
+
+        <span id="cartCount">
+            0
+        </span>
+
+    </button>
+
+    <!-- MODAL PRODUTO -->
+
+    <div id="productModal" class="modal">
+
+        <div class="modal-content">
+
+            <span id="closeModal">
+                ×
+            </span>
+
+            <img
+                id="modalImage"
+                src=""
+                alt="Produto">
+
+            <h2 id="modalName"></h2>
+			
+			<div id="modalPrice" class="modal-price"></div>
+
+            <div class="product-meta">
+
+                <span id="modalWeight"></span>
+
+                <span id="modalServes"></span>
+
+            </div>
+
+            <p id="modalDescription"></p>
+			
+			<textarea
+				id="itemObservation"
+				class="item-observation"
+				placeholder="Alguma observação?">
+			</textarea>
+
+            <div class="modal-footer">
+
+                <div class="quantity-selector">
+
+                    <button id="decreaseQty">
+                        -
+                    </button>
+
+                    <span id="modalQty">
+                        1
+                    </span>
+
+                    <button id="increaseQty">
+                        +
+                    </button>
+
+                </div>
+
+                <button id="addToCart">
+
+                    Adicionar
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- MODAL CARRINHO -->
+
+    <div id="cartModal" class="modal">
+
+        <div class="modal-content cart-content">
+
+            <span id="closeCartModal">
+                ×
+            </span>
+
+            <h2>
+                Seu Pedido
+            </h2>
+
+            <div id="cartItems">
+
+            </div>
+
+            <div class="cart-total">
+
+                Total:
+                <strong id="cartTotal">
+                    R$ 0,00
+                </strong>
+
+            </div>
+
+            <hr>
+
+            <div class="checkout-form">
+
+                <input
+                    type="text"
+                    id="customerName"
+                    placeholder="Seu nome">
+
+                <input
+                    type="tel"
+                    id="customerPhone"
+                    placeholder="Seu telefone">
+
+                <!-- <select id="deliveryType"> -->
+
+                  <label>Retirada ou Entrega</label>
+
+					<select id="deliveryType">
+						<option value="Retirada" selected>Retirada</option>
+						<option value="Entrega">Entrega</option>
+					</select>
+					
+					<div id="pickupInfo" class="pickup-info hidden"></div>
+
+					<input
+						type="text"
+						id="customerAddress"
+						placeholder="Digite seu endereço">
+						
+					<div id="deliveryFeeInfo" class="hidden delivery-fee-info"></div>
+
+					<label>Forma de pagamento</label>
+
+					<select id="paymentMethod">
+						<option value="PIX">PIX</option>
+						<option value="Dinheiro">Dinheiro</option>
+						<option value="Débito">Débito</option>
+						<option value="Crédito">Crédito</option>
+					</select>
+					
+					<div id="pixInfo" class="hidden pix-inline">
+
+						Chave: <span id="pixKeyText"></span>
+						|
+						Titular: <span id="pixOwnerText"></span>
+
+					</div>
+
+					<div id="changeWrapper" class="hidden">
+						<label>Precisa de troco?</label>
+
+						<div class="radio-group">
+							<label>
+								<input type="radio" name="needsChange" value="Não" checked>
+								Não
+							</label>
+
+							<label>
+								<input type="radio" name="needsChange" value="Sim">
+								Sim
+							</label>
+						</div>
+
+						<input
+							type="text"
+							id="changeFor"
+							class="hidden"
+							placeholder="Troco para quanto?">
+					</div>
+
+                <!-- </select> -->
+
+                <button id="sendOrder">
+
+                    Enviar Pedido pelo WhatsApp
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+	
+
+
+	<script src="config.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
