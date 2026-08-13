@@ -1,6 +1,14 @@
 import { db }
 from "./firebase-config.js";
 
+import {
+    collection,
+    getDocs,
+    query,
+    orderBy
+}
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
 console.log(
     "Firebase conectado:",
     db
@@ -165,7 +173,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     loadCartFromLocalStorage();
 
-    await loadProductsFromSheet();
+    // await loadProductsFromSheet();
+	
+	await loadProductsFromFirestore();
 
 });
 
@@ -1083,3 +1093,135 @@ function updateSendOrderButtonState() {
 
 }
 
+/* ==================================================
+   CARREGA PRODUTOS DO FIRESTORE
+   ================================================== */
+
+async function loadProductsFromFirestore() {
+
+    try {
+
+        /*
+         * Caminho no Firestore:
+         *
+         * lojas
+         *   └── da-minha-vo
+         *        └── produtos
+         */
+
+        const productsReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos"
+            );
+
+
+        /*
+         * Busca os produtos ordenados
+         * pelo campo "ordem".
+         */
+
+        const productsQuery =
+            query(
+                productsReference,
+                orderBy("ordem", "asc")
+            );
+
+
+        const snapshot =
+            await getDocs(productsQuery);
+
+
+        /*
+         * Limpa os produtos carregados anteriormente.
+         */
+
+        products = [];
+
+
+        snapshot.forEach(documentSnapshot => {
+
+            const data =
+                documentSnapshot.data();
+
+
+            /*
+             * Produtos com ativo = false
+             * não aparecem no cardápio.
+             */
+
+            if (data.ativo === false) {
+                return;
+            }
+
+
+            /*
+             * Converte o documento Firestore
+             * para o formato já utilizado
+             * pelo seu cardápio.
+             */
+
+            products.push({
+
+                id:
+                    documentSnapshot.id,
+
+                categoria:
+                    data.categoria || "",
+
+                nome:
+                    data.nome || "",
+
+                descricao:
+                    data.descricao || "",
+
+                preco:
+                    Number(data.preco || 0),
+
+                imagem:
+                    data.imagemUrl || "",
+
+                ativo:
+                    data.ativo !== false,
+
+                ordem:
+                    Number(data.ordem || 0)
+
+            });
+
+        });
+
+
+        /*
+         * Atualiza categorias e produtos.
+         */
+
+        renderCategories();
+
+        renderProducts();
+
+
+        console.log(
+            `${products.length} produtos carregados do Firestore`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar produtos do Firestore:",
+            error
+        );
+
+        productsContainer.innerHTML = `
+            <p>
+                Não foi possível carregar os produtos.
+            </p>
+        `;
+
+    }
+
+}
