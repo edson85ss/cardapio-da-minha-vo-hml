@@ -5,7 +5,9 @@ import {
     collection,
     getDocs,
     query,
-    orderBy
+    orderBy,
+    doc,
+    getDoc
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -158,26 +160,53 @@ const deliveryFeeInfo =
    INICIALIZAÇÃO
    ================================================== */
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
 
-    loadStoreInfo();
-	
-	updateStoreStatus();
+        /*
+         * PRIMEIRO:
+         * Busca configurações no Firestore.
+         */
 
-    toggleAddressField();
+        await loadStoreConfigFromFirestore();
 
-    togglePaymentFields();
-	
-	pixKeyText.textContent = CONFIG.pixKey;
-    pixOwnerText.textContent = CONFIG.pixOwner;
 
-    loadCartFromLocalStorage();
+        /*
+         * DEPOIS:
+         * Aplica as configurações carregadas.
+         */
 
-    // await loadProductsFromSheet();
-	
-	await loadProductsFromFirestore();
+        applyStoreColors();
 
-});
+        loadStoreInfo();
+
+        updateStoreStatus();
+
+        toggleAddressField();
+
+        togglePaymentFields();
+
+
+        pixKeyText.textContent =
+            CONFIG.pixKey;
+
+        pixOwnerText.textContent =
+            CONFIG.pixOwner;
+
+
+        loadCartFromLocalStorage();
+
+
+        /*
+         * Por último:
+         * carrega produtos.
+         */
+
+        await loadProductsFromFirestore();
+
+    }
+);
 
 /* ==================================================
    CARREGA DADOS DA LOJA
@@ -996,6 +1025,20 @@ function convertGoogleDriveImageUrl(url) {
 }
 
 function updateStoreStatus() {
+	
+	if (CONFIG.storeActive === false) {
+
+    isStoreOpen = false;
+
+    storeStatus.textContent =
+        "🔴 Loja fechada";
+
+    storeStatus.className =
+        "store-status closed";
+
+    return;
+
+}
 
     const now =
         new Date();
@@ -1223,5 +1266,220 @@ async function loadProductsFromFirestore() {
         `;
 
     }
+
+}
+
+/* ==================================================
+   CARREGA CONFIGURAÇÕES DA LOJA DO FIRESTORE
+   ================================================== */
+
+async function loadStoreConfigFromFirestore() {
+
+    try {
+
+        /*
+         * Documento:
+         *
+         * lojas
+         *   └── da-minha-vo
+         */
+
+        const storeReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo"
+            );
+
+        const snapshot =
+            await getDoc(storeReference);
+
+
+        if (!snapshot.exists()) {
+
+            throw new Error(
+                "Documento da loja não encontrado."
+            );
+
+        }
+
+
+        const data =
+            snapshot.data();
+
+
+        /* ==================================================
+           TRANSFERE OS DADOS DO FIRESTORE
+           PARA O CONFIG JÁ UTILIZADO PELO CARDÁPIO
+           ================================================== */
+
+        CONFIG.storeName =
+            data.nomeLoja || CONFIG.storeName;
+
+        CONFIG.storeHours =
+            data.horarioTexto || CONFIG.storeHours;
+
+        CONFIG.whatsappNumber =
+            data.whatsapp || CONFIG.whatsappNumber;
+
+        CONFIG.pixKey =
+            data.pixChave || CONFIG.pixKey;
+
+        CONFIG.pixOwner =
+            data.pixTitular || CONFIG.pixOwner;
+
+        CONFIG.deliveryFee =
+            Number(
+                data.taxaEntrega ??
+                CONFIG.deliveryFee
+            );
+
+        CONFIG.pickupAddress =
+            data.enderecoRetirada ||
+            CONFIG.pickupAddress;
+
+
+        /* ==================================================
+           CORES
+           ================================================== */
+
+        if (!CONFIG.colors) {
+            CONFIG.colors = {};
+        }
+
+        CONFIG.colors.primary =
+            data.corPrimaria ||
+            CONFIG.colors.primary;
+
+        CONFIG.colors.secondary =
+            data.corSecundaria ||
+            CONFIG.colors.secondary;
+
+        CONFIG.colors.text =
+            data.corTexto ||
+            CONFIG.colors.text;
+
+
+        /* ==================================================
+           LOJA ATIVA
+           ================================================== */
+
+        CONFIG.storeActive =
+            data.ativo !== false;
+
+
+        /* ==================================================
+           HORÁRIOS
+           ================================================== */
+
+        if (data.horarios) {
+
+            CONFIG.openingHours =
+                convertFirestoreHours(
+                    data.horarios
+                );
+
+        }
+
+
+        console.log(
+            "Configurações da loja carregadas do Firestore"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar configurações da loja:",
+            error
+        );
+
+    }
+
+}
+
+/* ==================================================
+   CONVERTE HORÁRIOS DO FIRESTORE
+   ================================================== */
+
+function convertFirestoreHours(horarios) {
+
+    const days = {
+        0: "domingo",
+        1: "segunda",
+        2: "terca",
+        3: "quarta",
+        4: "quinta",
+        5: "sexta",
+        6: "sabado"
+    };
+
+    const result = {};
+
+    for (let day = 0; day <= 6; day++) {
+
+        const dayName =
+            days[day];
+
+        const schedule =
+            horarios[dayName];
+
+
+        /*
+         * Dia inexistente ou marcado como fechado.
+         */
+
+        if (
+            !schedule ||
+            schedule.fechado === true
+        ) {
+
+            result[day] = null;
+
+            continue;
+
+        }
+
+
+        /*
+         * Exemplo:
+         * ["09:00", "19:00"]
+         */
+
+        result[day] = [
+            schedule.abre,
+            schedule.fecha
+        ];
+
+    }
+
+    return result;
+
+}
+
+/* ==================================================
+   APLICA IDENTIDADE VISUAL
+   ================================================== */
+
+function applyStoreColors() {
+
+    const root =
+        document.documentElement;
+
+    root.style.setProperty(
+        "--primary",
+        CONFIG.colors.primary
+    );
+
+    root.style.setProperty(
+        "--secondary",
+        CONFIG.colors.secondary
+    );
+
+    root.style.setProperty(
+        "--text",
+        CONFIG.colors.text
+    );
 
 }
