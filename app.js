@@ -54,6 +54,9 @@ const storeStatus =
 const pickupInfo =
     document.getElementById("pickupInfo");
 	
+const storeLogo =
+    document.querySelector(".logo");
+	
 /* ==================================================
    MODAL PRODUTO
    ================================================== */
@@ -219,6 +222,10 @@ function loadStoreInfo() {
 
     storeHours.textContent =
         CONFIG.storeHours;
+		
+	if (CONFIG.logo) {
+    storeLogo.src = CONFIG.logo;
+}
 
 }
 
@@ -1396,6 +1403,10 @@ async function loadStoreConfigFromFirestore() {
         );
 
     }
+	
+	CONFIG.logo =
+    data.logoUrl ||
+    CONFIG.logo;
 
 }
 
