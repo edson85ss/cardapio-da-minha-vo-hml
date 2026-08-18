@@ -4,7 +4,8 @@
 
 import {
     auth,
-    db
+    db,
+    storage
 }
 from "../firebase-config.js";
 
@@ -19,9 +20,20 @@ import {
     collection,
     getDocs,
     query,
-    orderBy
+    orderBy,
+    doc,
+    getDoc,
+    addDoc,
+    updateDoc
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+import {
+    ref,
+    uploadBytes,
+    getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
 
 /* ==================================================
@@ -42,6 +54,63 @@ const sidebarOverlay =
 	
 const productsList =
     document.getElementById("productsList");
+	
+const newProductButton =
+    document.getElementById("newProductButton");
+
+const productFormModal =
+    document.getElementById("productFormModal");
+
+const productModalOverlay =
+    document.getElementById("productModalOverlay");
+
+const closeProductModalButton =
+    document.getElementById("closeProductModal");
+
+const cancelProductButton =
+    document.getElementById("cancelProductButton");
+
+const productForm =
+    document.getElementById("productForm");
+
+const productFormTitle =
+    document.getElementById("productFormTitle");
+
+const productIdInput =
+    document.getElementById("productId");
+
+const productNameInput =
+    document.getElementById("productName");
+
+const productCategoryInput =
+    document.getElementById("productCategory");
+
+const productDescriptionInput =
+    document.getElementById("productDescription");
+
+const productPriceInput =
+    document.getElementById("productPrice");
+
+const productOrderInput =
+    document.getElementById("productOrder");
+
+const productImageInput =
+    document.getElementById("productImage");
+
+const productActiveInput =
+    document.getElementById("productActive");
+
+const productImagePreview =
+    document.getElementById("productImagePreview");
+
+const productImagePreviewWrapper =
+    document.getElementById("productImagePreviewWrapper");
+
+const productFormMessage =
+    document.getElementById("productFormMessage");
+
+const saveProductButton =
+    document.getElementById("saveProductButton");
 	
 
 /* ==================================================
@@ -127,6 +196,199 @@ logoutButton.addEventListener(
                 "Erro ao sair:",
                 error
             );
+
+        }
+
+    }
+);
+
+newProductButton.addEventListener(
+    "click",
+    openProductForm
+);
+
+closeProductModalButton.addEventListener(
+    "click",
+    closeProductForm
+);
+
+cancelProductButton.addEventListener(
+    "click",
+    closeProductForm
+);
+
+productModalOverlay.addEventListener(
+    "click",
+    closeProductForm
+);
+
+productImageInput.addEventListener(
+    "change",
+    () => {
+
+        const file =
+            productImageInput.files[0];
+
+        if (!file) return;
+
+        const previewUrl =
+            URL.createObjectURL(file);
+
+        productImagePreview.src =
+            previewUrl;
+
+        productImagePreviewWrapper
+            .classList.add("visible");
+
+    }
+);
+
+productForm.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+        productFormMessage.textContent =
+            "";
+
+        const price =
+            parseBrazilianPrice(
+                productPriceInput.value
+            );
+
+
+        if (
+            !productNameInput.value.trim() ||
+            !productCategoryInput.value.trim() ||
+            Number.isNaN(price)
+        ) {
+
+            productFormMessage.textContent =
+                "Preencha os campos obrigatórios.";
+
+            productFormMessage.className =
+                "form-message error";
+
+            return;
+
+        }
+
+
+        try {
+
+            saveProductButton.disabled =
+                true;
+
+            saveProductButton.textContent =
+                "Salvando...";
+
+
+            const currentProductId =
+                productIdInput.value;
+
+
+            /*
+             * NOVO PRODUTO
+             */
+
+            if (!currentProductId) {
+
+                const documentReference =
+                    await addDoc(
+                        collection(
+                            db,
+                            "lojas",
+                            "da-minha-vo",
+                            "produtos"
+                        ),
+                        {
+                            nome:
+                                productNameInput.value.trim(),
+
+                            categoria:
+                                productCategoryInput.value.trim(),
+
+                            descricao:
+                                productDescriptionInput.value.trim(),
+
+                            preco:
+                                price,
+
+                            ordem:
+                                Number(
+                                    productOrderInput.value || 0
+                                ),
+
+                            ativo:
+                                productActiveInput.checked,
+
+                            imagemUrl:
+                                ""
+                        }
+                    );
+
+
+                const file =
+                    productImageInput.files[0];
+
+
+                if (file) {
+
+                    const imageUrl =
+                        await uploadProductImage(
+                            file,
+                            documentReference.id
+                        );
+
+
+                    await updateDoc(
+                        documentReference,
+                        {
+                            imagemUrl:
+                                imageUrl
+                        }
+                    );
+
+                }
+
+            }
+
+
+            /*
+             * Depois implementaremos
+             * a edição aqui.
+             */
+
+
+            closeProductForm();
+
+            await loadProducts();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Erro ao salvar produto:",
+                error
+            );
+
+            productFormMessage.textContent =
+                "Não foi possível salvar o produto.";
+
+            productFormMessage.className =
+                "form-message error";
+
+        }
+
+        finally {
+
+            saveProductButton.disabled =
+                false;
+
+            saveProductButton.textContent =
+                "Salvar produto";
 
         }
 
@@ -373,6 +635,87 @@ function setupEditButtons() {
             );
 
         }
+    );
+
+}
+
+function openProductForm() {
+
+    productForm.reset();
+
+    productIdInput.value = "";
+
+    productActiveInput.checked = true;
+
+    productImagePreviewWrapper
+        .classList.remove("visible");
+
+    productImagePreview.src = "";
+
+    productFormMessage.textContent = "";
+
+    productFormMessage.className =
+        "form-message";
+
+    productFormTitle.textContent =
+        "Novo produto";
+
+    productFormModal.classList.add(
+        "open"
+    );
+
+}
+
+
+function closeProductForm() {
+
+    productFormModal.classList.remove(
+        "open"
+    );
+
+}
+
+function parseBrazilianPrice(value) {
+
+    return Number(
+        value
+            .replace(/\./g, "")
+            .replace(",", ".")
+    );
+
+}
+
+async function uploadProductImage(
+    file,
+    productId
+) {
+
+    if (!file) {
+        return null;
+    }
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+    const fileName =
+        `${Date.now()}.${extension}`;
+
+    const imageReference =
+        ref(
+            storage,
+            `lojas/da-minha-vo/produtos/${productId}/${fileName}`
+        );
+
+    await uploadBytes(
+        imageReference,
+        file
+    );
+
+    return await getDownloadURL(
+        imageReference
     );
 
 }
