@@ -1344,6 +1344,11 @@ async function loadStoreConfigFromFirestore() {
         CONFIG.pickupAddress =
             data.enderecoRetirada ||
             CONFIG.pickupAddress;
+			
+		/* LOGO */
+        CONFIG.logo =
+            data.logoUrl ||
+            CONFIG.logo;
 
 
         /* ==================================================
@@ -1403,11 +1408,7 @@ async function loadStoreConfigFromFirestore() {
         );
 
     }
-	
-	CONFIG.logo =
-    data.logoUrl ||
-    CONFIG.logo;
-
+		
 }
 
 /* ==================================================
