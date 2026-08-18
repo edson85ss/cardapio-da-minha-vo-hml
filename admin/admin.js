@@ -27,6 +27,9 @@ const menuButton =
 
 const logoutButton =
     document.getElementById("logoutButton");
+	
+const closeSidebarButton =
+    document.getElementById("closeSidebarButton");
 
 
 /* ==================================================
@@ -61,6 +64,17 @@ menuButton.addEventListener(
     () => {
 
         sidebar.classList.toggle(
+            "open"
+        );
+
+    }
+);
+
+closeSidebarButton.addEventListener(
+    "click",
+    () => {
+
+        sidebar.classList.remove(
             "open"
         );
 
