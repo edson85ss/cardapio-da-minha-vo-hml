@@ -9,18 +9,182 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Produtos</title>
+    <title>Produtos - Administração</title>
+
+    <link rel="stylesheet" href="admin.css">
 </head>
 
 <body>
 
-    <h1>
-        Login realizado com sucesso.
-    </h1>
+    <div class="admin-layout">
 
-    <p>
-        Painel de produtos será criado na próxima etapa.
-    </p>
+        <!-- ==========================================
+             MENU LATERAL
+             ========================================== -->
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+
+                <div class="sidebar-logo">
+                    🍽️
+                </div>
+
+                <div>
+                    <strong>
+                        Cardápio Digital
+                    </strong>
+
+                    <small>
+                        Administração
+                    </small>
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-menu">
+
+                <a
+                    href="produtos.html"
+                    class="menu-item active"
+                >
+                    <span class="menu-icon">▦</span>
+                    Produtos
+                </a>
+
+
+                <a
+                    href="configuracoes.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">⚙</span>
+                    Configurações
+                </a>
+
+
+                <a
+                    href="../"
+                    target="_blank"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">↗</span>
+                    Ver cardápio
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-footer">
+
+                <button
+                    id="logoutButton"
+                    class="logout-button"
+                >
+                    <span>↪</span>
+                    Sair
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ==========================================
+             CONTEÚDO PRINCIPAL
+             ========================================== -->
+
+        <main class="admin-main">
+
+            <!-- TOPO -->
+
+            <header class="admin-header">
+
+                <button
+                    id="menuButton"
+                    class="mobile-menu-button"
+                    aria-label="Abrir menu"
+                >
+                    ☰
+                </button>
+
+                <div>
+
+                    <h1>
+                        Produtos
+                    </h1>
+
+                    <p>
+                        Gerencie os itens exibidos no cardápio.
+                    </p>
+
+                </div>
+
+            </header>
+
+
+            <!-- CONTEÚDO -->
+
+            <section class="admin-content">
+
+                <div class="page-actions">
+
+                    <div>
+
+                        <h2>
+                            Seu cardápio
+                        </h2>
+
+                        <p>
+                            Adicione, edite ou desative produtos.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        class="primary-action-button"
+                        id="newProductButton"
+                    >
+                        + Novo produto
+                    </button>
+
+                </div>
+
+
+                <!-- ÁREA TEMPORÁRIA -->
+
+                <div class="products-panel">
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            🍔
+                        </div>
+
+                        <h3>
+                            Produtos serão carregados aqui
+                        </h3>
+
+                        <p>
+                            Na próxima etapa esta tela será conectada ao Firestore.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script
+        type="module"
+        src="admin.js"
+    ></script>
 
 </body>
 

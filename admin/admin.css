@@ -283,3 +283,562 @@ body {
         center;
 
 }
+
+/* ==================================================
+   PAINEL ADMINISTRATIVO
+   ================================================== */
+
+.admin-layout {
+    min-height: 100vh;
+    display: flex;
+}
+
+
+/* ==================================================
+   SIDEBAR
+   ================================================== */
+
+.sidebar {
+
+    width: 240px;
+    min-height: 100vh;
+
+    background: var(--surface);
+
+    border-right: 1px solid var(--border);
+
+    display: flex;
+    flex-direction: column;
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    z-index: 1000;
+}
+
+
+.sidebar-header {
+
+    min-height: 84px;
+
+    padding: 20px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+
+.sidebar-logo {
+
+    width: 44px;
+    height: 44px;
+
+    border-radius: 12px;
+
+    background: #fff2ee;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+}
+
+
+.sidebar-header strong {
+
+    display: block;
+
+    font-size: 15px;
+}
+
+
+.sidebar-header small {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-light);
+
+    font-size: 11px;
+}
+
+
+/* ==================================================
+   MENU
+   ================================================== */
+
+.sidebar-menu {
+
+    padding: 18px 12px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    flex: 1;
+}
+
+
+.menu-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-height: 46px;
+
+    padding: 0 14px;
+
+    border-radius: 10px;
+
+    color: var(--text);
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    transition: .2s;
+}
+
+
+.menu-item:hover {
+
+    background:
+        #f5f6f8;
+
+}
+
+
+.menu-item.active {
+
+    background:
+        #fff2ee;
+
+    color:
+        var(--primary);
+
+    font-weight:
+        600;
+
+}
+
+
+.menu-icon {
+
+    width: 20px;
+
+    text-align: center;
+
+    font-size: 17px;
+
+}
+
+
+/* ==================================================
+   RODAPÉ SIDEBAR
+   ================================================== */
+
+.sidebar-footer {
+
+    padding: 14px;
+
+    border-top:
+        1px solid var(--border);
+
+}
+
+
+.logout-button {
+
+    width: 100%;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-start;
+
+    gap: 12px;
+
+    padding: 0 14px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: var(--text-light);
+
+    font-size: 14px;
+
+    cursor: pointer;
+}
+
+
+.logout-button:hover {
+
+    background:
+        #f5f6f8;
+
+    color:
+        var(--danger);
+
+}
+
+
+/* ==================================================
+   ÁREA PRINCIPAL
+   ================================================== */
+
+.admin-main {
+
+    flex: 1;
+
+    min-width: 0;
+
+    margin-left: 240px;
+
+}
+
+
+.admin-header {
+
+    min-height: 84px;
+
+    background:
+        var(--surface);
+
+    border-bottom:
+        1px solid var(--border);
+
+    padding:
+        18px 30px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+}
+
+
+.admin-header h1 {
+
+    font-size: 22px;
+
+    margin-bottom: 4px;
+
+}
+
+
+.admin-header p {
+
+    color:
+        var(--text-light);
+
+    font-size:
+        13px;
+
+}
+
+
+.admin-content {
+
+    padding:
+        28px 30px;
+
+}
+
+
+/* ==================================================
+   CABEÇALHO DA PÁGINA
+   ================================================== */
+
+.page-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 22px;
+
+}
+
+
+.page-actions h2 {
+
+    font-size: 18px;
+
+    margin-bottom: 4px;
+
+}
+
+
+.page-actions p {
+
+    color:
+        var(--text-light);
+
+    font-size: 13px;
+
+}
+
+
+.primary-action-button {
+
+    min-height: 42px;
+
+    padding:
+        0 18px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+        var(--primary);
+
+    color:
+        white;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    cursor: pointer;
+}
+
+
+.primary-action-button:hover {
+
+    opacity: .92;
+
+}
+
+
+/* ==================================================
+   PAINEL DE PRODUTOS
+   ================================================== */
+
+.products-panel {
+
+    min-height: 380px;
+
+    background:
+        var(--surface);
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        16px;
+
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, .03);
+
+    padding:
+        24px;
+
+}
+
+
+.empty-state {
+
+    min-height:
+        320px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    color:
+        var(--text-light);
+
+}
+
+
+.empty-icon {
+
+    width: 68px;
+    height: 68px;
+
+    border-radius: 18px;
+
+    background:
+        #fff2ee;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 30px;
+
+    margin-bottom: 16px;
+
+}
+
+
+.empty-state h3 {
+
+    color:
+        var(--text);
+
+    font-size:
+        17px;
+
+    margin-bottom:
+        7px;
+
+}
+
+
+.empty-state p {
+
+    font-size:
+        13px;
+
+}
+
+
+/* ==================================================
+   BOTÃO MENU MOBILE
+   ================================================== */
+
+.mobile-menu-button {
+
+    display: none;
+
+    width: 40px;
+
+    height: 40px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        9px;
+
+    background:
+        var(--surface);
+
+    font-size:
+        20px;
+
+    cursor:
+        pointer;
+
+}
+
+
+/* ==================================================
+   MOBILE
+   ================================================== */
+
+@media(max-width: 768px) {
+
+    .sidebar {
+
+        transform:
+            translateX(-100%);
+
+        transition:
+            transform .25s ease;
+
+        box-shadow:
+            8px 0 30px rgba(0, 0, 0, .08);
+
+    }
+
+
+    .sidebar.open {
+
+        transform:
+            translateX(0);
+
+    }
+
+
+    .admin-main {
+
+        margin-left:
+            0;
+
+    }
+
+
+    .admin-header {
+
+        padding:
+            16px 18px;
+
+    }
+
+
+    .mobile-menu-button {
+
+        display:
+            block;
+
+    }
+
+
+    .admin-content {
+
+        padding:
+            20px 16px;
+
+    }
+
+
+    .page-actions {
+
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+
+    }
+
+
+    .primary-action-button {
+
+        width:
+            100%;
+
+    }
+
+}
+
