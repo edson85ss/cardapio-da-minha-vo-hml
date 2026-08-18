@@ -28,9 +28,9 @@ const menuButton =
 const logoutButton =
     document.getElementById("logoutButton");
 	
-const closeSidebarButton =
-    document.getElementById("closeSidebarButton");
-
+const sidebarOverlay =
+    document.getElementById("sidebarOverlay");
+	
 
 /* ==================================================
    PROTEÇÃO DA PÁGINA
@@ -63,20 +63,20 @@ menuButton.addEventListener(
     "click",
     () => {
 
-        sidebar.classList.toggle(
-            "open"
-        );
+        sidebar.classList.add("open");
+
+        sidebarOverlay.classList.add("active");
 
     }
 );
 
-closeSidebarButton.addEventListener(
+sidebarOverlay.addEventListener(
     "click",
     () => {
 
-        sidebar.classList.remove(
-            "open"
-        );
+        sidebar.classList.remove("open");
+
+        sidebarOverlay.classList.remove("active");
 
     }
 );
