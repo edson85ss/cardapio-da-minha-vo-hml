@@ -112,6 +112,19 @@ const productFormMessage =
 const saveProductButton =
     document.getElementById("saveProductButton");
 	
+const categoryFilters =
+    document.getElementById(
+        "categoryFilters"
+    );
+	
+/* ==================================================
+   DADOS LOCAIS
+   ================================================== */
+
+let adminProducts = [];
+
+let selectedCategoryId = "all";
+	
 
 /* ==================================================
    PROTEÇÃO DA PÁGINA
@@ -140,7 +153,9 @@ onAuthStateChanged(
          * pode carregar os produtos.
          */
 
-        await loadProducts();
+        await loadCategoryFilters();
+
+		await loadProducts();
 
     }
 );
@@ -396,6 +411,84 @@ productForm.addEventListener(
 );
 
 /* ==================================================
+   CARREGA CATEGORIAS PARA O FILTRO
+   ================================================== */
+
+async function loadCategoryFilters() {
+
+    try {
+
+        const categoriesReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "categorias"
+            );
+
+
+        const categoriesQuery =
+            query(
+                categoriesReference,
+                orderBy("ordem", "asc")
+            );
+
+
+        const snapshot =
+            await getDocs(
+                categoriesQuery
+            );
+
+
+        const categories = [];
+
+
+        snapshot.forEach(
+            documentSnapshot => {
+
+                const data =
+                    documentSnapshot.data();
+
+
+                /*
+                 * Apenas categorias ativas
+                 */
+
+                if (data.ativo === false) {
+                    return;
+                }
+
+
+                categories.push({
+                    id:
+                        documentSnapshot.id,
+
+                    nome:
+                        data.nome || "Sem nome"
+                });
+
+            }
+        );
+
+
+        renderCategoryFilters(
+            categories
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar filtros:",
+            error
+        );
+
+    }
+
+}
+
+/* ==================================================
    CARREGA PRODUTOS
    ================================================== */
 
@@ -420,164 +513,29 @@ async function loadProducts() {
         const snapshot =
             await getDocs(productsQuery);
 
-        productsList.innerHTML = "";
+        adminProducts = [];
 
 
-        if (snapshot.empty) {
+		snapshot.forEach(
+			documentSnapshot => {
 
-            productsList.innerHTML = `
-                <div class="empty-state">
-
-                    <div class="empty-icon">
-                        🍔
-                    </div>
-
-                    <h3>
-                        Nenhum produto cadastrado
-                    </h3>
-
-                    <p>
-                        Clique em "Novo produto" para começar.
-                    </p>
-
-                </div>
-            `;
-
-            return;
-
-        }
+				const product =
+					documentSnapshot.data();
 
 
-        snapshot.forEach(
-            documentSnapshot => {
+				adminProducts.push({
 
-                const product =
-                    documentSnapshot.data();
+					id:
+						documentSnapshot.id,
 
-                const productId =
-                    documentSnapshot.id;
+					...product
 
-                const item =
-                    document.createElement("div");
+				});
 
-                item.className =
-                    "admin-product-item";
+			}
+		);
 
-
-                item.innerHTML = `
-
-                    <div class="admin-product-image">
-
-                        ${
-                            product.imagemUrl
-                            ?
-                            `<img
-                                src="${product.imagemUrl}"
-                                alt="${product.nome || "Produto"}"
-                            >`
-                            :
-                            `<div class="image-placeholder">
-                                🍽️
-                            </div>`
-                        }
-
-                    </div>
-
-
-                    <div class="admin-product-info">
-
-                        <div class="product-title-row">
-
-                            <div>
-
-                                <h3>
-                                    ${product.nome || "Sem nome"}
-                                </h3>
-
-                                <span class="product-category">
-                                    ${product.categoria || "Sem categoria"}
-                                </span>
-
-                            </div>
-
-
-                            <span class="
-                                product-status
-                                ${product.ativo === false ? "inactive" : "active"}
-                            ">
-
-                                ${
-                                    product.ativo === false
-                                    ? "Inativo"
-                                    : "Ativo"
-                                }
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="product-bottom-row">
-
-                            <strong class="admin-product-price">
-
-                                ${formatCurrency(
-                                    Number(product.preco || 0)
-                                )}
-
-                            </strong>
-
-
-                            <button
-                                class="edit-product-button"
-                                data-id="${productId}"
-                            >
-                                Editar
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                `;
-
-
-                productsList.appendChild(item);
-
-            }
-        );
-
-
-        setupEditButtons();
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Erro ao carregar produtos:",
-            error
-        );
-
-        productsList.innerHTML = `
-            <div class="empty-state">
-
-                <div class="empty-icon">
-                    ⚠️
-                </div>
-
-                <h3>
-                    Não foi possível carregar os produtos
-                </h3>
-
-                <p>
-                    Verifique o console do navegador.
-                </p>
-
-            </div>
-        `;
-
-    }
+		renderAdminProducts();
 
 }
 
@@ -720,3 +678,314 @@ async function uploadProductImage(
 
 }
 
+/* ==================================================
+   RENDERIZA FILTROS
+   ================================================== */
+
+function renderCategoryFilters(
+    categories
+) {
+
+    categoryFilters.innerHTML = "";
+
+
+    /*
+     * Botão TODOS
+     */
+
+    const allButton =
+        document.createElement(
+            "button"
+        );
+
+
+    allButton.className =
+        "category-filter-button active";
+
+
+    allButton.textContent =
+        "Todos";
+
+
+    allButton.dataset.id =
+        "all";
+
+
+    categoryFilters.appendChild(
+        allButton
+    );
+
+
+    /*
+     * Categorias
+     */
+
+    categories.forEach(
+        category => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.className =
+                "category-filter-button";
+
+
+            button.textContent =
+                category.nome;
+
+
+            button.dataset.id =
+                category.id;
+
+
+            categoryFilters.appendChild(
+                button
+            );
+
+        }
+    );
+
+
+    setupCategoryFilterButtons();
+
+}
+
+/* ==================================================
+   CLIQUE NOS FILTROS
+   ================================================== */
+
+function setupCategoryFilterButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".category-filter-button"
+        );
+
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+
+                    /*
+                     * Remove seleção anterior
+                     */
+
+                    buttons.forEach(
+                        item => {
+
+                            item.classList.remove(
+                                "active"
+                            );
+
+                        }
+                    );
+
+
+                    /*
+                     * Marca botão atual
+                     */
+
+                    button.classList.add(
+                        "active"
+                    );
+
+
+                    selectedCategoryId =
+                        button.dataset.id;
+
+
+                    /*
+                     * Atualiza somente a interface.
+                     * Nenhuma nova leitura Firestore.
+                     */
+
+                    renderAdminProducts();
+
+                }
+            );
+
+        }
+    );
+
+}
+
+/* ==================================================
+   RENDERIZA PRODUTOS
+   ================================================== */
+
+function renderAdminProducts() {
+
+    productsList.innerHTML = "";
+
+
+    let filteredProducts =
+        adminProducts;
+
+
+    /*
+     * Aplica filtro somente se
+     * não estiver em "Todos".
+     */
+
+    if (
+        selectedCategoryId !== "all"
+    ) {
+
+        filteredProducts =
+            adminProducts.filter(
+                product => {
+
+                    return (
+                        product.categoriaId ===
+                        selectedCategoryId
+                    );
+
+                }
+            );
+
+    }
+
+
+    /*
+     * Nenhum produto encontrado
+     */
+
+    if (
+        filteredProducts.length === 0
+    ) {
+
+        productsList.innerHTML = `
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    🍽️
+                </div>
+
+                <h3>
+                    Nenhum produto encontrado
+                </h3>
+
+                <p>
+                    Não há produtos nesta categoria.
+                </p>
+
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    filteredProducts.forEach(
+        product => {
+
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "admin-product-item";
+
+
+            item.innerHTML = `
+
+                <div class="admin-product-image">
+
+                    ${
+                        product.imagemUrl
+                        ?
+                        `<img
+                            src="${product.imagemUrl}"
+                            alt="${product.nome || "Produto"}"
+                        >`
+                        :
+                        `<div class="image-placeholder">
+                            🍽️
+                        </div>`
+                    }
+
+                </div>
+
+
+                <div class="admin-product-info">
+
+                    <div class="product-title-row">
+
+                        <div>
+
+                            <h3>
+                                ${product.nome || "Sem nome"}
+                            </h3>
+
+                            <span class="product-category">
+                                ${product.categoria || "Sem categoria"}
+                            </span>
+
+                        </div>
+
+
+                        <span class="
+                            product-status
+                            ${product.ativo === false ? "inactive" : "active"}
+                        ">
+
+                            ${
+                                product.ativo === false
+                                ? "Inativo"
+                                : "Ativo"
+                            }
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="product-bottom-row">
+
+                        <strong class="admin-product-price">
+
+                            ${formatCurrency(
+                                Number(
+                                    product.preco || 0
+                                )
+                            )}
+
+                        </strong>
+
+
+                        <button
+                            class="edit-product-button"
+                            data-id="${product.id}"
+                        >
+                            Editar
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            productsList.appendChild(
+                item
+            );
+
+        }
+    );
+
+
+    setupEditButtons();
+
+}
