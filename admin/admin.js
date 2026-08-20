@@ -515,28 +515,54 @@ async function loadProducts() {
 
         adminProducts = [];
 
+        snapshot.forEach(
+            documentSnapshot => {
 
-		snapshot.forEach(
-			documentSnapshot => {
+                const product =
+                    documentSnapshot.data();
 
-				const product =
-					documentSnapshot.data();
+                adminProducts.push({
 
+                    id:
+                        documentSnapshot.id,
 
-				adminProducts.push({
+                    ...product
 
-					id:
-						documentSnapshot.id,
+                });
 
-					...product
+            }
+        );
 
-				});
+        renderAdminProducts();
 
-			}
-		);
+    }
 
-		renderAdminProducts();
-	}
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar produtos:",
+            error
+        );
+
+        productsList.innerHTML = `
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    ⚠️
+                </div>
+
+                <h3>
+                    Não foi possível carregar os produtos
+                </h3>
+
+                <p>
+                    Verifique o console do navegador.
+                </p>
+
+            </div>
+        `;
+
+    }
 
 }
 
