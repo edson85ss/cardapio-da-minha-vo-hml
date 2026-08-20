@@ -536,6 +536,7 @@ async function loadProducts() {
 		);
 
 		renderAdminProducts();
+	}
 
 }
 
