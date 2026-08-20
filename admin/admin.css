@@ -1390,5 +1390,55 @@ body {
 
 }
 
+/* ==================================================
+   CATEGORIAS
+   ================================================== */
 
+.admin-categories-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.admin-category-item {
+
+    min-height: 72px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 14px 16px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 12px;
+
+    background:
+        var(--surface);
+}
+
+
+.admin-category-item h3 {
+
+    font-size: 15px;
+
+    margin-bottom: 7px;
+}
+
+
+.small-modal {
+
+    max-width: 480px;
+
+}
 

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Categorias - Administração</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+    <div class="admin-layout">
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+
+                <div class="sidebar-logo">
+                    🍽️
+                </div>
+
+                <div>
+                    <strong>Cardápio Digital</strong>
+                    <small>Administração</small>
+                </div>
+
+            </div>
+
+            <nav class="sidebar-menu">
+
+                <a
+                    href="produtos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">▦</span>
+                    Produtos
+                </a>
+
+                <a
+                    href="categorias.html"
+                    class="menu-item active"
+                >
+                    <span class="menu-icon">☷</span>
+                    Categorias
+                </a>
+
+                <a
+                    href="configuracoes.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">⚙</span>
+                    Configurações
+                </a>
+
+                <a
+                    href="../"
+                    target="_blank"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">↗</span>
+                    Ver cardápio
+                </a>
+
+            </nav>
+
+            <div class="sidebar-footer">
+
+                <button
+                    id="logoutButton"
+                    class="logout-button"
+                >
+                    <span>↪</span>
+                    Sair
+                </button>
+
+            </div>
+
+        </aside>
+
+        <div
+            id="sidebarOverlay"
+            class="sidebar-overlay"
+        ></div>
+
+        <main class="admin-main">
+
+            <header class="admin-header">
+
+                <button
+                    id="menuButton"
+                    class="mobile-menu-button"
+                    aria-label="Abrir menu"
+                >
+                    ☰
+                </button>
+
+                <div>
+                    <h1>Categorias</h1>
+                    <p>
+                        Organize os grupos do seu cardápio.
+                    </p>
+                </div>
+
+            </header>
+
+            <section class="admin-content">
+
+                <div class="page-actions">
+
+                    <div>
+                        <h2>Suas categorias</h2>
+
+                        <p>
+                            Cadastre as categorias disponíveis para os produtos.
+                        </p>
+                    </div>
+
+                    <button
+                        id="newCategoryButton"
+                        class="primary-action-button"
+                    >
+                        + Nova categoria
+                    </button>
+
+                </div>
+
+                <div class="products-panel">
+
+                    <div
+                        id="categoriesList"
+                        class="admin-categories-list"
+                    >
+                        <div class="empty-state">
+
+                            <div class="empty-icon">
+                                ⏳
+                            </div>
+
+                            <h3>
+                                Carregando categorias...
+                            </h3>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- MODAL CATEGORIA -->
+
+    <div
+        id="categoryModal"
+        class="admin-modal"
+    >
+
+        <div
+            id="categoryModalOverlay"
+            class="admin-modal-overlay"
+        ></div>
+
+        <div class="admin-modal-card small-modal">
+
+            <div class="admin-modal-header">
+
+                <div>
+                    <h2 id="categoryFormTitle">
+                        Nova categoria
+                    </h2>
+
+                    <p>
+                        Informe o nome da categoria.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    id="closeCategoryModal"
+                    class="modal-close-button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <form id="categoryForm">
+
+                <input
+                    type="hidden"
+                    id="categoryId"
+                >
+
+                <div class="admin-form-group">
+
+                    <label for="categoryName">
+                        Nome
+                    </label>
+
+                    <input
+                        type="text"
+                        id="categoryName"
+                        placeholder="Ex: Hambúrgueres"
+                        required
+                    >
+
+                </div>
+
+                <label class="switch-row">
+
+                    <input
+                        type="checkbox"
+                        id="categoryActive"
+                        checked
+                    >
+
+                    <span>
+                        Categoria ativa
+                    </span>
+
+                </label>
+
+                <div
+                    id="categoryFormMessage"
+                    class="form-message"
+                ></div>
+
+                <div class="admin-modal-actions">
+
+                    <button
+                        type="button"
+                        id="cancelCategoryButton"
+                        class="secondary-button"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="saveCategoryButton"
+                        class="primary-action-button"
+                    >
+                        Salvar categoria
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <script
+        type="module"
+        src="categorias.js"
+    ></script>
+
+</body>
+
+</html>
