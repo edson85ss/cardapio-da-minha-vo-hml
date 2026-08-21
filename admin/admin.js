@@ -123,6 +123,8 @@ const categoryFilters =
 
 let adminProducts = [];
 
+let adminCategories = [];
+
 let selectedCategoryId = "all";
 	
 
@@ -271,23 +273,30 @@ productForm.addEventListener(
             parseBrazilianPrice(
                 productPriceInput.value
             );
+			
+		const selectedCategory =
+			adminCategories.find(
+				category =>
+					category.id ===
+					productCategoryInput.value
+			);
 
 
         if (
-            !productNameInput.value.trim() ||
-            !productCategoryInput.value.trim() ||
-            Number.isNaN(price)
-        ) {
+			!productNameInput.value.trim() ||
+			!productCategoryInput.value ||
+			Number.isNaN(price)
+		) {
 
-            productFormMessage.textContent =
-                "Preencha os campos obrigatórios.";
+			productFormMessage.textContent =
+				"Preencha os campos obrigatórios.";
 
-            productFormMessage.className =
-                "form-message error";
+			productFormMessage.className =
+				"form-message error";
 
-            return;
+			return;
 
-        }
+		}
 
 
         try {
@@ -321,8 +330,13 @@ productForm.addEventListener(
                             nome:
                                 productNameInput.value.trim(),
 
-                            categoria:
-                                productCategoryInput.value.trim(),
+                            categoriaId:
+								productCategoryInput.value,
+
+							categoria:
+								selectedCategory
+									? selectedCategory.nome
+									: "",
 
                             descricao:
                                 productDescriptionInput.value.trim(),
@@ -440,7 +454,7 @@ async function loadCategoryFilters() {
             );
 
 
-        const categories = [];
+        adminCategories = [];
 
 
         snapshot.forEach(
@@ -459,21 +473,20 @@ async function loadCategoryFilters() {
                 }
 
 
-                categories.push({
-                    id:
-                        documentSnapshot.id,
-
-                    nome:
-                        data.nome || "Sem nome"
-                });
+                adminCategories.push({
+					id: documentSnapshot.id,
+					nome: data.nome || "Sem nome"
+				});
 
             }
         );
 
 
         renderCategoryFilters(
-            categories
-        );
+			adminCategories
+		);
+
+		populateProductCategorySelect();
 
     }
 
@@ -1014,5 +1027,34 @@ function renderAdminProducts() {
 
 
     setupEditButtons();
+
+}
+
+function populateProductCategorySelect() {
+
+    productCategoryInput.innerHTML = `
+        <option value="">
+            Selecione uma categoria
+        </option>
+    `;
+
+    adminCategories.forEach(
+        category => {
+
+            const option =
+                document.createElement("option");
+
+            option.value =
+                category.id;
+
+            option.textContent =
+                category.nome;
+
+            productCategoryInput.appendChild(
+                option
+            );
+
+        }
+    );
 
 }
