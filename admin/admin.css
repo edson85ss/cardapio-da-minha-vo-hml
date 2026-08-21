@@ -864,11 +864,7 @@ body {
     display: block;
 	}
 	
-	.category-filters {
-    padding-bottom: 12px;
-	}
-	
-	
+		
 
 }
 
@@ -1468,7 +1464,7 @@ body {
 
     overflow-x: auto;
 
-    padding-bottom: 4px;
+    padding-bottom: 12px;
 
     scrollbar-width: thin;
 }
