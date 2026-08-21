@@ -862,7 +862,11 @@ body {
 	
 	.sidebar-overlay.active {
     display: block;
-}
+	}
+	
+	.category-filters {
+    padding-bottom: 12px;
+	}
 	
 	
 
