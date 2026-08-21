@@ -382,6 +382,77 @@ productForm.addEventListener(
                 }
 
             }
+			
+			else {
+
+				const productReference =
+					doc(
+						db,
+						"lojas",
+						"da-minha-vo",
+						"produtos",
+						currentProductId
+					);
+
+
+				const updateData = {
+
+					nome:
+						productNameInput.value.trim(),
+
+					categoriaId:
+						productCategoryInput.value,
+
+					categoria:
+						selectedCategory
+							? selectedCategory.nome
+							: "",
+
+					descricao:
+						productDescriptionInput.value.trim(),
+
+					preco:
+						price,
+
+					ordem:
+						Number(
+							productOrderInput.value || 0
+						),
+
+					ativo:
+						productActiveInput.checked
+
+				};
+
+
+				/*
+				 * Nova imagem opcional
+				 */
+
+				const file =
+					productImageInput.files[0];
+
+
+				if (file) {
+
+					const imageUrl =
+						await uploadProductImage(
+							file,
+							currentProductId
+						);
+
+					updateData.imagemUrl =
+						imageUrl;
+
+				}
+
+
+				await updateDoc(
+					productReference,
+					updateData
+				);
+
+			}
 
 
             /*
@@ -613,21 +684,14 @@ function setupEditButtons() {
 
             button.addEventListener(
                 "click",
-                () => {
+                async () => {
 
                     const productId =
                         button.dataset.id;
 
-                    console.log(
-                        "Editar produto:",
+                    await openEditProductForm(
                         productId
                     );
-
-                    /*
-                     * Na próxima etapa
-                     * abriremos o formulário
-                     * deste produto.
-                     */
 
                 }
             );
@@ -1056,5 +1120,127 @@ function populateProductCategorySelect() {
 
         }
     );
+
+}
+
+async function openEditProductForm(
+    productId
+) {
+
+    try {
+
+        const productReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                productId
+            );
+
+        const snapshot =
+            await getDoc(
+                productReference
+            );
+
+        if (!snapshot.exists()) {
+
+            alert(
+                "Produto não encontrado."
+            );
+
+            return;
+
+        }
+
+        const product =
+            snapshot.data();
+
+
+        productForm.reset();
+
+        productIdInput.value =
+            productId;
+
+        productNameInput.value =
+            product.nome || "";
+
+        productCategoryInput.value =
+            product.categoriaId || "";
+
+        productDescriptionInput.value =
+            product.descricao || "";
+
+        productPriceInput.value =
+            Number(
+                product.preco || 0
+            )
+            .toFixed(2)
+            .replace(".", ",");
+
+        productOrderInput.value =
+            product.ordem || 0;
+
+        productActiveInput.checked =
+            product.ativo !== false;
+
+
+        /*
+         * Imagem atual
+         */
+
+        if (product.imagemUrl) {
+
+            productImagePreview.src =
+                product.imagemUrl;
+
+            productImagePreviewWrapper
+                .classList.add(
+                    "visible"
+                );
+
+        }
+
+        else {
+
+            productImagePreview.src =
+                "";
+
+            productImagePreviewWrapper
+                .classList.remove(
+                    "visible"
+                );
+
+        }
+
+
+        productFormTitle.textContent =
+            "Editar produto";
+
+        productFormMessage.textContent =
+            "";
+
+        productFormMessage.className =
+            "form-message";
+
+
+        productFormModal.classList.add(
+            "open"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao abrir produto:",
+            error
+        );
+
+        alert(
+            "Não foi possível carregar o produto."
+        );
+
+    }
 
 }
