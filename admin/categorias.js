@@ -20,7 +20,10 @@ import {
     addDoc,
     doc,
     getDoc,
-    updateDoc
+    updateDoc,
+	deleteDoc,
+    where,
+    limit
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -237,12 +240,24 @@ async function loadCategories() {
 
                     </div>
 
-                    <button
-                        class="edit-product-button edit-category-button"
-                        data-id="${categoryId}"
-                    >
-                        Editar
-                    </button>
+                    <div class="category-actions">
+
+						<button
+							class="edit-product-button edit-category-button"
+							data-id="${categoryId}"
+						>
+							Editar
+						</button>
+
+						<button
+							class="delete-category-button"
+							data-id="${categoryId}"
+							data-name="${category.nome || ""}"
+						>
+							Excluir
+						</button>
+
+					</div>
 
                 `;
 
@@ -255,6 +270,7 @@ async function loadCategories() {
 
 
         setupCategoryEditButtons();
+		setupCategoryDeleteButtons();
 
     }
 
@@ -560,3 +576,142 @@ categoryForm.addEventListener(
 
     }
 );
+
+function setupCategoryDeleteButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".delete-category-button"
+        );
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    const categoryId =
+                        button.dataset.id;
+
+                    const categoryName =
+                        button.dataset.name;
+
+                    await deleteCategory(
+                        categoryId,
+                        categoryName
+                    );
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+async function deleteCategory(
+    categoryId,
+    categoryName
+) {
+
+    try {
+
+        /*
+         * Verifica se existe ao menos
+         * um produto usando a categoria.
+         */
+
+        const productsReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos"
+            );
+
+        const productsQuery =
+            query(
+                productsReference,
+                where(
+                    "categoriaId",
+                    "==",
+                    categoryId
+                ),
+                limit(1)
+            );
+
+        const productsSnapshot =
+            await getDocs(
+                productsQuery
+            );
+
+
+        /*
+         * Categoria em uso:
+         * não permite excluir.
+         */
+
+        if (!productsSnapshot.empty) {
+
+            alert(
+                `A categoria "${categoryName}" não pode ser excluída porque possui produtos associados.`
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Confirmação final.
+         */
+
+        const confirmed =
+            confirm(
+                `Deseja realmente excluir a categoria "${categoryName}"?`
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        const categoryReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "categorias",
+                categoryId
+            );
+
+
+        await deleteDoc(
+            categoryReference
+        );
+
+
+        /*
+         * Atualiza a lista.
+         */
+
+        await loadCategories();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao excluir categoria:",
+            error
+        );
+
+        alert(
+            "Não foi possível excluir a categoria."
+        );
+
+    }
+
+}
