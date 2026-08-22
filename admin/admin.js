@@ -31,7 +31,8 @@ from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import {
     ref,
     uploadBytes,
-    getDownloadURL
+    getDownloadURL,
+    deleteObject
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
@@ -435,11 +436,44 @@ productForm.addEventListener(
 
 				if (file) {
 
+					/*
+					 * Busca o produto atual para
+					 * descobrir a imagem antiga.
+					 */
+
+					const currentSnapshot =
+						await getDoc(
+							productReference
+						);
+
+					const currentData =
+						currentSnapshot.data();
+
+
+					/*
+					 * Faz upload da nova imagem primeiro.
+					 */
+
 					const imageUrl =
 						await uploadProductImage(
 							file,
 							currentProductId
 						);
+
+
+					/*
+					 * Somente depois que o novo upload
+					 * funcionar, remove a imagem antiga.
+					 */
+
+					if (currentData?.imagemUrl) {
+
+						await deleteOldProductImage(
+							currentData.imagemUrl
+						);
+
+					}
+
 
 					updateData.imagemUrl =
 						imageUrl;
@@ -1239,6 +1273,37 @@ async function openEditProductForm(
 
         alert(
             "Não foi possível carregar o produto."
+        );
+
+    }
+
+}
+
+async function deleteOldProductImage(imageUrl) {
+
+    if (!imageUrl) {
+        return;
+    }
+
+    try {
+
+        const imageReference =
+            ref(
+                storage,
+                imageUrl
+            );
+
+        await deleteObject(
+            imageReference
+        );
+
+    }
+
+    catch (error) {
+
+        console.warn(
+            "Não foi possível remover a imagem antiga:",
+            error
         );
 
     }
