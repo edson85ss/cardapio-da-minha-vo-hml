@@ -365,20 +365,25 @@ productForm.addEventListener(
 
                 if (file) {
 
-                    const imageUrl =
-                        await uploadProductImage(
-                            file,
-                            documentReference.id
-                        );
+                    const uploadedImage =
+						await uploadProductImage(
+							file,
+							documentReference.id
+						);
 
 
-                    await updateDoc(
-                        documentReference,
-                        {
-                            imagemUrl:
-                                imageUrl
-                        }
-                    );
+					await updateDoc(
+						documentReference,
+						{
+
+							imagemUrl:
+								uploadedImage.url,
+
+							imagemPath:
+								uploadedImage.path
+
+						}
+					);
 
                 }
 
@@ -437,8 +442,8 @@ productForm.addEventListener(
 				if (file) {
 
 					/*
-					 * Busca o produto atual para
-					 * descobrir a imagem antiga.
+					 * Descobre qual arquivo está
+					 * atualmente associado ao produto.
 					 */
 
 					const currentSnapshot =
@@ -446,15 +451,16 @@ productForm.addEventListener(
 							productReference
 						);
 
+
 					const currentData =
 						currentSnapshot.data();
 
 
 					/*
-					 * Faz upload da nova imagem primeiro.
+					 * Primeiro envia a nova imagem.
 					 */
 
-					const imageUrl =
+					const uploadedImage =
 						await uploadProductImage(
 							file,
 							currentProductId
@@ -462,21 +468,29 @@ productForm.addEventListener(
 
 
 					/*
-					 * Somente depois que o novo upload
-					 * funcionar, remove a imagem antiga.
+					 * Depois remove a antiga.
 					 */
 
-					if (currentData?.imagemUrl) {
+					if (currentData?.imagemPath) {
 
 						await deleteOldProductImage(
-							currentData.imagemUrl
+							currentData.imagemPath
 						);
 
 					}
+					
+				
 
+
+					/*
+					 * Atualiza as referências.
+					 */
 
 					updateData.imagemUrl =
-						imageUrl;
+						uploadedImage.url;
+
+					updateData.imagemPath =
+						uploadedImage.path;
 
 				}
 
@@ -790,29 +804,55 @@ async function uploadProductImage(
         return null;
     }
 
+
     const extension =
         file.name
             .split(".")
             .pop()
             .toLowerCase();
 
+
     const fileName =
         `${Date.now()}.${extension}`;
+
+
+    const imagePath =
+        `lojas/da-minha-vo/produtos/${productId}/${fileName}`;
+
 
     const imageReference =
         ref(
             storage,
-            `lojas/da-minha-vo/produtos/${productId}/${fileName}`
+            imagePath
         );
+
 
     await uploadBytes(
         imageReference,
         file
     );
 
-    return await getDownloadURL(
-        imageReference
-    );
+
+    const imageUrl =
+        await getDownloadURL(
+            imageReference
+        );
+
+
+    /*
+     * Retornamos tanto URL
+     * quanto caminho interno.
+     */
+
+    return {
+
+        url:
+            imageUrl,
+
+        path:
+            imagePath
+
+    };
 
 }
 
@@ -1279,22 +1319,32 @@ async function openEditProductForm(
 
 }
 
-async function deleteOldProductImage(imageUrl) {
+async function deleteOldProductImage(
+    imagePath
+) {
 
-    if (!imageUrl) {
+    if (!imagePath) {
         return;
     }
+
 
     try {
 
         const imageReference =
             ref(
                 storage,
-                imageUrl
+                imagePath
             );
+
 
         await deleteObject(
             imageReference
+        );
+
+
+        console.log(
+            "Imagem antiga removida:",
+            imagePath
         );
 
     }
