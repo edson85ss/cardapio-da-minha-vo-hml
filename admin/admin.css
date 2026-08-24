@@ -1403,6 +1403,11 @@ body {
             100%;
 
     }
+	
+	.product-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
 }
 
@@ -1574,3 +1579,32 @@ body {
         #fdecec;
 }
 
+.product-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-product-button {
+
+    height: 34px;
+
+    padding: 0 13px;
+
+    border:
+        1px solid #f1c7c2;
+
+    border-radius: 8px;
+
+    background: #fff;
+
+    color: var(--danger);
+
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+.delete-product-button:hover {
+    background: #fdecec;
+}

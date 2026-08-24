@@ -24,7 +24,8 @@ import {
     doc,
     getDoc,
     addDoc,
-    updateDoc
+    updateDoc,
+	deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -1142,12 +1143,24 @@ function renderAdminProducts() {
                         </strong>
 
 
-                        <button
-                            class="edit-product-button"
-                            data-id="${product.id}"
-                        >
-                            Editar
-                        </button>
+                        <div class="product-actions">
+
+							<button
+								class="edit-product-button"
+								data-id="${product.id}"
+							>
+								Editar
+							</button>
+
+							<button
+								class="delete-product-button"
+								data-id="${product.id}"
+								data-name="${product.nome || ""}"
+							>
+								Excluir
+							</button>
+
+						</div>
 
                     </div>
 
@@ -1165,6 +1178,8 @@ function renderAdminProducts() {
 
 
     setupEditButtons();
+	
+	setupDeleteButtons();
 
 }
 
@@ -1354,6 +1369,135 @@ async function deleteOldProductImage(
         console.warn(
             "Não foi possível remover a imagem antiga:",
             error
+        );
+
+    }
+
+}
+
+function setupDeleteButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".delete-product-button"
+        );
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    const productId =
+                        button.dataset.id;
+
+                    const productName =
+                        button.dataset.name;
+
+                    await deleteProduct(
+                        productId,
+                        productName
+                    );
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+async function deleteProduct(
+    productId,
+    productName
+) {
+
+    const confirmed =
+        confirm(
+            `Deseja realmente excluir o produto "${productName}"?`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const productReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                productId
+            );
+
+        /*
+         * Busca dados atuais antes de excluir,
+         * principalmente imagemPath.
+         */
+
+        const snapshot =
+            await getDoc(
+                productReference
+            );
+
+        if (!snapshot.exists()) {
+
+            alert(
+                "Produto não encontrado."
+            );
+
+            return;
+
+        }
+
+        const product =
+            snapshot.data();
+
+
+        /*
+         * Remove imagem do Storage,
+         * se existir.
+         */
+
+        if (product.imagemPath) {
+
+            await deleteOldProductImage(
+                product.imagemPath
+            );
+
+        }
+
+
+        /*
+         * Remove documento do Firestore.
+         */
+
+        await deleteDoc(
+            productReference
+        );
+
+
+        /*
+         * Atualiza a lista local.
+         */
+
+        await loadProducts();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao excluir produto:",
+            error
+        );
+
+        alert(
+            "Não foi possível excluir o produto."
         );
 
     }
