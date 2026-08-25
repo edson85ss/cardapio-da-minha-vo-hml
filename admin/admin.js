@@ -25,7 +25,8 @@ import {
     getDoc,
     addDoc,
     updateDoc,
-	deleteDoc
+	deleteDoc,
+	writeBatch
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -92,9 +93,6 @@ const productDescriptionInput =
 
 const productPriceInput =
     document.getElementById("productPrice");
-
-const productOrderInput =
-    document.getElementById("productOrder");
 
 const productImageInput =
     document.getElementById("productImage");
@@ -347,9 +345,9 @@ productForm.addEventListener(
                                 price,
 
                             ordem:
-                                Number(
-                                    productOrderInput.value || 0
-                                ),
+                                getNextOrderForCategory(
+								productCategoryInput.value
+							),
 
                             ativo:
                                 productActiveInput.checked,
@@ -420,11 +418,6 @@ productForm.addEventListener(
 
 					preco:
 						price,
-
-					ordem:
-						Number(
-							productOrderInput.value || 0
-						),
 
 					ativo:
 						productActiveInput.checked
@@ -1030,6 +1023,13 @@ function renderAdminProducts() {
             );
 
     }
+	
+	filteredProducts =
+		[...filteredProducts].sort(
+			(a, b) =>
+				Number(a.ordem || 0) -
+				Number(b.ordem || 0)
+		);
 
 
     /*
@@ -1064,7 +1064,10 @@ function renderAdminProducts() {
 
 
     filteredProducts.forEach(
-        product => {
+		(product, index) => {
+			
+			const canReorder =
+				selectedCategoryId !== "all";
 
 
             const item =
@@ -1078,6 +1081,44 @@ function renderAdminProducts() {
 
 
             item.innerHTML = `
+			
+				${
+					canReorder
+					?
+					`
+					<div class="product-order-controls">
+
+						<button
+							type="button"
+							class="order-button"
+							data-id="${product.id}"
+							data-direction="up"
+							title="Mover para cima"
+							${index === 0 ? "disabled" : ""}
+						>
+							↑
+						</button>
+
+						<button
+							type="button"
+							class="order-button"
+							data-id="${product.id}"
+							data-direction="down"
+							title="Mover para baixo"
+							${
+								index === filteredProducts.length - 1
+								? "disabled"
+								: ""
+							}
+						>
+							↓
+						</button>
+
+					</div>
+					`
+					:
+					""
+				}
 
                 <div class="admin-product-image">
 
@@ -1180,6 +1221,8 @@ function renderAdminProducts() {
     setupEditButtons();
 	
 	setupDeleteButtons();
+	
+	setupOrderButtons();
 
 }
 
@@ -1266,9 +1309,6 @@ async function openEditProductForm(
             )
             .toFixed(2)
             .replace(".", ",");
-
-        productOrderInput.value =
-            product.ordem || 0;
 
         productActiveInput.checked =
             product.ativo !== false;
@@ -1498,6 +1538,249 @@ async function deleteProduct(
 
         alert(
             "Não foi possível excluir o produto."
+        );
+
+    }
+
+}
+
+function getNextOrderForCategory(
+    categoryId
+) {
+
+    const categoryProducts =
+        adminProducts.filter(
+            product =>
+                product.categoriaId === categoryId
+        );
+
+
+    if (
+        categoryProducts.length === 0
+    ) {
+        return 1;
+    }
+
+
+    const highestOrder =
+        Math.max(
+            ...categoryProducts.map(
+                product =>
+                    Number(product.ordem || 0)
+            )
+        );
+
+
+    return highestOrder + 1;
+
+}
+
+function setupOrderButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".order-button"
+        );
+
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    if (button.disabled) {
+                        return;
+                    }
+
+
+                    const productId =
+                        button.dataset.id;
+
+
+                    const direction =
+                        button.dataset.direction;
+
+
+                    await moveProduct(
+                        productId,
+                        direction
+                    );
+
+                }
+            );
+
+        }
+    );
+
+}
+
+async function moveProduct(
+    productId,
+    direction
+) {
+
+    if (
+        selectedCategoryId === "all"
+    ) {
+        return;
+    }
+
+
+    try {
+
+        /*
+         * Produtos somente da categoria
+         * atualmente selecionada.
+         */
+
+        const categoryProducts =
+            adminProducts
+                .filter(
+                    product =>
+                        product.categoriaId ===
+                        selectedCategoryId
+                )
+                .sort(
+                    (a, b) =>
+                        Number(a.ordem || 0) -
+                        Number(b.ordem || 0)
+                );
+
+
+        const currentIndex =
+            categoryProducts.findIndex(
+                product =>
+                    product.id === productId
+            );
+
+
+        if (currentIndex === -1) {
+            return;
+        }
+
+
+        const targetIndex =
+            direction === "up"
+                ? currentIndex - 1
+                : currentIndex + 1;
+
+
+        /*
+         * Proteção contra início/fim.
+         */
+
+        if (
+            targetIndex < 0 ||
+            targetIndex >=
+                categoryProducts.length
+        ) {
+            return;
+        }
+
+
+        const currentProduct =
+            categoryProducts[
+                currentIndex
+            ];
+
+
+        const targetProduct =
+            categoryProducts[
+                targetIndex
+            ];
+
+
+        const currentOrder =
+            Number(
+                currentProduct.ordem || 0
+            );
+
+
+        const targetOrder =
+            Number(
+                targetProduct.ordem || 0
+            );
+
+
+        /*
+         * Atualização atômica:
+         * troca a ordem dos dois produtos.
+         */
+
+        const batch =
+            writeBatch(db);
+
+
+        const currentReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                currentProduct.id
+            );
+
+
+        const targetReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                targetProduct.id
+            );
+
+
+        batch.update(
+            currentReference,
+            {
+                ordem:
+                    targetOrder
+            }
+        );
+
+
+        batch.update(
+            targetReference,
+            {
+                ordem:
+                    currentOrder
+            }
+        );
+
+
+        await batch.commit();
+
+
+        /*
+         * Atualiza o array local.
+         * Não precisamos consultar
+         * o Firestore novamente.
+         */
+
+        currentProduct.ordem =
+            targetOrder;
+
+
+        targetProduct.ordem =
+            currentOrder;
+
+
+        renderAdminProducts();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao alterar ordem:",
+            error
+        );
+
+        alert(
+            "Não foi possível alterar a ordem dos produtos."
         );
 
     }
