@@ -23,7 +23,8 @@ import {
     updateDoc,
 	deleteDoc,
     where,
-    limit
+    limit,
+	writeBatch
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -204,73 +205,122 @@ async function loadCategories() {
         }
 
 
-        snapshot.forEach(
-            documentSnapshot => {
+        const categories = [];
 
-                const category =
-                    documentSnapshot.data();
+		snapshot.forEach(
+			documentSnapshot => {
 
-                const categoryId =
-                    documentSnapshot.id;
+				categories.push({
+					id: documentSnapshot.id,
+					...documentSnapshot.data()
+				});
 
-                const item =
-                    document.createElement("div");
+			}
+		);
+		
+		categories
+			.sort(
+				(a, b) =>
+					Number(a.ordem || 0) -
+					Number(b.ordem || 0)
+			)
+			.forEach(
+				(category, index) => {
 
-                item.className =
-                    "admin-category-item";
+					const categoryId =
+						category.id;
 
-                item.innerHTML = `
+					const item =
+						document.createElement("div");
 
-                    <div>
+					item.className =
+						"admin-category-item";
 
-                        <h3>
-                            ${category.nome || "Sem nome"}
-                        </h3>
+					item.innerHTML = `
 
-                        <span class="
-                            product-status
-                            ${category.ativo === false ? "inactive" : "active"}
-                        ">
-                            ${
-                                category.ativo === false
-                                ? "Inativa"
-                                : "Ativa"
-                            }
-                        </span>
+						<div class="category-order-controls">
 
-                    </div>
+							<button
+								type="button"
+								class="category-order-button"
+								data-id="${categoryId}"
+								data-direction="up"
+								${index === 0 ? "disabled" : ""}
+							>
+								↑
+							</button>
 
-                    <div class="category-actions">
+							<button
+								type="button"
+								class="category-order-button"
+								data-id="${categoryId}"
+								data-direction="down"
+								${
+									index === categories.length - 1
+									? "disabled"
+									: ""
+								}
+							>
+								↓
+							</button>
 
-						<button
-							class="edit-product-button edit-category-button"
-							data-id="${categoryId}"
-						>
-							Editar
-						</button>
+						</div>
 
-						<button
-							class="delete-category-button"
-							data-id="${categoryId}"
-							data-name="${category.nome || ""}"
-						>
-							Excluir
-						</button>
 
-					</div>
+						<div class="category-main-info">
 
-                `;
+							<h3>
+								${category.nome || "Sem nome"}
+							</h3>
 
-                categoriesList.appendChild(
-                    item
-                );
+							<span class="
+								product-status
+								${category.ativo === false ? "inactive" : "active"}
+							">
+								${
+									category.ativo === false
+									? "Inativa"
+									: "Ativa"
+								}
+							</span>
 
-            }
+						</div>
+
+
+						<div class="category-actions">
+
+							<button
+								class="edit-product-button edit-category-button"
+								data-id="${categoryId}"
+							>
+								Editar
+							</button>
+
+							<button
+								class="delete-category-button"
+								data-id="${categoryId}"
+								data-name="${category.nome || ""}"
+							>
+								Excluir
+							</button>
+
+						</div>
+
+					`;
+
+					categoriesList.appendChild(
+						item
+					);
+
+				}
+			);
+		
         );
 
 
         setupCategoryEditButtons();
 		setupCategoryDeleteButtons();
+		setupCategoryOrderButtons(categories);
 
     }
 
@@ -710,6 +760,165 @@ async function deleteCategory(
 
         alert(
             "Não foi possível excluir a categoria."
+        );
+
+    }
+
+}
+
+function setupCategoryOrderButtons(
+    categories
+) {
+
+    const buttons =
+        document.querySelectorAll(
+            ".category-order-button"
+        );
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    if (button.disabled) {
+                        return;
+                    }
+
+                    await moveCategory(
+                        categories,
+                        button.dataset.id,
+                        button.dataset.direction
+                    );
+
+                }
+            );
+
+        }
+    );
+
+}
+
+async function moveCategory(
+    categories,
+    categoryId,
+    direction
+) {
+
+    try {
+
+        const orderedCategories =
+            [...categories].sort(
+                (a, b) =>
+                    Number(a.ordem || 0) -
+                    Number(b.ordem || 0)
+            );
+
+
+        const currentIndex =
+            orderedCategories.findIndex(
+                category =>
+                    category.id === categoryId
+            );
+
+
+        if (currentIndex === -1) {
+            return;
+        }
+
+
+        const targetIndex =
+            direction === "up"
+                ? currentIndex - 1
+                : currentIndex + 1;
+
+
+        if (
+            targetIndex < 0 ||
+            targetIndex >=
+                orderedCategories.length
+        ) {
+            return;
+        }
+
+
+        const currentCategory =
+            orderedCategories[currentIndex];
+
+        const targetCategory =
+            orderedCategories[targetIndex];
+
+
+        const currentOrder =
+            Number(
+                currentCategory.ordem || 0
+            );
+
+        const targetOrder =
+            Number(
+                targetCategory.ordem || 0
+            );
+
+
+        const batch =
+            writeBatch(db);
+
+
+        const currentReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "categorias",
+                currentCategory.id
+            );
+
+
+        const targetReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "categorias",
+                targetCategory.id
+            );
+
+
+        batch.update(
+            currentReference,
+            {
+                ordem:
+                    targetOrder
+            }
+        );
+
+
+        batch.update(
+            targetReference,
+            {
+                ordem:
+                    currentOrder
+            }
+        );
+
+
+        await batch.commit();
+
+
+        await loadCategories();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao alterar ordem das categorias:",
+            error
+        );
+
+        alert(
+            "Não foi possível alterar a ordem das categorias."
         );
 
     }
