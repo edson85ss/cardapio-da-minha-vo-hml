@@ -32,6 +32,8 @@ let currentQuantity = 1;
 
 let isStoreOpen = false;
 
+let categories = [];
+
 /* ==================================================
    ELEMENTOS DA PÁGINA
    ================================================== */
@@ -174,39 +176,37 @@ document.addEventListener(
 
         await loadStoreConfigFromFirestore();
 
+		applyStoreColors();
 
-        /*
-         * DEPOIS:
-         * Aplica as configurações carregadas.
-         */
+		loadStoreInfo();
 
-        applyStoreColors();
+		updateStoreStatus();
 
-        loadStoreInfo();
+		toggleAddressField();
 
-        updateStoreStatus();
+		togglePaymentFields();
 
-        toggleAddressField();
+		pixKeyText.textContent =
+			CONFIG.pixKey;
 
-        togglePaymentFields();
+		pixOwnerText.textContent =
+			CONFIG.pixOwner;
 
-
-        pixKeyText.textContent =
-            CONFIG.pixKey;
-
-        pixOwnerText.textContent =
-            CONFIG.pixOwner;
+		loadCartFromLocalStorage();
 
 
-        loadCartFromLocalStorage();
+		/*
+		 * Primeiro categorias
+		 */
+
+		await loadCategoriesFromFirestore();
 
 
-        /*
-         * Por último:
-         * carrega produtos.
-         */
+		/*
+		 * Depois produtos
+		 */
 
-        await loadProductsFromFirestore();
+		await loadProductsFromFirestore();
 
     }
 );
@@ -235,47 +235,77 @@ function loadStoreInfo() {
 
 function renderCategories() {
 
-    categoriesContainer.innerHTML = "";
+    categoriesContainer.innerHTML =
+        "";
 
-    const categories =
-        [...new Set(products.map(product => product.categoria))];
-
-    if (categories.length === 0) return;
-
-    if (!selectedCategory) {
-        selectedCategory = categories[0];
+    if (categories.length === 0) {
+        return;
     }
 
-    categories.forEach(category => {
 
-        const button =
-            document.createElement("button");
+    /*
+     * Se nenhuma categoria estiver
+     * selecionada, usa a primeira
+     * da ordem definida no admin.
+     */
 
-        button.className =
-            category === selectedCategory
-                ? "category-btn active"
-                : "category-btn";
+    const selectedExists =
+        categories.some(
+            category =>
+                category.nome ===
+                selectedCategory
+        );
 
-        button.dataset.category =
-            category;
 
-        button.textContent =
-            category;
+    if (!selectedExists) {
 
-        button.addEventListener("click", () => {
+        selectedCategory =
+            categories[0].nome;
 
-            selectedCategory =
-                category;
+    }
 
-            renderCategories();
 
-            renderProducts();
+    categories.forEach(
+        category => {
 
-        });
+            const button =
+                document.createElement(
+                    "button"
+                );
 
-        categoriesContainer.appendChild(button);
+            button.className =
+                category.nome === selectedCategory
+                    ? "category-btn active"
+                    : "category-btn";
 
-    });
+            button.dataset.category =
+                category.nome;
+
+            button.textContent =
+                category.nome;
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    selectedCategory =
+                        category.nome;
+
+                    renderCategories();
+
+                    renderProducts();
+
+                }
+            );
+
+
+            categoriesContainer.appendChild(
+                button
+            );
+
+        }
+    );
 
 }
 
@@ -1493,5 +1523,78 @@ function applyStoreColors() {
         "--text",
         CONFIG.colors.text
     );
+
+}
+
+async function loadCategoriesFromFirestore() {
+
+    try {
+
+        const categoriesReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "categorias"
+            );
+
+        const categoriesQuery =
+            query(
+                categoriesReference,
+                orderBy("ordem", "asc")
+            );
+
+        const snapshot =
+            await getDocs(
+                categoriesQuery
+            );
+
+        categories = [];
+
+        snapshot.forEach(
+            documentSnapshot => {
+
+                const data =
+                    documentSnapshot.data();
+
+                /*
+                 * Categorias inativas
+                 * não aparecem no cardápio.
+                 */
+
+                if (data.ativo === false) {
+                    return;
+                }
+
+                categories.push({
+
+                    id:
+                        documentSnapshot.id,
+
+                    nome:
+                        data.nome || "",
+
+                    ordem:
+                        Number(data.ordem || 0)
+
+                });
+
+            }
+        );
+
+        console.log(
+            `${categories.length} categorias carregadas do Firestore`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar categorias:",
+            error
+        );
+
+    }
 
 }
