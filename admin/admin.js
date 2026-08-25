@@ -453,12 +453,18 @@ productForm.addEventListener(
 					/*
 					 * Primeiro envia a nova imagem.
 					 */
+					 
+					saveProductButton.textContent =
+						"Otimizando imagem...";
 
 					const uploadedImage =
 						await uploadProductImage(
 							file,
 							currentProductId
 						);
+						
+					saveProductButton.textContent =
+						"Salvando...";
 
 
 					/*
@@ -790,24 +796,35 @@ function parseBrazilianPrice(value) {
 }
 
 async function uploadProductImage(
-    file,
+    originalFile,
     productId
 ) {
 
-    if (!file) {
+    if (!originalFile) {
         return null;
     }
 
 
-    const extension =
-        file.name
-            .split(".")
-            .pop()
-            .toLowerCase();
+    /*
+     * Otimiza no navegador antes
+     * de enviar qualquer coisa
+     * para o Firebase.
+     */
 
+    const optimizedFile =
+        await optimizeImage(
+            originalFile,
+            500,
+            0.80
+        );
+
+
+    /*
+     * Nome sempre WebP.
+     */
 
     const fileName =
-        `${Date.now()}.${extension}`;
+        `${Date.now()}.webp`;
 
 
     const imagePath =
@@ -823,7 +840,11 @@ async function uploadProductImage(
 
     await uploadBytes(
         imageReference,
-        file
+        optimizedFile,
+        {
+            contentType:
+                "image/webp"
+        }
     );
 
 
@@ -832,11 +853,6 @@ async function uploadProductImage(
             imageReference
         );
 
-
-    /*
-     * Retornamos tanto URL
-     * quanto caminho interno.
-     */
 
     return {
 
@@ -1784,5 +1800,199 @@ async function moveProduct(
         );
 
     }
+
+}/* ==================================================
+   OTIMIZA IMAGEM ANTES DO UPLOAD
+   ================================================== */
+
+async function optimizeImage(
+    file,
+    maxDimension = 500,
+    quality = 0.80
+) {
+
+    /*
+     * Tipos permitidos na entrada.
+     */
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+
+    if (!allowedTypes.includes(file.type)) {
+
+        throw new Error(
+            "Formato de imagem não permitido."
+        );
+
+    }
+
+
+    /*
+     * Limite do arquivo original:
+     * 10 MB.
+     */
+
+    const maxOriginalSize =
+        10 * 1024 * 1024;
+
+
+    if (file.size > maxOriginalSize) {
+
+        throw new Error(
+            "A imagem deve possuir no máximo 10 MB."
+        );
+
+    }
+
+
+    /*
+     * Carrega a imagem.
+     */
+
+    const bitmap =
+        await createImageBitmap(file);
+
+
+    let width =
+        bitmap.width;
+
+    let height =
+        bitmap.height;
+
+
+    /*
+     * Calcula dimensões mantendo proporção.
+     */
+
+    if (
+        width > maxDimension ||
+        height > maxDimension
+    ) {
+
+        const scale =
+            Math.min(
+                maxDimension / width,
+                maxDimension / height
+            );
+
+
+        width =
+            Math.round(
+                width * scale
+            );
+
+
+        height =
+            Math.round(
+                height * scale
+            );
+
+    }
+
+
+    /*
+     * Canvas temporário.
+     */
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+
+    canvas.width =
+        width;
+
+    canvas.height =
+        height;
+
+
+    const context =
+        canvas.getContext("2d");
+
+
+    context.drawImage(
+        bitmap,
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    bitmap.close();
+
+
+    /*
+     * Converte para WebP.
+     */
+
+    const blob =
+        await new Promise(
+            (resolve, reject) => {
+
+                canvas.toBlob(
+                    result => {
+
+                        if (result) {
+
+                            resolve(result);
+
+                        }
+
+                        else {
+
+                            reject(
+                                new Error(
+                                    "Não foi possível otimizar a imagem."
+                                )
+                            );
+
+                        }
+
+                    },
+                    "image/webp",
+                    quality
+                );
+
+            }
+        );
+
+
+    /*
+     * Segurança adicional:
+     * arquivo final não pode ultrapassar 1 MB.
+     */
+
+    const maxFinalSize =
+        1 * 1024 * 1024;
+
+
+    if (blob.size > maxFinalSize) {
+
+        throw new Error(
+            "Mesmo após a otimização, a imagem ficou maior que 1 MB."
+        );
+
+    }
+
+
+    /*
+     * Retorna como File para manter
+     * compatibilidade com o upload atual.
+     */
+
+    return new File(
+        [blob],
+        "imagem.webp",
+        {
+            type:
+                "image/webp"
+        }
+    );
 
 }
