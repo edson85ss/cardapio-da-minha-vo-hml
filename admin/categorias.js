@@ -315,9 +315,7 @@ async function loadCategories() {
 				}
 			);
 		
-        );
-
-
+        
         setupCategoryEditButtons();
 		setupCategoryDeleteButtons();
 		setupCategoryOrderButtons(categories);
