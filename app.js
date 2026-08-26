@@ -59,6 +59,16 @@ const pickupInfo =
 const storeLogo =
     document.querySelector(".logo");
 	
+const footerStoreName =
+    document.getElementById(
+        "footerStoreName"
+    );
+
+const footerYear =
+    document.getElementById(
+        "footerYear"
+    );
+	
 /* ==================================================
    MODAL PRODUTO
    ================================================== */
@@ -225,7 +235,13 @@ function loadStoreInfo() {
 		
 	if (CONFIG.logo) {
     storeLogo.src = CONFIG.logo;
-}
+	}
+	
+	footerStoreName.textContent =
+		CONFIG.storeName;
+
+	footerYear.textContent =
+		new Date().getFullYear();
 
 }
 
