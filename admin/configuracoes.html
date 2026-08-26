@@ -9,19 +9,395 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Configurações</title>
+    <title>Configurações - Administração</title>
 
-    <link
-        rel="stylesheet"
-        href="admin.css"
-    >
+    <link rel="stylesheet" href="admin.css">
 </head>
 
 <body>
 
-    <p style="padding:30px;">
-        Tela de configurações será criada posteriormente.
-    </p>
+    <div class="admin-layout">
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+
+                <div class="sidebar-logo">
+                    🍽️
+                </div>
+
+                <div>
+                    <strong>Cardápio Digital</strong>
+                    <small>Administração</small>
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-menu">
+
+                <a
+                    href="produtos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">▦</span>
+                    Produtos
+                </a>
+
+                <a
+                    href="categorias.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">☷</span>
+                    Categorias
+                </a>
+
+                <a
+                    href="configuracoes.html"
+                    class="menu-item active"
+                >
+                    <span class="menu-icon">⚙</span>
+                    Configurações
+                </a>
+
+                <a
+                    href="../"
+                    target="_blank"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">↗</span>
+                    Ver cardápio
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-footer">
+
+                <button
+                    id="logoutButton"
+                    class="logout-button"
+                >
+                    <span>↪</span>
+                    Sair
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <div
+            id="sidebarOverlay"
+            class="sidebar-overlay"
+        ></div>
+
+
+        <main class="admin-main">
+
+            <header class="admin-header">
+
+                <button
+                    id="menuButton"
+                    class="mobile-menu-button"
+                    aria-label="Abrir menu"
+                >
+                    ☰
+                </button>
+
+                <div>
+                    <h1>Configurações</h1>
+                    <p>
+                        Personalize as informações da loja.
+                    </p>
+                </div>
+
+            </header>
+
+
+            <section class="admin-content">
+
+                <form id="storeConfigForm">
+
+                    <!-- IDENTIDADE -->
+
+                    <div class="settings-section">
+
+                        <div class="settings-section-header">
+
+                            <h2>
+                                Identidade e contato
+                            </h2>
+
+                            <p>
+                                Dados exibidos no cardápio e usados nos pedidos.
+                            </p>
+
+                        </div>
+
+
+                        <div class="settings-grid">
+
+                            <div class="admin-form-group">
+
+                                <label for="storeName">
+                                    Nome da loja
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storeName"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="admin-form-group">
+
+                                <label for="storeHoursText">
+                                    Horário exibido
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storeHoursText"
+                                    placeholder="Ex: Seg a Sáb • 09h às 19h"
+                                >
+
+                            </div>
+
+
+                            <div class="admin-form-group">
+
+                                <label for="storeWhatsapp">
+                                    WhatsApp
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storeWhatsapp"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="admin-form-group">
+
+                                <label for="storePixKey">
+                                    Chave PIX
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storePixKey"
+                                >
+
+                            </div>
+
+
+                            <div class="admin-form-group">
+
+                                <label for="storePixOwner">
+                                    Titular PIX
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storePixOwner"
+                                >
+
+                            </div>
+
+
+                            <div class="admin-form-group">
+
+                                <label for="storeDeliveryFee">
+                                    Taxa de entrega
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storeDeliveryFee"
+                                    inputmode="decimal"
+                                    placeholder="0,00"
+                                >
+
+                            </div>
+
+
+                            <div class="admin-form-group settings-full">
+
+                                <label for="storePickupAddress">
+                                    Endereço de retirada
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="storePickupAddress"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CORES -->
+
+                        <div class="settings-colors">
+
+                            <div class="color-field">
+
+                                <label for="storePrimaryColor">
+                                    Cor primária
+                                </label>
+
+                                <input
+                                    type="color"
+                                    id="storePrimaryColor"
+                                >
+
+                            </div>
+
+
+                            <div class="color-field">
+
+                                <label for="storeSecondaryColor">
+                                    Cor secundária
+                                </label>
+
+                                <input
+                                    type="color"
+                                    id="storeSecondaryColor"
+                                >
+
+                            </div>
+
+
+                            <div class="color-field">
+
+                                <label for="storeTextColor">
+                                    Cor do texto
+                                </label>
+
+                                <input
+                                    type="color"
+                                    id="storeTextColor"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- LOGO -->
+
+                        <div class="admin-form-group">
+
+                            <label for="storeLogo">
+                                Logotipo
+                            </label>
+
+                            <input
+                                type="file"
+                                id="storeLogo"
+                                accept="image/jpeg,image/png,image/webp"
+                            >
+
+                            <small class="form-help">
+                                JPG, PNG ou WebP. A imagem será otimizada automaticamente.
+                            </small>
+
+                        </div>
+
+
+                        <div
+                            id="storeLogoPreviewWrapper"
+                            class="product-image-preview-wrapper"
+                        >
+                            <img
+                                id="storeLogoPreview"
+                                class="product-image-preview"
+                                alt="Prévia do logotipo"
+                            >
+                        </div>
+
+
+                        <label class="switch-row">
+
+                            <input
+                                type="checkbox"
+                                id="storeActive"
+                                checked
+                            >
+
+                            <span>
+                                Loja ativa
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- FUNCIONAMENTO -->
+
+                    <div class="settings-section">
+
+                        <div class="settings-section-header">
+
+                            <h2>
+                                Funcionamento
+                            </h2>
+
+                            <p>
+                                Defina os horários usados para abrir e fechar automaticamente o cardápio.
+                            </p>
+
+                        </div>
+
+
+                        <div id="openingHoursContainer">
+
+                            <!-- dias gerados pelo JavaScript -->
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="configFormMessage"
+                        class="form-message"
+                    ></div>
+
+
+                    <div class="settings-actions">
+
+                        <button
+                            type="submit"
+                            id="saveConfigButton"
+                            class="primary-action-button"
+                        >
+                            Salvar configurações
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script
+        type="module"
+        src="configuracoes.js"
+    ></script>
 
 </body>
 

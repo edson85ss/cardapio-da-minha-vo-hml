@@ -1765,3 +1765,250 @@ body {
 
 }
 
+/* ==================================================
+   CONFIGURAÇÕES
+   ================================================== */
+
+.settings-section {
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    padding: 24px;
+
+    margin-bottom: 22px;
+
+}
+
+
+.settings-section-header {
+
+    margin-bottom: 24px;
+
+}
+
+
+.settings-section-header h2 {
+
+    font-size: 18px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.settings-section-header p {
+
+    font-size: 13px;
+
+    color: var(--text-light);
+
+}
+
+
+.settings-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 0 18px;
+
+}
+
+
+.settings-full {
+
+    grid-column:
+        1 / -1;
+
+}
+
+
+.settings-colors {
+
+    display: flex;
+
+    gap: 18px;
+
+    margin-bottom: 22px;
+
+    flex-wrap: wrap;
+
+}
+
+
+.color-field {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+}
+
+
+.color-field label {
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+.color-field input[type="color"] {
+
+    width: 44px;
+
+    height: 36px;
+
+    padding: 2px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 8px;
+
+    background: var(--surface);
+
+    cursor: pointer;
+
+}
+
+
+/* HORÁRIOS */
+
+.opening-day-row {
+
+    display: grid;
+
+    grid-template-columns:
+        120px 110px 110px auto;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-height: 54px;
+
+    border-bottom:
+        1px solid var(--border);
+
+}
+
+
+.opening-day-row:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.opening-day-name {
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+}
+
+
+.opening-day-row input[type="time"] {
+
+    height: 38px;
+
+    padding: 0 9px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 8px;
+
+    background: var(--surface);
+
+}
+
+
+.day-closed-label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    font-size: 13px;
+
+}
+
+
+.settings-actions {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    margin-bottom: 30px;
+
+}
+
+
+@media(max-width: 700px) {
+
+    .settings-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .settings-full {
+
+        grid-column:
+            auto;
+
+    }
+
+
+    .opening-day-row {
+
+        grid-template-columns:
+            1fr 1fr;
+
+        padding:
+            12px 0;
+
+    }
+
+
+    .opening-day-name {
+
+        grid-column:
+            1 / -1;
+
+    }
+
+
+    .day-closed-label {
+
+        grid-column:
+            1 / -1;
+
+    }
+
+
+    .settings-actions
+    .primary-action-button {
+
+        width: 100%;
+
+    }
+
+}
