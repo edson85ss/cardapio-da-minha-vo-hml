@@ -117,6 +117,87 @@ const categoryFilters =
         "categoryFilters"
     );
 	
+const newComplementGroupButton =
+    document.getElementById(
+        "newComplementGroupButton"
+    );
+
+const complementGroupsList =
+    document.getElementById(
+        "complementGroupsList"
+    );
+
+const complementGroupModal =
+    document.getElementById(
+        "complementGroupModal"
+    );
+
+const complementGroupModalOverlay =
+    document.getElementById(
+        "complementGroupModalOverlay"
+    );
+
+const closeComplementGroupModalButton =
+    document.getElementById(
+        "closeComplementGroupModal"
+    );
+
+const cancelComplementGroupButton =
+    document.getElementById(
+        "cancelComplementGroupButton"
+    );
+
+const complementGroupForm =
+    document.getElementById(
+        "complementGroupForm"
+    );
+
+const complementGroupFormTitle =
+    document.getElementById(
+        "complementGroupFormTitle"
+    );
+
+const complementGroupIdInput =
+    document.getElementById(
+        "complementGroupId"
+    );
+
+const complementGroupNameInput =
+    document.getElementById(
+        "complementGroupName"
+    );
+
+const complementGroupTypeInput =
+    document.getElementById(
+        "complementGroupType"
+    );
+
+const complementGroupMinInput =
+    document.getElementById(
+        "complementGroupMin"
+    );
+
+const complementGroupMaxInput =
+    document.getElementById(
+        "complementGroupMax"
+    );
+
+const complementGroupActiveInput =
+    document.getElementById(
+        "complementGroupActive"
+    );
+
+const complementGroupMessage =
+    document.getElementById(
+        "complementGroupMessage"
+    );
+
+const saveComplementGroupButton =
+    document.getElementById(
+        "saveComplementGroupButton"
+    );
+
+	
 /* ==================================================
    DADOS LOCAIS
    ================================================== */
@@ -126,6 +207,8 @@ let adminProducts = [];
 let adminCategories = [];
 
 let selectedCategoryId = "all";
+
+let currentComplementProductId = null;
 	
 
 /* ==================================================
@@ -773,6 +856,18 @@ function openProductForm() {
     productFormModal.classList.add(
         "open"
     );
+	
+	currentComplementProductId =
+    null;
+
+	newComplementGroupButton.disabled =
+		true;
+
+	complementGroupsList.innerHTML = `
+		<div class="complements-empty">
+			Salve o produto primeiro para cadastrar complementos.
+		</div>
+	`;
 
 }
 
@@ -1309,6 +1404,16 @@ async function openEditProductForm(
 
         productIdInput.value =
             productId;
+			
+		currentComplementProductId =
+			productId;
+
+		newComplementGroupButton.disabled =
+			false;
+
+		await loadComplementGroups(
+			productId
+		);
 
         productNameInput.value =
             product.nome || "";
@@ -1994,5 +2099,618 @@ async function optimizeImage(
                 "image/webp"
         }
     );
+
+}
+
+async function loadComplementGroups(
+    productId
+) {
+
+    if (!productId) {
+        return;
+    }
+
+
+    try {
+
+        const groupsReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                productId,
+                "gruposAdicionais"
+            );
+
+
+        const groupsQuery =
+            query(
+                groupsReference,
+                orderBy("ordem", "asc")
+            );
+
+
+        const snapshot =
+            await getDocs(
+                groupsQuery
+            );
+
+
+        complementGroupsList.innerHTML =
+            "";
+
+
+        if (snapshot.empty) {
+
+            complementGroupsList.innerHTML = `
+                <div class="complements-empty">
+                    Nenhum grupo cadastrado.
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        snapshot.forEach(
+            documentSnapshot => {
+
+                const group =
+                    documentSnapshot.data();
+
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    "complement-group-item";
+
+
+                let typeLabel =
+                    "Escolha única";
+
+
+                if (
+                    group.tipo ===
+                    "multipla"
+                ) {
+
+                    typeLabel =
+                        "Múltipla escolha";
+
+                }
+
+
+                if (
+                    group.tipo ===
+                    "quantidade"
+                ) {
+
+                    typeLabel =
+                        "Quantidades";
+
+                }
+
+
+                item.innerHTML = `
+
+                    <div class="complement-group-info">
+
+                        <h4>
+                            ${group.nome || "Sem nome"}
+                        </h4>
+
+                        <div class="complement-group-meta">
+
+                            ${typeLabel}
+                            · mínimo ${group.minimo ?? 0}
+                            · máximo ${group.maximo ?? 1}
+                            · ${
+                                group.ativo === false
+                                ? "Inativo"
+                                : "Ativo"
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="complement-group-actions">
+
+                        <button
+                            type="button"
+                            class="edit-product-button edit-complement-group-button"
+                            data-id="${documentSnapshot.id}"
+                        >
+                            Editar
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="delete-product-button delete-complement-group-button"
+                            data-id="${documentSnapshot.id}"
+                            data-name="${group.nome || ""}"
+                        >
+                            Excluir
+                        </button>
+
+                    </div>
+
+                `;
+
+
+                complementGroupsList
+                    .appendChild(item);
+
+            }
+        );
+
+
+        setupComplementGroupButtons();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar grupos:",
+            error
+        );
+
+    }
+
+}
+
+newComplementGroupButton
+    .addEventListener(
+        "click",
+        () => {
+
+            if (
+                !currentComplementProductId
+            ) {
+
+                return;
+
+            }
+
+
+            complementGroupForm.reset();
+
+            complementGroupIdInput.value =
+                "";
+
+            complementGroupTypeInput.value =
+                "unica";
+
+            complementGroupMinInput.value =
+                0;
+
+            complementGroupMaxInput.value =
+                1;
+
+            complementGroupActiveInput.checked =
+                true;
+
+            complementGroupFormTitle.textContent =
+                "Novo grupo";
+
+            complementGroupMessage.textContent =
+                "";
+
+            complementGroupModal.classList.add(
+                "open"
+            );
+
+        }
+    );
+	
+function closeComplementGroupForm() {
+
+    complementGroupModal.classList.remove(
+        "open"
+    );
+
+}
+
+
+closeComplementGroupModalButton
+    .addEventListener(
+        "click",
+        closeComplementGroupForm
+    );
+
+
+cancelComplementGroupButton
+    .addEventListener(
+        "click",
+        closeComplementGroupForm
+    );
+
+
+complementGroupModalOverlay
+    .addEventListener(
+        "click",
+        closeComplementGroupForm
+    );
+	
+complementGroupForm.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+
+        if (
+            !currentComplementProductId
+        ) {
+
+            return;
+
+        }
+
+
+        const name =
+            complementGroupNameInput.value.trim();
+
+
+        const minimum =
+            Number(
+                complementGroupMinInput.value
+            );
+
+
+        const maximum =
+            Number(
+                complementGroupMaxInput.value
+            );
+
+
+        if (!name) {
+
+            complementGroupMessage.textContent =
+                "Informe o nome do grupo.";
+
+            complementGroupMessage.className =
+                "form-message error";
+
+            return;
+
+        }
+
+
+        if (
+            minimum < 0 ||
+            maximum < 1 ||
+            minimum > maximum
+        ) {
+
+            complementGroupMessage.textContent =
+                "Confira os valores mínimo e máximo.";
+
+            complementGroupMessage.className =
+                "form-message error";
+
+            return;
+
+        }
+
+
+        try {
+
+            saveComplementGroupButton.disabled =
+                true;
+
+            saveComplementGroupButton.textContent =
+                "Salvando...";
+
+
+            const groupId =
+                complementGroupIdInput.value;
+
+
+            const groupData = {
+
+                nome:
+                    name,
+
+                tipo:
+                    complementGroupTypeInput.value,
+
+                minimo:
+                    minimum,
+
+                maximo:
+                    maximum,
+
+                ativo:
+                    complementGroupActiveInput.checked
+
+            };
+
+
+            if (groupId) {
+
+                const groupReference =
+                    doc(
+                        db,
+                        "lojas",
+                        "da-minha-vo",
+                        "produtos",
+                        currentComplementProductId,
+                        "gruposAdicionais",
+                        groupId
+                    );
+
+
+                await updateDoc(
+                    groupReference,
+                    groupData
+                );
+
+            }
+
+            else {
+
+                const existingGroups =
+                    await getDocs(
+                        collection(
+                            db,
+                            "lojas",
+                            "da-minha-vo",
+                            "produtos",
+                            currentComplementProductId,
+                            "gruposAdicionais"
+                        )
+                    );
+
+
+                groupData.ordem =
+                    existingGroups.size + 1;
+
+
+                await addDoc(
+                    collection(
+                        db,
+                        "lojas",
+                        "da-minha-vo",
+                        "produtos",
+                        currentComplementProductId,
+                        "gruposAdicionais"
+                    ),
+                    groupData
+                );
+
+            }
+
+
+            closeComplementGroupForm();
+
+
+            await loadComplementGroups(
+                currentComplementProductId
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Erro ao salvar grupo:",
+                error
+            );
+
+
+            complementGroupMessage.textContent =
+                "Não foi possível salvar o grupo.";
+
+            complementGroupMessage.className =
+                "form-message error";
+
+        }
+
+        finally {
+
+            saveComplementGroupButton.disabled =
+                false;
+
+            saveComplementGroupButton.textContent =
+                "Salvar grupo";
+
+        }
+
+    }
+);
+
+function setupComplementGroupButtons() {
+
+    const editButtons =
+        document.querySelectorAll(
+            ".edit-complement-group-button"
+        );
+
+
+    editButtons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    await openEditComplementGroup(
+                        button.dataset.id
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    const deleteButtons =
+        document.querySelectorAll(
+            ".delete-complement-group-button"
+        );
+
+
+    deleteButtons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    await deleteComplementGroup(
+                        button.dataset.id,
+                        button.dataset.name
+                    );
+
+                }
+            );
+
+        }
+    );
+
+}
+
+async function openEditComplementGroup(
+    groupId
+) {
+
+    try {
+
+        const groupReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                currentComplementProductId,
+                "gruposAdicionais",
+                groupId
+            );
+
+
+        const snapshot =
+            await getDoc(
+                groupReference
+            );
+
+
+        if (!snapshot.exists()) {
+            return;
+        }
+
+
+        const group =
+            snapshot.data();
+
+
+        complementGroupIdInput.value =
+            groupId;
+
+        complementGroupNameInput.value =
+            group.nome || "";
+
+        complementGroupTypeInput.value =
+            group.tipo || "unica";
+
+        complementGroupMinInput.value =
+            group.minimo ?? 0;
+
+        complementGroupMaxInput.value =
+            group.maximo ?? 1;
+
+        complementGroupActiveInput.checked =
+            group.ativo !== false;
+
+
+        complementGroupFormTitle.textContent =
+            "Editar grupo";
+
+
+        complementGroupMessage.textContent =
+            "";
+
+
+        complementGroupModal.classList.add(
+            "open"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao abrir grupo:",
+            error
+        );
+
+    }
+
+}
+
+async function deleteComplementGroup(
+    groupId,
+    groupName
+) {
+
+    const confirmed =
+        confirm(
+            `Deseja realmente excluir o grupo "${groupName}"?`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        const groupReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                currentComplementProductId,
+                "gruposAdicionais",
+                groupId
+            );
+
+
+        await deleteDoc(
+            groupReference
+        );
+
+
+        await loadComplementGroups(
+            currentComplementProductId
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao excluir grupo:",
+            error
+        );
+
+
+        alert(
+            "Não foi possível excluir o grupo."
+        );
+
+    }
 
 }
