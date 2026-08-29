@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Complementos - Administração
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
+
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
+
+        <div class="sidebar-header">
+
+            <div class="sidebar-logo">
+                🍽️
+            </div>
+
+            <div>
+
+                <strong>
+                    Cardápio Digital
+                </strong>
+
+                <small>
+                    Administração
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-menu">
+
+            <a
+                href="produtos.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">▦</span>
+                Produtos
+            </a>
+
+
+            <a
+                href="categorias.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">☷</span>
+                Categorias
+            </a>
+
+
+            <a
+                href="complementos.html"
+                class="menu-item active"
+            >
+                <span class="menu-icon">＋</span>
+                Complementos
+            </a>
+
+
+            <a
+                href="configuracoes.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">⚙</span>
+                Configurações
+            </a>
+
+
+            <a
+                href="../"
+                target="_blank"
+                class="menu-item"
+            >
+                <span class="menu-icon">↗</span>
+                Ver cardápio
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <button
+                id="logoutButton"
+                class="logout-button"
+            >
+
+                <span>↪</span>
+                Sair
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+    ></div>
+
+
+    <main class="admin-main">
+
+        <header class="admin-header">
+
+            <button
+                id="menuButton"
+                class="mobile-menu-button"
+                aria-label="Abrir menu"
+            >
+                ☰
+            </button>
+
+
+            <div>
+
+                <h1>
+                    Complementos
+                </h1>
+
+                <p>
+                    Crie grupos reutilizáveis para seus produtos.
+                </p>
+
+            </div>
+
+        </header>
+
+
+        <section class="admin-content">
+
+
+            <div class="page-actions">
+
+                <div class="page-actions-top">
+
+                    <div>
+
+                        <h2>
+                            Seus complementos
+                        </h2>
+
+                        <p>
+                            Cadastre grupos de escolhas, adicionais e extras.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        id="newComplementButton"
+                        class="primary-action-button"
+                    >
+                        + Novo complemento
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="products-panel">
+
+                <div
+                    id="complementsList"
+                    class="admin-complements-list"
+                >
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            ⏳
+                        </div>
+
+                        <h3>
+                            Carregando complementos...
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- MODAL COMPLEMENTO -->
+
+<div
+    id="complementModal"
+    class="admin-modal"
+>
+
+    <div
+        id="complementModalOverlay"
+        class="admin-modal-overlay"
+    ></div>
+
+
+    <div class="admin-modal-card small-modal">
+
+        <div class="admin-modal-header">
+
+            <div>
+
+                <h2 id="complementFormTitle">
+                    Novo complemento
+                </h2>
+
+                <p>
+                    Defina as regras gerais deste grupo.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeComplementModal"
+                class="modal-close-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="complementForm">
+
+            <input
+                type="hidden"
+                id="complementId"
+            >
+
+
+            <div class="admin-form-group">
+
+                <label for="complementName">
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    id="complementName"
+                    placeholder="Ex: Ponto da carne"
+                    required
+                >
+
+            </div>
+
+
+            <div class="admin-form-group">
+
+                <label for="complementType">
+                    Tipo de seleção
+                </label>
+
+                <select
+                    id="complementType"
+                    required
+                >
+
+                    <option value="unica">
+                        Escolha única
+                    </option>
+
+                    <option value="multipla">
+                        Múltipla escolha
+                    </option>
+
+                    <option value="quantidade">
+                        Quantidades (+ / -)
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="admin-form-row">
+
+                <div class="admin-form-group">
+
+                    <label for="complementMin">
+                        Mínimo
+                    </label>
+
+                    <input
+                        type="number"
+                        id="complementMin"
+                        min="0"
+                        value="0"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="admin-form-group">
+
+                    <label for="complementMax">
+                        Máximo
+                    </label>
+
+                    <input
+                        type="number"
+                        id="complementMax"
+                        min="1"
+                        value="1"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <label class="switch-row">
+
+                <input
+                    type="checkbox"
+                    id="complementActive"
+                    checked
+                >
+
+                <span>
+                    Complemento ativo
+                </span>
+
+            </label>
+
+
+            <div
+                id="complementFormMessage"
+                class="form-message"
+            ></div>
+
+
+            <div class="admin-modal-actions">
+
+                <button
+                    type="button"
+                    id="cancelComplementButton"
+                    class="secondary-button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    type="submit"
+                    id="saveComplementButton"
+                    class="primary-action-button"
+                >
+                    Salvar complemento
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script
+    type="module"
+    src="complementos.js"
+></script>
+
+</body>
+
+</html>

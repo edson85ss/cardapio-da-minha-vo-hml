@@ -60,6 +60,14 @@
 				<span class="menu-icon">☷</span>
 				Categorias
 				</a>
+				
+				<a
+					href="complementos.html"
+					class="menu-item"
+				>
+					<span class="menu-icon">＋</span>
+					Complementos
+				</a>
 
 
                 <a
@@ -347,43 +355,7 @@
 
             </label>
 			
-			<div class="product-complements-section">
-
-				<div class="complements-header">
-
-					<div>
-						<h3>Complementos</h3>
-
-						<p>
-							Crie grupos de escolhas e adicionais para este produto.
-						</p>
-					</div>
-
-					<button
-						type="button"
-						id="newComplementGroupButton"
-						class="secondary-button"
-					>
-						+ Novo grupo
-					</button>
-
-				</div>
-
-
-				<div
-					id="complementGroupsList"
-					class="complement-groups-list"
-				>
-
-					<div class="complements-empty">
-						Salve o produto primeiro para cadastrar complementos.
-					</div>
-
-				</div>
-
-			</div>
-
-
+			
             <div
                 id="productFormMessage"
                 class="form-message"
@@ -416,181 +388,7 @@
 
 </div>
 
-<div
-    id="complementGroupModal"
-    class="admin-modal"
->
 
-    <div
-        id="complementGroupModalOverlay"
-        class="admin-modal-overlay"
-    ></div>
-
-
-    <div class="admin-modal-card small-modal">
-
-        <div class="admin-modal-header">
-
-            <div>
-
-                <h2 id="complementGroupFormTitle">
-                    Novo grupo
-                </h2>
-
-                <p>
-                    Defina como o cliente poderá escolher as opções.
-                </p>
-
-            </div>
-
-
-            <button
-                type="button"
-                id="closeComplementGroupModal"
-                class="modal-close-button"
-            >
-                ×
-            </button>
-
-        </div>
-
-
-        <form id="complementGroupForm">
-
-            <input
-                type="hidden"
-                id="complementGroupId"
-            >
-
-
-            <div class="admin-form-group">
-
-                <label for="complementGroupName">
-                    Nome do grupo
-                </label>
-
-                <input
-                    type="text"
-                    id="complementGroupName"
-                    placeholder="Ex: Ponto da carne"
-                    required
-                >
-
-            </div>
-
-
-            <div class="admin-form-group">
-
-                <label for="complementGroupType">
-                    Tipo de seleção
-                </label>
-
-                <select
-                    id="complementGroupType"
-                    required
-                >
-
-                    <option value="unica">
-                        Escolha única
-                    </option>
-
-                    <option value="multipla">
-                        Múltipla escolha
-                    </option>
-
-                    <option value="quantidade">
-                        Quantidades (+ / -)
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="admin-form-row">
-
-                <div class="admin-form-group">
-
-                    <label for="complementGroupMin">
-                        Mínimo
-                    </label>
-
-                    <input
-                        type="number"
-                        id="complementGroupMin"
-                        min="0"
-                        value="0"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="admin-form-group">
-
-                    <label for="complementGroupMax">
-                        Máximo
-                    </label>
-
-                    <input
-                        type="number"
-                        id="complementGroupMax"
-                        min="1"
-                        value="1"
-                        required
-                    >
-
-                </div>
-
-            </div>
-
-
-            <label class="switch-row">
-
-                <input
-                    type="checkbox"
-                    id="complementGroupActive"
-                    checked
-                >
-
-                <span>
-                    Grupo ativo
-                </span>
-
-            </label>
-
-
-            <div
-                id="complementGroupMessage"
-                class="form-message"
-            ></div>
-
-
-            <div class="admin-modal-actions">
-
-                <button
-                    type="button"
-                    id="cancelComplementGroupButton"
-                    class="secondary-button"
-                >
-                    Cancelar
-                </button>
-
-                <button
-                    type="submit"
-                    id="saveComplementGroupButton"
-                    class="primary-action-button"
-                >
-                    Salvar grupo
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
 
     <script
         type="module"
