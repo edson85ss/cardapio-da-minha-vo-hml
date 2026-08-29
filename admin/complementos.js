@@ -21,7 +21,8 @@ import {
     doc,
     getDoc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+	writeBatch
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -130,6 +131,126 @@ const saveComplementButton =
     document.getElementById(
         "saveComplementButton"
     );
+	
+/* ==================================================
+   ELEMENTOS - OPÇÕES
+   ================================================== */
+
+const optionsModal =
+    document.getElementById(
+        "optionsModal"
+    );
+
+const optionsModalOverlay =
+    document.getElementById(
+        "optionsModalOverlay"
+    );
+
+const closeOptionsModalButton =
+    document.getElementById(
+        "closeOptionsModal"
+    );
+
+const optionsComplementName =
+    document.getElementById(
+        "optionsComplementName"
+    );
+
+const optionsList =
+    document.getElementById(
+        "optionsList"
+    );
+
+const newOptionButton =
+    document.getElementById(
+        "newOptionButton"
+    );
+
+
+const optionFormModal =
+    document.getElementById(
+        "optionFormModal"
+    );
+
+const optionFormModalOverlay =
+    document.getElementById(
+        "optionFormModalOverlay"
+    );
+
+const closeOptionFormModalButton =
+    document.getElementById(
+        "closeOptionFormModal"
+    );
+
+const cancelOptionButton =
+    document.getElementById(
+        "cancelOptionButton"
+    );
+
+const optionForm =
+    document.getElementById(
+        "optionForm"
+    );
+
+const optionFormTitle =
+    document.getElementById(
+        "optionFormTitle"
+    );
+
+const optionFormComplementName =
+    document.getElementById(
+        "optionFormComplementName"
+    );
+
+const optionIdInput =
+    document.getElementById(
+        "optionId"
+    );
+
+const optionNameInput =
+    document.getElementById(
+        "optionName"
+    );
+
+const optionPriceInput =
+    document.getElementById(
+        "optionPrice"
+    );
+
+const optionQuantityMaxGroup =
+    document.getElementById(
+        "optionQuantityMaxGroup"
+    );
+
+const optionQuantityMaxInput =
+    document.getElementById(
+        "optionQuantityMax"
+    );
+
+const optionActiveInput =
+    document.getElementById(
+        "optionActive"
+    );
+
+const optionFormMessage =
+    document.getElementById(
+        "optionFormMessage"
+    );
+
+const saveOptionButton =
+    document.getElementById(
+        "saveOptionButton"
+    );
+
+
+let currentComplementId =
+    null;
+
+let currentComplementData =
+    null;
+
+let currentOptions =
+    [];
 
 
 /* ==================================================
@@ -347,6 +468,14 @@ async function loadComplements() {
 
 
                     <div class="admin-complement-actions">
+					
+						<button
+							type="button"
+							class="edit-product-button manage-options-button"
+							data-id="${documentSnapshot.id}"
+						>
+							Opções
+						</button>
 
                         <button
                             type="button"
@@ -657,6 +786,27 @@ complementForm.addEventListener(
    ================================================== */
 
 function setupComplementButtons() {
+	
+	document
+    .querySelectorAll(
+        ".manage-options-button"
+    )
+    .forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    await openOptions(
+                        button.dataset.id
+                    );
+
+                }
+            );
+
+        }
+    );
 
     document
         .querySelectorAll(
@@ -790,6 +940,29 @@ async function deleteComplement(
     if (!confirmed) {
         return;
     }
+	
+	const optionsSnapshot =
+		await getDocs(
+			collection(
+				db,
+				"lojas",
+				"da-minha-vo",
+				"complementos",
+				complementId,
+				"opcoes"
+			)
+		);
+
+
+	if (!optionsSnapshot.empty) {
+
+		alert(
+			"Este complemento possui opções cadastradas. Exclua as opções primeiro."
+		);
+
+		return;
+
+	}
 
 
     try {
@@ -824,3 +997,978 @@ async function deleteComplement(
     }
 
 }
+
+/* ==================================================
+   ABRIR OPÇÕES
+   ================================================== */
+
+async function openOptions(
+    complementId
+) {
+
+    try {
+
+        const reference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                complementId
+            );
+
+
+        const snapshot =
+            await getDoc(reference);
+
+
+        if (!snapshot.exists()) {
+            return;
+        }
+
+
+        currentComplementId =
+            complementId;
+
+        currentComplementData =
+            snapshot.data();
+
+
+        optionsComplementName.textContent =
+            currentComplementData.nome ||
+            "Complemento";
+
+
+        await loadOptions();
+
+
+        optionsModal.classList.add(
+            "open"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao abrir opções:",
+            error
+        );
+
+    }
+
+}
+
+async function loadOptions() {
+
+    if (!currentComplementId) {
+        return;
+    }
+
+
+    try {
+
+        const reference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                currentComplementId,
+                "opcoes"
+            );
+
+
+        const optionsQuery =
+            query(
+                reference,
+                orderBy(
+                    "ordem",
+                    "asc"
+                )
+            );
+
+
+        const snapshot =
+            await getDocs(
+                optionsQuery
+            );
+
+
+        currentOptions =
+            snapshot.docs.map(
+                documentSnapshot => ({
+                    id:
+                        documentSnapshot.id,
+
+                    ...documentSnapshot.data()
+                })
+            );
+
+
+        renderOptions();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar opções:",
+            error
+        );
+
+    }
+
+}
+
+function renderOptions() {
+
+    optionsList.innerHTML =
+        "";
+
+
+    if (
+        currentOptions.length === 0
+    ) {
+
+        optionsList.innerHTML = `
+            <div class="options-empty">
+                Nenhuma opção cadastrada neste complemento.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    currentOptions.forEach(
+        (option, index) => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "complement-option-item";
+
+
+            const price =
+                Number(
+                    option.preco || 0
+                )
+                .toLocaleString(
+                    "pt-BR",
+                    {
+                        style:
+                            "currency",
+
+                        currency:
+                            "BRL"
+                    }
+                );
+
+
+            item.innerHTML = `
+
+                <div class="complement-option-order">
+
+                    <button
+                        type="button"
+                        class="option-order-button option-up-button"
+                        data-id="${option.id}"
+                        ${index === 0 ? "disabled" : ""}
+                        title="Mover para cima"
+                    >
+                        ↑
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="option-order-button option-down-button"
+                        data-id="${option.id}"
+                        ${
+                            index === currentOptions.length - 1
+                            ? "disabled"
+                            : ""
+                        }
+                        title="Mover para baixo"
+                    >
+                        ↓
+                    </button>
+
+                </div>
+
+
+                <div class="complement-option-info">
+
+                    <h4>
+                        ${option.nome || "Sem nome"}
+                    </h4>
+
+                    <div class="complement-option-price">
+                        ${price}
+                    </div>
+
+                </div>
+
+
+                <span class="
+                    product-status
+                    ${option.ativo === false ? "inactive" : "active"}
+                ">
+
+                    ${
+                        option.ativo === false
+                        ? "Inativo"
+                        : "Ativo"
+                    }
+
+                </span>
+
+
+                <div class="complement-option-actions">
+
+                    <button
+                        type="button"
+                        class="edit-product-button edit-option-button"
+                        data-id="${option.id}"
+                    >
+                        Editar
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="delete-product-button delete-option-button"
+                        data-id="${option.id}"
+                        data-name="${option.nome || ""}"
+                    >
+                        Excluir
+                    </button>
+
+                </div>
+
+            `;
+
+
+            optionsList.appendChild(
+                item
+            );
+
+        }
+    );
+
+
+    setupOptionButtons();
+
+}
+
+newOptionButton.addEventListener(
+    "click",
+    () => {
+
+        if (!currentComplementId) {
+            return;
+        }
+
+
+        optionForm.reset();
+
+
+        optionIdInput.value =
+            "";
+
+        optionPriceInput.value =
+            "0";
+
+        optionActiveInput.checked =
+            true;
+
+        optionQuantityMaxInput.value =
+            "10";
+
+
+        optionFormTitle.textContent =
+            "Nova opção";
+
+
+        optionFormComplementName.textContent =
+            currentComplementData?.nome ||
+            "Complemento";
+
+
+        optionFormMessage.textContent =
+            "";
+
+
+        updateQuantityFieldVisibility();
+
+
+        optionFormModal.classList.add(
+            "open"
+        );
+
+    }
+);
+
+function updateQuantityFieldVisibility() {
+
+    if (
+        currentComplementData?.tipo ===
+        "quantidade"
+    ) {
+
+        optionQuantityMaxGroup.style.display =
+            "block";
+
+    }
+
+    else {
+
+        optionQuantityMaxGroup.style.display =
+            "none";
+
+    }
+
+}
+
+optionForm.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+
+        if (!currentComplementId) {
+            return;
+        }
+
+
+        const name =
+            optionNameInput
+                .value
+                .trim();
+
+
+        const price =
+            Number(
+                optionPriceInput.value
+            );
+
+
+        if (!name) {
+
+            optionFormMessage.textContent =
+                "Informe o nome da opção.";
+
+            optionFormMessage.className =
+                "form-message error";
+
+            return;
+
+        }
+
+
+        if (
+            !Number.isFinite(price) ||
+            price < 0
+        ) {
+
+            optionFormMessage.textContent =
+                "Informe um preço válido.";
+
+            optionFormMessage.className =
+                "form-message error";
+
+            return;
+
+        }
+
+
+        try {
+
+            saveOptionButton.disabled =
+                true;
+
+            saveOptionButton.textContent =
+                "Salvando...";
+
+
+            const optionId =
+                optionIdInput.value;
+
+
+            const data = {
+
+                nome:
+                    name,
+
+                preco:
+                    price,
+
+                ativo:
+                    optionActiveInput.checked
+
+            };
+
+
+            if (
+                currentComplementData?.tipo ===
+                "quantidade"
+            ) {
+
+                const quantityMax =
+                    Number(
+                        optionQuantityMaxInput.value
+                    );
+
+
+                if (
+                    !Number.isInteger(quantityMax) ||
+                    quantityMax < 1
+                ) {
+
+                    throw new Error(
+                        "Quantidade máxima inválida."
+                    );
+
+                }
+
+
+                data.quantidadeMaxima =
+                    quantityMax;
+
+            }
+
+
+            if (optionId) {
+
+                await updateDoc(
+                    doc(
+                        db,
+                        "lojas",
+                        "da-minha-vo",
+                        "complementos",
+                        currentComplementId,
+                        "opcoes",
+                        optionId
+                    ),
+                    data
+                );
+
+            }
+
+            else {
+
+                const snapshot =
+                    await getDocs(
+                        collection(
+                            db,
+                            "lojas",
+                            "da-minha-vo",
+                            "complementos",
+                            currentComplementId,
+                            "opcoes"
+                        )
+                    );
+
+
+                data.ordem =
+                    snapshot.size + 1;
+
+
+                await addDoc(
+                    collection(
+                        db,
+                        "lojas",
+                        "da-minha-vo",
+                        "complementos",
+                        currentComplementId,
+                        "opcoes"
+                    ),
+                    data
+                );
+
+            }
+
+
+            closeOptionForm();
+
+
+            await loadOptions();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Erro ao salvar opção:",
+                error
+            );
+
+
+            optionFormMessage.textContent =
+                error.message ===
+                    "Quantidade máxima inválida."
+                ? "Informe uma quantidade máxima válida."
+                : "Não foi possível salvar a opção.";
+
+
+            optionFormMessage.className =
+                "form-message error";
+
+        }
+
+        finally {
+
+            saveOptionButton.disabled =
+                false;
+
+            saveOptionButton.textContent =
+                "Salvar opção";
+
+        }
+
+    }
+);
+
+async function openEditOption(
+    optionId
+) {
+
+    try {
+
+        const reference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                currentComplementId,
+                "opcoes",
+                optionId
+            );
+
+
+        const snapshot =
+            await getDoc(
+                reference
+            );
+
+
+        if (!snapshot.exists()) {
+            return;
+        }
+
+
+        const data =
+            snapshot.data();
+
+
+        optionIdInput.value =
+            optionId;
+
+        optionNameInput.value =
+            data.nome || "";
+
+        optionPriceInput.value =
+            data.preco ?? 0;
+
+        optionActiveInput.checked =
+            data.ativo !== false;
+
+        optionQuantityMaxInput.value =
+            data.quantidadeMaxima ?? 10;
+
+
+        optionFormTitle.textContent =
+            "Editar opção";
+
+
+        optionFormComplementName.textContent =
+            currentComplementData?.nome ||
+            "Complemento";
+
+
+        optionFormMessage.textContent =
+            "";
+
+
+        updateQuantityFieldVisibility();
+
+
+        optionFormModal.classList.add(
+            "open"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao abrir opção:",
+            error
+        );
+
+    }
+
+}
+
+async function deleteOption(
+    optionId,
+    optionName
+) {
+
+    const confirmed =
+        confirm(
+            `Deseja realmente excluir a opção "${optionName}"?`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        await deleteDoc(
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                currentComplementId,
+                "opcoes",
+                optionId
+            )
+        );
+
+
+        await normalizeOptionOrder();
+
+        await loadOptions();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao excluir opção:",
+            error
+        );
+
+
+        alert(
+            "Não foi possível excluir a opção."
+        );
+
+    }
+
+}
+
+async function moveOption(
+    optionId,
+    direction
+) {
+
+    const index =
+        currentOptions.findIndex(
+            option =>
+                option.id === optionId
+        );
+
+
+    if (index === -1) {
+        return;
+    }
+
+
+    const targetIndex =
+        direction === "up"
+        ? index - 1
+        : index + 1;
+
+
+    if (
+        targetIndex < 0 ||
+        targetIndex >= currentOptions.length
+    ) {
+
+        return;
+
+    }
+
+
+    const current =
+        currentOptions[index];
+
+    const target =
+        currentOptions[targetIndex];
+
+
+    try {
+
+        const batch =
+            writeBatch(db);
+
+
+        batch.update(
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                currentComplementId,
+                "opcoes",
+                current.id
+            ),
+            {
+                ordem:
+                    target.ordem
+            }
+        );
+
+
+        batch.update(
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                currentComplementId,
+                "opcoes",
+                target.id
+            ),
+            {
+                ordem:
+                    current.ordem
+            }
+        );
+
+
+        await batch.commit();
+
+
+        await loadOptions();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao ordenar opções:",
+            error
+        );
+
+    }
+
+}
+
+async function normalizeOptionOrder() {
+
+    const reference =
+        collection(
+            db,
+            "lojas",
+            "da-minha-vo",
+            "complementos",
+            currentComplementId,
+            "opcoes"
+        );
+
+
+    const snapshot =
+        await getDocs(
+            query(
+                reference,
+                orderBy(
+                    "ordem",
+                    "asc"
+                )
+            )
+        );
+
+
+    if (snapshot.empty) {
+        return;
+    }
+
+
+    const batch =
+        writeBatch(db);
+
+
+    snapshot.docs.forEach(
+        (documentSnapshot, index) => {
+
+            batch.update(
+                documentSnapshot.ref,
+                {
+                    ordem:
+                        index + 1
+                }
+            );
+
+        }
+    );
+
+
+    await batch.commit();
+
+}
+
+function setupOptionButtons() {
+
+    document
+        .querySelectorAll(
+            ".edit-option-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        openEditOption(
+                            button.dataset.id
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".delete-option-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        deleteOption(
+                            button.dataset.id,
+                            button.dataset.name
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".option-up-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        moveOption(
+                            button.dataset.id,
+                            "up"
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".option-down-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        moveOption(
+                            button.dataset.id,
+                            "down"
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+function closeOptions() {
+
+    optionsModal.classList.remove(
+        "open"
+    );
+
+    currentComplementId =
+        null;
+
+    currentComplementData =
+        null;
+
+    currentOptions =
+        [];
+
+}
+
+
+function closeOptionForm() {
+
+    optionFormModal.classList.remove(
+        "open"
+    );
+
+}
+
+
+closeOptionsModalButton.addEventListener(
+    "click",
+    closeOptions
+);
+
+
+optionsModalOverlay.addEventListener(
+    "click",
+    closeOptions
+);
+
+
+closeOptionFormModalButton.addEventListener(
+    "click",
+    closeOptionForm
+);
+
+
+cancelOptionButton.addEventListener(
+    "click",
+    closeOptionForm
+);
+
+
+optionFormModalOverlay.addEventListener(
+    "click",
+    closeOptionForm
+);
+

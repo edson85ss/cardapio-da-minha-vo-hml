@@ -2113,3 +2113,171 @@ body {
     }
 
 }
+
+/* ==================================================
+   OPÇÕES DOS COMPLEMENTOS
+   ================================================== */
+
+.options-modal-card {
+    width: min(720px, calc(100% - 32px));
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+
+.options-modal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    margin-bottom: 18px;
+}
+
+
+.options-modal-toolbar p {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+
+.complement-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+
+.complement-option-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 13px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    background: var(--surface);
+}
+
+
+.complement-option-order {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+
+.option-order-button {
+    width: 27px;
+    height: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    background: var(--surface);
+
+    cursor: pointer;
+
+    font-size: 12px;
+}
+
+
+.option-order-button:hover {
+    background: #f3f3f3;
+}
+
+
+.option-order-button:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+
+.complement-option-info {
+    flex: 1;
+    min-width: 0;
+}
+
+
+.complement-option-info h4 {
+    margin-bottom: 4px;
+
+    font-size: 14px;
+}
+
+
+.complement-option-price {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+
+.complement-option-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+
+.options-empty {
+    padding: 24px 15px;
+
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+
+    text-align: center;
+
+    color: var(--text-light);
+
+    font-size: 12px;
+}
+
+
+.admin-form-group small {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--text-light);
+
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+
+@media(max-width: 600px) {
+
+    .options-modal-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .options-modal-toolbar .primary-action-button {
+        width: 100%;
+    }
+
+
+    .complement-option-item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+
+    .complement-option-info {
+        flex: 1;
+    }
+
+
+    .complement-option-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+}

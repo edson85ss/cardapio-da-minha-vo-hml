@@ -394,6 +394,229 @@
 
 </div>
 
+<!-- MODAL OPÇÕES DO COMPLEMENTO -->
+
+<div
+    id="optionsModal"
+    class="admin-modal"
+>
+
+    <div
+        id="optionsModalOverlay"
+        class="admin-modal-overlay"
+    ></div>
+
+
+    <div class="admin-modal-card options-modal-card">
+
+        <div class="admin-modal-header">
+
+            <div>
+
+                <h2>
+                    Opções
+                </h2>
+
+                <p id="optionsComplementName">
+                    Complemento
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeOptionsModal"
+                class="modal-close-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="options-modal-toolbar">
+
+            <p>
+                Cadastre as opções disponíveis neste complemento.
+            </p>
+
+
+            <button
+                type="button"
+                id="newOptionButton"
+                class="primary-action-button"
+            >
+                + Nova opção
+            </button>
+
+        </div>
+
+
+        <div
+            id="optionsList"
+            class="complement-options-list"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- MODAL CADASTRO/EDIÇÃO DA OPÇÃO -->
+
+<div
+    id="optionFormModal"
+    class="admin-modal"
+>
+
+    <div
+        id="optionFormModalOverlay"
+        class="admin-modal-overlay"
+    ></div>
+
+
+    <div class="admin-modal-card small-modal">
+
+        <div class="admin-modal-header">
+
+            <div>
+
+                <h2 id="optionFormTitle">
+                    Nova opção
+                </h2>
+
+                <p id="optionFormComplementName">
+                    Complemento
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeOptionFormModal"
+                class="modal-close-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="optionForm">
+
+            <input
+                type="hidden"
+                id="optionId"
+            >
+
+
+            <div class="admin-form-group">
+
+                <label for="optionName">
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    id="optionName"
+                    placeholder="Ex: Ao ponto"
+                    required
+                >
+
+            </div>
+
+
+            <div class="admin-form-group">
+
+                <label for="optionPrice">
+                    Preço adicional
+                </label>
+
+                <input
+                    type="number"
+                    id="optionPrice"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    required
+                >
+
+            </div>
+
+
+            <div
+                id="optionQuantityMaxGroup"
+                class="admin-form-group"
+                style="display: none;"
+            >
+
+                <label for="optionQuantityMax">
+                    Quantidade máxima
+                </label>
+
+                <input
+                    type="number"
+                    id="optionQuantityMax"
+                    min="1"
+                    value="10"
+                >
+
+                <small>
+                    Quantidade máxima desta opção que o cliente poderá adicionar.
+                </small>
+
+            </div>
+
+
+            <label class="switch-row">
+
+                <input
+                    type="checkbox"
+                    id="optionActive"
+                    checked
+                >
+
+                <span>
+                    Opção ativa
+                </span>
+
+            </label>
+
+
+            <div
+                id="optionFormMessage"
+                class="form-message"
+            ></div>
+
+
+            <div class="admin-modal-actions">
+
+                <button
+                    type="button"
+                    id="cancelOptionButton"
+                    class="secondary-button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    type="submit"
+                    id="saveOptionButton"
+                    class="primary-action-button"
+                >
+                    Salvar opção
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 
 <script
     type="module"
