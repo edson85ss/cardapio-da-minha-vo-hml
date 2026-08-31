@@ -609,6 +609,62 @@ function normalizeName(name) {
 
 }
 
+async function optionNameExists(
+    name,
+    currentOptionId = null
+) {
+
+    if (!currentComplementId) {
+        return false;
+    }
+
+
+    const normalizedName =
+        normalizeName(name);
+
+
+    const snapshot =
+        await getDocs(
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos",
+                currentComplementId,
+                "opcoes"
+            )
+        );
+
+
+    return snapshot.docs.some(
+        documentSnapshot => {
+
+            // Na edição, ignora a própria opção.
+            if (
+                currentOptionId &&
+                documentSnapshot.id === currentOptionId
+            ) {
+
+                return false;
+
+            }
+
+
+            const data =
+                documentSnapshot.data();
+
+
+            return (
+                normalizeName(
+                    data.nome || ""
+                ) === normalizedName
+            );
+
+        }
+    );
+
+}
+
 async function complementNameExists(
     name,
     currentComplementId = null
@@ -1492,6 +1548,51 @@ optionForm.addEventListener(
             return;
 
         }
+		
+		const currentOptionId =
+			optionIdInput.value;
+
+
+		try {
+
+			const duplicate =
+				await optionNameExists(
+					name,
+					currentOptionId
+				);
+
+
+			if (duplicate) {
+
+				optionFormMessage.textContent =
+					"Já existe uma opção com este nome neste complemento.";
+
+				optionFormMessage.className =
+					"form-message error";
+
+				return;
+
+			}
+
+		}
+
+		catch (error) {
+
+			console.error(
+				"Erro ao verificar opção duplicada:",
+				error
+			);
+
+
+			optionFormMessage.textContent =
+				"Não foi possível verificar o nome da opção.";
+
+			optionFormMessage.className =
+				"form-message error";
+
+			return;
+
+		}
 
 
         try {
