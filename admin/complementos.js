@@ -598,6 +598,66 @@ complementModalOverlay
     );
 
 
+function normalizeName(name) {
+
+    return name
+        .trim()
+        .toLocaleLowerCase("pt-BR")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+
+}
+
+async function complementNameExists(
+    name,
+    currentComplementId = null
+) {
+
+    const normalizedName =
+        normalizeName(name);
+
+
+    const snapshot =
+        await getDocs(
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "complementos"
+            )
+        );
+
+
+    return snapshot.docs.some(
+        documentSnapshot => {
+
+            // Na edição, ignora o próprio documento.
+            if (
+                currentComplementId &&
+                documentSnapshot.id === currentComplementId
+            ) {
+
+                return false;
+
+            }
+
+
+            const data =
+                documentSnapshot.data();
+
+
+            return (
+                normalizeName(
+                    data.nome || ""
+                ) === normalizedName
+            );
+
+        }
+    );
+
+}
+
 /* ==================================================
    SALVAR
    ================================================== */
@@ -659,6 +719,51 @@ complementForm.addEventListener(
             return;
 
         }
+		
+		const currentComplementId =
+			complementIdInput.value;
+
+
+		try {
+
+			const duplicate =
+				await complementNameExists(
+					name,
+					currentComplementId
+				);
+
+
+			if (duplicate) {
+
+				complementFormMessage.textContent =
+					"Já existe um complemento com este nome.";
+
+				complementFormMessage.className =
+					"form-message error";
+
+				return;
+
+			}
+
+		}
+
+		catch (error) {
+
+			console.error(
+				"Erro ao verificar complemento duplicado:",
+				error
+			);
+
+
+			complementFormMessage.textContent =
+				"Não foi possível verificar o nome do complemento.";
+
+			complementFormMessage.className =
+				"form-message error";
+
+			return;
+
+		}
 
 
         try {
