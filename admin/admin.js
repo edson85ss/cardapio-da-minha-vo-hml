@@ -23,6 +23,7 @@ import {
     orderBy,
     doc,
     getDoc,
+	setDoc,
     addDoc,
     updateDoc,
 	deleteDoc,
@@ -116,6 +117,64 @@ const categoryFilters =
     document.getElementById(
         "categoryFilters"
     );
+	
+const productComplementsSection =
+    document.getElementById(
+        "productComplementsSection"
+    );
+
+const associateComplementButton =
+    document.getElementById(
+        "associateComplementButton"
+    );
+
+const associatedComplementsList =
+    document.getElementById(
+        "associatedComplementsList"
+    );
+
+
+const associateComplementModal =
+    document.getElementById(
+        "associateComplementModal"
+    );
+
+const associateComplementModalOverlay =
+    document.getElementById(
+        "associateComplementModalOverlay"
+    );
+
+const closeAssociateComplementModalButton =
+    document.getElementById(
+        "closeAssociateComplementModal"
+    );
+
+const cancelAssociateComplementButton =
+    document.getElementById(
+        "cancelAssociateComplementButton"
+    );
+
+const availableComplementsList =
+    document.getElementById(
+        "availableComplementsList"
+    );
+
+const associateComplementMessage =
+    document.getElementById(
+        "associateComplementMessage"
+    );
+
+const saveAssociatedComplementsButton =
+    document.getElementById(
+        "saveAssociatedComplementsButton"
+    );
+
+
+let currentProductComplementId =
+    null;
+
+let currentAssociatedComplements =
+    [];
 	
 
 	
@@ -776,6 +835,20 @@ function openProductForm() {
         "open"
     );
 	
+	currentProductComplementId =
+		null;
+
+
+	associateComplementButton.disabled =
+		true;
+
+
+	associatedComplementsList.innerHTML = `
+		<div class="associated-complements-empty">
+			Salve o produto primeiro para associar complementos.
+		</div>
+	`;
+	
 	
 
 }
@@ -1391,6 +1464,18 @@ async function openEditProductForm(
         );
 
     }
+	
+	currentProductComplementId =
+		productId;
+
+
+	associateComplementButton.disabled =
+		false;
+
+
+	await loadAssociatedComplements(
+		productId
+	);
 
 }
 
@@ -2000,3 +2085,881 @@ async function optimizeImage(
     );
 
 }
+
+async function loadAssociatedComplements(
+    productId
+) {
+
+    if (!productId) {
+        return;
+    }
+
+
+    try {
+
+        const associationReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                productId,
+                "complementosAssociados"
+            );
+
+
+        const snapshot =
+            await getDocs(
+                query(
+                    associationReference,
+                    orderBy(
+                        "ordem",
+                        "asc"
+                    )
+                )
+            );
+
+
+        currentAssociatedComplements =
+            [];
+
+
+        for (
+            const associationDocument
+            of snapshot.docs
+        ) {
+
+            const association =
+                associationDocument.data();
+
+
+            const complementReference =
+                doc(
+                    db,
+                    "lojas",
+                    "da-minha-vo",
+                    "complementos",
+                    association.complementoId
+                );
+
+
+            const complementSnapshot =
+                await getDoc(
+                    complementReference
+                );
+
+
+            if (
+                !complementSnapshot.exists()
+            ) {
+
+                continue;
+
+            }
+
+
+            currentAssociatedComplements.push({
+
+                id:
+                    associationDocument.id,
+
+                complementoId:
+                    association.complementoId,
+
+                ordem:
+                    association.ordem ?? 0,
+
+                ativo:
+                    association.ativo !== false,
+
+                complemento:
+                    complementSnapshot.data()
+
+            });
+
+        }
+
+
+        renderAssociatedComplements();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar complementos associados:",
+            error
+        );
+
+    }
+
+}
+
+function renderAssociatedComplements() {
+
+    associatedComplementsList.innerHTML =
+        "";
+
+
+    if (
+        currentAssociatedComplements.length ===
+        0
+    ) {
+
+        associatedComplementsList.innerHTML = `
+            <div class="associated-complements-empty">
+                Nenhum complemento associado.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    currentAssociatedComplements.forEach(
+        (item, index) => {
+
+            const complement =
+                item.complemento;
+
+
+            let typeLabel =
+                "Escolha única";
+
+
+            if (
+                complement.tipo ===
+                "multipla"
+            ) {
+
+                typeLabel =
+                    "Múltipla escolha";
+
+            }
+
+
+            if (
+                complement.tipo ===
+                "quantidade"
+            ) {
+
+                typeLabel =
+                    "Quantidades";
+
+            }
+
+
+            const element =
+                document.createElement(
+                    "div"
+                );
+
+
+            element.className =
+                "associated-complement-item";
+
+
+            element.innerHTML = `
+
+                <div class="associated-complement-order">
+
+                    <button
+                        type="button"
+                        class="complement-order-button associated-up-button"
+                        data-id="${item.complementoId}"
+                        ${index === 0 ? "disabled" : ""}
+                    >
+                        ↑
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="complement-order-button associated-down-button"
+                        data-id="${item.complementoId}"
+                        ${
+                            index ===
+                            currentAssociatedComplements.length - 1
+                            ? "disabled"
+                            : ""
+                        }
+                    >
+                        ↓
+                    </button>
+
+                </div>
+
+
+                <div class="associated-complement-info">
+
+                    <strong>
+                        ${complement.nome || "Sem nome"}
+                    </strong>
+
+                    <span>
+                        ${typeLabel}
+                        · mínimo ${complement.minimo ?? 0}
+                        · máximo ${complement.maximo ?? 1}
+                    </span>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="remove-associated-complement-button"
+                    data-id="${item.complementoId}"
+                    data-name="${complement.nome || ""}"
+                >
+                    Remover
+                </button>
+
+            `;
+
+
+            associatedComplementsList
+                .appendChild(
+                    element
+                );
+
+        }
+    );
+
+
+    setupAssociatedComplementButtons();
+
+}
+
+associateComplementButton.addEventListener(
+    "click",
+    async () => {
+
+        if (!currentProductComplementId) {
+            return;
+        }
+
+
+        associateComplementMessage.textContent =
+            "";
+
+
+        await loadAvailableComplements();
+
+
+        associateComplementModal.classList.add(
+            "open"
+        );
+
+    }
+);
+
+async function loadAvailableComplements() {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                query(
+                    collection(
+                        db,
+                        "lojas",
+                        "da-minha-vo",
+                        "complementos"
+                    ),
+                    orderBy(
+                        "ordem",
+                        "asc"
+                    )
+                )
+            );
+
+
+        const associatedIds =
+            new Set(
+                currentAssociatedComplements.map(
+                    item =>
+                        item.complementoId
+                )
+            );
+
+
+        const available =
+            snapshot.docs
+                .map(
+                    documentSnapshot => ({
+
+                        id:
+                            documentSnapshot.id,
+
+                        ...documentSnapshot.data()
+
+                    })
+                )
+                .filter(
+                    complement =>
+                        complement.ativo !== false &&
+                        !associatedIds.has(
+                            complement.id
+                        )
+                );
+
+
+        availableComplementsList.innerHTML =
+            "";
+
+
+        if (
+            available.length ===
+            0
+        ) {
+
+            availableComplementsList.innerHTML = `
+                <div class="associated-complements-empty">
+                    Não há outros complementos disponíveis para associar.
+                </div>
+            `;
+
+            saveAssociatedComplementsButton.disabled =
+                true;
+
+            return;
+
+        }
+
+
+        saveAssociatedComplementsButton.disabled =
+            false;
+
+
+        available.forEach(
+            complement => {
+
+                let typeLabel =
+                    "Escolha única";
+
+
+                if (
+                    complement.tipo ===
+                    "multipla"
+                ) {
+
+                    typeLabel =
+                        "Múltipla escolha";
+
+                }
+
+
+                if (
+                    complement.tipo ===
+                    "quantidade"
+                ) {
+
+                    typeLabel =
+                        "Quantidades";
+
+                }
+
+
+                const label =
+                    document.createElement(
+                        "label"
+                    );
+
+
+                label.className =
+                    "available-complement-item";
+
+
+                label.innerHTML = `
+
+                    <input
+                        type="checkbox"
+                        class="available-complement-checkbox"
+                        value="${complement.id}"
+                    >
+
+
+                    <div class="available-complement-info">
+
+                        <strong>
+                            ${complement.nome || "Sem nome"}
+                        </strong>
+
+                        <span>
+                            ${typeLabel}
+                            · mínimo ${complement.minimo ?? 0}
+                            · máximo ${complement.maximo ?? 1}
+                        </span>
+
+                    </div>
+
+                `;
+
+
+                availableComplementsList
+                    .appendChild(
+                        label
+                    );
+
+            }
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar complementos disponíveis:",
+            error
+        );
+
+    }
+
+}
+
+saveAssociatedComplementsButton
+    .addEventListener(
+        "click",
+        async () => {
+
+            if (!currentProductComplementId) {
+                return;
+            }
+
+
+            const selected =
+                [
+                    ...document.querySelectorAll(
+                        ".available-complement-checkbox:checked"
+                    )
+                ];
+
+
+            if (
+                selected.length ===
+                0
+            ) {
+
+                associateComplementMessage.textContent =
+                    "Selecione pelo menos um complemento.";
+
+                associateComplementMessage.className =
+                    "form-message error";
+
+                return;
+
+            }
+
+
+            try {
+
+                saveAssociatedComplementsButton.disabled =
+                    true;
+
+                saveAssociatedComplementsButton.textContent =
+                    "Associando...";
+
+
+                let nextOrder =
+                    currentAssociatedComplements.length + 1;
+
+
+                const batch =
+                    writeBatch(db);
+
+
+                selected.forEach(
+                    checkbox => {
+
+                        const complementId =
+                            checkbox.value;
+
+
+                        const reference =
+                            doc(
+                                db,
+                                "lojas",
+                                "da-minha-vo",
+                                "produtos",
+                                currentProductComplementId,
+                                "complementosAssociados",
+                                complementId
+                            );
+
+
+                        batch.set(
+                            reference,
+                            {
+                                complementoId:
+                                    complementId,
+
+                                ordem:
+                                    nextOrder++,
+
+                                ativo:
+                                    true
+                            }
+                        );
+
+                    }
+                );
+
+
+                await batch.commit();
+
+
+                associateComplementModal.classList.remove(
+                    "open"
+                );
+
+
+                await loadAssociatedComplements(
+                    currentProductComplementId
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Erro ao associar complementos:",
+                    error
+                );
+
+
+                associateComplementMessage.textContent =
+                    "Não foi possível associar os complementos.";
+
+                associateComplementMessage.className =
+                    "form-message error";
+
+            }
+
+            finally {
+
+                saveAssociatedComplementsButton.disabled =
+                    false;
+
+                saveAssociatedComplementsButton.textContent =
+                    "Associar selecionados";
+
+            }
+
+        }
+    );
+	
+async function removeAssociatedComplement(
+    complementId,
+    complementName
+) {
+
+    const confirmed =
+        confirm(
+            `Remover "${complementName}" deste produto?`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        await deleteDoc(
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                currentProductComplementId,
+                "complementosAssociados",
+                complementId
+            )
+        );
+
+
+        await normalizeAssociatedComplementOrder();
+
+
+        await loadAssociatedComplements(
+            currentProductComplementId
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao remover complemento:",
+            error
+        );
+
+
+        alert(
+            "Não foi possível remover o complemento."
+        );
+
+    }
+
+}
+
+async function moveAssociatedComplement(
+    complementId,
+    direction
+) {
+
+    const index =
+        currentAssociatedComplements
+            .findIndex(
+                item =>
+                    item.complementoId ===
+                    complementId
+            );
+
+
+    if (index === -1) {
+        return;
+    }
+
+
+    const targetIndex =
+        direction === "up"
+        ? index - 1
+        : index + 1;
+
+
+    if (
+        targetIndex < 0 ||
+        targetIndex >=
+            currentAssociatedComplements.length
+    ) {
+
+        return;
+
+    }
+
+
+    const current =
+        currentAssociatedComplements[index];
+
+    const target =
+        currentAssociatedComplements[
+            targetIndex
+        ];
+
+
+    try {
+
+        const batch =
+            writeBatch(db);
+
+
+        batch.update(
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                currentProductComplementId,
+                "complementosAssociados",
+                current.complementoId
+            ),
+            {
+                ordem:
+                    target.ordem
+            }
+        );
+
+
+        batch.update(
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                currentProductComplementId,
+                "complementosAssociados",
+                target.complementoId
+            ),
+            {
+                ordem:
+                    current.ordem
+            }
+        );
+
+
+        await batch.commit();
+
+
+        await loadAssociatedComplements(
+            currentProductComplementId
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao ordenar complementos:",
+            error
+        );
+
+    }
+
+}
+
+async function normalizeAssociatedComplementOrder() {
+
+    const snapshot =
+        await getDocs(
+            query(
+                collection(
+                    db,
+                    "lojas",
+                    "da-minha-vo",
+                    "produtos",
+                    currentProductComplementId,
+                    "complementosAssociados"
+                ),
+                orderBy(
+                    "ordem",
+                    "asc"
+                )
+            )
+        );
+
+
+    if (snapshot.empty) {
+        return;
+    }
+
+
+    const batch =
+        writeBatch(db);
+
+
+    snapshot.docs.forEach(
+        (
+            documentSnapshot,
+            index
+        ) => {
+
+            batch.update(
+                documentSnapshot.ref,
+                {
+                    ordem:
+                        index + 1
+                }
+            );
+
+        }
+    );
+
+
+    await batch.commit();
+
+}
+
+function setupAssociatedComplementButtons() {
+
+    document
+        .querySelectorAll(
+            ".remove-associated-complement-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        removeAssociatedComplement(
+                            button.dataset.id,
+                            button.dataset.name
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".associated-up-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        moveAssociatedComplement(
+                            button.dataset.id,
+                            "up"
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".associated-down-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        moveAssociatedComplement(
+                            button.dataset.id,
+                            "down"
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+function closeAssociateComplementModal() {
+
+    associateComplementModal.classList.remove(
+        "open"
+    );
+
+}
+
+
+closeAssociateComplementModalButton
+    .addEventListener(
+        "click",
+        closeAssociateComplementModal
+    );
+
+
+cancelAssociateComplementButton
+    .addEventListener(
+        "click",
+        closeAssociateComplementModal
+    );
+
+
+associateComplementModalOverlay
+    .addEventListener(
+        "click",
+        closeAssociateComplementModal
+    );
+	

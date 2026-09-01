@@ -355,6 +355,43 @@
 
             </label>
 			
+			<div
+				id="productComplementsSection"
+				class="product-complements-section"
+			>
+
+				<div class="product-complements-header">
+
+					<div>
+						<h3>Complementos associados</h3>
+
+						<p>
+							Escolha quais complementos estarão disponíveis para este produto.
+						</p>
+					</div>
+
+
+					<button
+						type="button"
+						id="associateComplementButton"
+						class="secondary-button"
+					>
+						+ Associar complemento
+					</button>
+
+				</div>
+
+
+				<div
+					id="associatedComplementsList"
+					class="associated-complements-list"
+				>
+					<div class="associated-complements-empty">
+						Salve o produto primeiro para associar complementos.
+					</div>
+				</div>
+
+			</div>
 			
             <div
                 id="productFormMessage"
@@ -383,6 +420,82 @@
             </div>
 
         </form>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+     MODAL COMPLEMENTOS
+     ========================================== -->
+
+<div
+    id="associateComplementModal"
+    class="admin-modal"
+>
+
+    <div
+        id="associateComplementModalOverlay"
+        class="admin-modal-overlay"
+    ></div>
+
+
+    <div class="admin-modal-card small-modal">
+
+        <div class="admin-modal-header">
+
+            <div>
+                <h2>Associar complementos</h2>
+
+                <p>
+                    Selecione os complementos que deseja adicionar ao produto.
+                </p>
+            </div>
+
+
+            <button
+                type="button"
+                id="closeAssociateComplementModal"
+                class="modal-close-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            id="availableComplementsList"
+            class="available-complements-list"
+        ></div>
+
+
+        <div
+            id="associateComplementMessage"
+            class="form-message"
+        ></div>
+
+
+        <div class="admin-modal-actions">
+
+            <button
+                type="button"
+                id="cancelAssociateComplementButton"
+                class="secondary-button"
+            >
+                Cancelar
+            </button>
+
+
+            <button
+                type="button"
+                id="saveAssociatedComplementsButton"
+                class="primary-action-button"
+            >
+                Associar selecionados
+            </button>
+
+        </div>
 
     </div>
 
