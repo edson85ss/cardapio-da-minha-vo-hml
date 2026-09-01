@@ -1101,48 +1101,66 @@ async function deleteComplement(
     if (!confirmed) {
         return;
     }
-	
-	const optionsSnapshot =
-		await getDocs(
-			collection(
-				db,
-				"lojas",
-				"da-minha-vo",
-				"complementos",
-				complementId,
-				"opcoes"
-			)
-		);
-
-
-	if (!optionsSnapshot.empty) {
-
-		alert(
-			"Este complemento possui opções cadastradas. Exclua as opções primeiro."
-		);
-
-		return;
-
-	}
 
 
     try {
-		
-		const associated =
-			await complementIsAssociatedWithProduct(
-				complementId
-			);
+
+        /*
+         * 1. PRIMEIRO:
+         * verifica se está associado
+         * a algum produto.
+         */
+
+        const associated =
+            await complementIsAssociatedWithProduct(
+                complementId
+            );
 
 
-		if (associated) {
+        if (associated) {
 
-			alert(
-				"Este complemento está associado a um ou mais produtos. Remova essas associações antes de excluir o complemento."
-			);
+            alert(
+                "Este complemento está associado a um ou mais produtos. Remova essas associações antes de excluir o complemento."
+            );
 
-			return;
+            return;
 
-		}
+        }
+
+
+        /*
+         * 2. DEPOIS:
+         * verifica se possui opções.
+         */
+
+        const optionsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "lojas",
+                    "da-minha-vo",
+                    "complementos",
+                    complementId,
+                    "opcoes"
+                )
+            );
+
+
+        if (!optionsSnapshot.empty) {
+
+            alert(
+                "Este complemento possui opções cadastradas. Exclua as opções primeiro."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * 3. SOMENTE ENTÃO:
+         * exclui o complemento.
+         */
 
         await deleteDoc(
             doc(
