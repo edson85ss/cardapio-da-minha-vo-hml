@@ -1620,6 +1620,10 @@ async function deleteProduct(
         /*
          * Remove documento do Firestore.
          */
+		 
+		await deleteProductComplementAssociations(
+			productId
+		);
 
         await deleteDoc(
             productReference
@@ -2963,3 +2967,47 @@ associateComplementModalOverlay
         closeAssociateComplementModal
     );
 	
+async function deleteProductComplementAssociations(
+    productId
+) {
+
+    const associationsReference =
+        collection(
+            db,
+            "lojas",
+            "da-minha-vo",
+            "produtos",
+            productId,
+            "complementosAssociados"
+        );
+
+
+    const snapshot =
+        await getDocs(
+            associationsReference
+        );
+
+
+    if (snapshot.empty) {
+        return;
+    }
+
+
+    const batch =
+        writeBatch(db);
+
+
+    snapshot.docs.forEach(
+        documentSnapshot => {
+
+            batch.delete(
+                documentSnapshot.ref
+            );
+
+        }
+    );
+
+
+    await batch.commit();
+
+}

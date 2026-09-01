@@ -1127,6 +1127,22 @@ async function deleteComplement(
 
 
     try {
+		
+		const associated =
+			await complementIsAssociatedWithProduct(
+				complementId
+			);
+
+
+		if (associated) {
+
+			alert(
+				"Este complemento está associado a um ou mais produtos. Remova essas associações antes de excluir o complemento."
+			);
+
+			return;
+
+		}
 
         await deleteDoc(
             doc(
@@ -2178,3 +2194,60 @@ optionFormModalOverlay.addEventListener(
     closeOptionForm
 );
 
+async function complementIsAssociatedWithProduct(
+    complementId
+) {
+
+    const productsSnapshot =
+        await getDocs(
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos"
+            )
+        );
+
+
+    if (productsSnapshot.empty) {
+        return false;
+    }
+
+
+    for (
+        const productDocument
+        of productsSnapshot.docs
+    ) {
+
+        const associationReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                productDocument.id,
+                "complementosAssociados",
+                complementId
+            );
+
+
+        const associationSnapshot =
+            await getDoc(
+                associationReference
+            );
+
+
+        if (
+            associationSnapshot.exists()
+        ) {
+
+            return true;
+
+        }
+
+    }
+
+
+    return false;
+
+}
