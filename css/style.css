@@ -525,6 +525,182 @@ body{
     font-weight: 500;
 }
 
+/* ===================================================
+   COMPLEMENTOS DO PRODUTO
+   =================================================== */
+
+.product-complements {
+    margin-bottom: 20px;
+}
+
+
+.complements-loading {
+    padding: 14px 0;
+
+    font-size: 13px;
+
+    color: #777;
+}
+
+
+.product-complement-group {
+    margin-bottom: 18px;
+
+    padding: 15px;
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    background: #fff;
+}
+
+
+.product-complement-header {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 12px;
+}
+
+
+.product-complement-header h3 {
+    margin: 0 0 4px;
+
+    font-size: 15px;
+
+    color: var(--text);
+}
+
+
+.product-complement-header span {
+    font-size: 12px;
+
+    color: #777;
+}
+
+
+.complement-required {
+    flex-shrink: 0;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
+    background: #fff1ee;
+
+    color: var(--primary) !important;
+
+    font-size: 10px !important;
+
+    font-weight: 600;
+}
+
+
+.product-complement-options {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.product-complement-option {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    min-height: 46px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #ececec;
+    border-radius: 10px;
+
+    font-size: 14px;
+}
+
+
+.product-complement-option strong {
+    flex-shrink: 0;
+
+    font-size: 12px;
+
+    color: var(--primary);
+}
+
+
+.complement-option-left {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.complement-option-left input {
+    width: 18px;
+    height: 18px;
+
+    accent-color: var(--primary);
+}
+
+
+.complement-option-price {
+    margin-top: 3px;
+
+    font-size: 11px;
+
+    color: var(--primary);
+}
+
+
+.quantity-complement-option {
+    min-height: 58px;
+}
+
+
+.complement-quantity-selector {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.complement-quantity-selector button {
+    width: 30px;
+    height: 30px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-size: 18px;
+
+    cursor: pointer;
+}
+
+
+.complement-quantity-value {
+    min-width: 18px;
+
+    text-align: center;
+
+    font-weight: 600;
+}
 
 /* ===================================================
    QUANTIDADE
