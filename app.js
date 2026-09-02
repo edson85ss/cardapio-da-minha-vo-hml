@@ -112,6 +112,12 @@ const pixOwnerText =
 const modalPrice =
     document.getElementById("modalPrice");
 	
+const productComplements =
+    document.getElementById(
+        "productComplements"
+    );
+
+	
 /* ==================================================
    MODAL CARRINHO
    ================================================== */
@@ -376,41 +382,908 @@ function renderProducts() {
    ABRIR MODAL PRODUTO
    ================================================== */
 
-function openProductModal(product) {
-	
-	itemObservation.value = "";
+async function openProductModal(
+    product
+) {
 
-    currentProduct = product;
+    itemObservation.value =
+        "";
 
-    currentQuantity = 1;
+
+    currentProduct =
+        product;
+
+
+    currentQuantity =
+        1;
+
 
     modalImage.src =
         product.imagem;
 
+
     modalName.textContent =
         product.nome;
-		
-	modalPrice.textContent =
-    `${formatCurrency(product.preco)}`;
 
-    /* modalWeight.textContent =
-        product.peso;
 
-    modalServes.textContent =
-        product.pessoas; */
+    modalPrice.textContent =
+        formatCurrency(
+            product.preco
+        );
+
 
     modalDescription.textContent =
         product.descricao;
 
+
     modalQty.textContent =
         currentQuantity;
 
+
+    /*
+     * Limpa complementos do produto
+     * anteriormente aberto.
+     */
+
+    productComplements.innerHTML = `
+        <div class="complements-loading">
+            Carregando opções...
+        </div>
+    `;
+
+
+    productComplements.style.display =
+        "block";
+
+
     updateAddButtonPrice();
+
+
+    /*
+     * Mostra primeiro o modal.
+     * Assim o cliente não precisa
+     * esperar o Firestore responder.
+     */
 
     productModal.style.display =
         "block";
 
+
+    const productId =
+        product.id;
+
+
+    /*
+     * Carrega complementos apenas
+     * deste produto.
+     */
+
+    const complements =
+        await loadProductComplements(
+            productId
+        );
+
+
+    /*
+     * Proteção:
+     * se nesse intervalo outro produto
+     * tiver sido aberto, não renderiza
+     * os dados antigos.
+     */
+
+    if (
+        currentProduct?.id !==
+        productId
+    ) {
+
+        return;
+
+    }
+
+
+    renderProductComplements(
+        complements
+    );
+
 }
+
+/* ==================================================
+   COMPLEMENTOS DO PRODUTO
+   ================================================== */
+
+async function loadProductComplements(
+    productId
+) {
+
+    try {
+
+        /*
+         * Busca os vínculos existentes dentro
+         * do produto.
+         */
+
+        const associationsReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "produtos",
+                productId,
+                "complementosAssociados"
+            );
+
+
+        const associationsQuery =
+            query(
+                associationsReference,
+                orderBy(
+                    "ordem",
+                    "asc"
+                )
+            );
+
+
+        const associationsSnapshot =
+            await getDocs(
+                associationsQuery
+            );
+
+
+        const complements =
+            [];
+
+
+        /*
+         * Para cada vínculo:
+         *
+         * 1. busca o complemento global;
+         * 2. verifica se está ativo;
+         * 3. busca suas opções.
+         */
+
+        for (
+            const associationDocument
+            of associationsSnapshot.docs
+        ) {
+
+            const association =
+                associationDocument.data();
+
+
+            if (
+                association.ativo === false
+            ) {
+
+                continue;
+
+            }
+
+
+            const complementReference =
+                doc(
+                    db,
+                    "lojas",
+                    "da-minha-vo",
+                    "complementos",
+                    association.complementoId
+                );
+
+
+            const complementSnapshot =
+                await getDoc(
+                    complementReference
+                );
+
+
+            if (
+                !complementSnapshot.exists()
+            ) {
+
+                continue;
+
+            }
+
+
+            const complementData =
+                complementSnapshot.data();
+
+
+            /*
+             * Complemento inativo não aparece
+             * no cardápio público.
+             */
+
+            if (
+                complementData.ativo === false
+            ) {
+
+                continue;
+
+            }
+
+
+            /*
+             * Busca opções do complemento.
+             */
+
+            const optionsReference =
+                collection(
+                    db,
+                    "lojas",
+                    "da-minha-vo",
+                    "complementos",
+                    association.complementoId,
+                    "opcoes"
+                );
+
+
+            const optionsQuery =
+                query(
+                    optionsReference,
+                    orderBy(
+                        "ordem",
+                        "asc"
+                    )
+                );
+
+
+            const optionsSnapshot =
+                await getDocs(
+                    optionsQuery
+                );
+
+
+            const options =
+                optionsSnapshot.docs
+                    .map(
+                        optionDocument => ({
+
+                            id:
+                                optionDocument.id,
+
+                            ...optionDocument.data()
+
+                        })
+                    )
+                    .filter(
+                        option =>
+                            option.ativo !== false
+                    );
+
+
+            complements.push({
+
+                id:
+                    association.complementoId,
+
+                nome:
+                    complementData.nome || "",
+
+                tipo:
+                    complementData.tipo ||
+                    "unica",
+
+                minimo:
+                    Number(
+                        complementData.minimo ?? 0
+                    ),
+
+                maximo:
+                    Number(
+                        complementData.maximo ?? 1
+                    ),
+
+                ordem:
+                    Number(
+                        association.ordem ?? 0
+                    ),
+
+                opcoes:
+                    options
+
+            });
+
+        }
+
+
+        return complements;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar complementos do produto:",
+            error
+        );
+
+
+        return [];
+
+    }
+
+}
+
+function renderProductComplements(
+    complements
+) {
+
+    productComplements.innerHTML =
+        "";
+
+
+    if (
+        complements.length === 0
+    ) {
+
+        productComplements.style.display =
+            "none";
+
+        return;
+
+    }
+
+
+    productComplements.style.display =
+        "block";
+
+
+    complements.forEach(
+        complement => {
+
+            const group =
+                document.createElement(
+                    "div"
+                );
+
+
+            group.className =
+                "product-complement-group";
+
+
+            /*
+             * Cabeçalho
+             */
+
+            const required =
+                complement.minimo > 0;
+
+
+            let helperText = "";
+
+
+            if (
+                complement.tipo === "unica"
+            ) {
+
+                helperText =
+                    required
+                    ? "Escolha uma opção"
+                    : "Escolha uma opção se desejar";
+
+            }
+
+
+            else if (
+                complement.tipo ===
+                "multipla"
+            ) {
+
+                if (required) {
+
+                    helperText =
+                        `Escolha de ${complement.minimo} até ${complement.maximo}`;
+
+                }
+
+                else {
+
+                    helperText =
+                        `Escolha até ${complement.maximo}`;
+
+                }
+
+            }
+
+
+            else if (
+                complement.tipo ===
+                "quantidade"
+            ) {
+
+                if (required) {
+
+                    helperText =
+                        `Escolha de ${complement.minimo} até ${complement.maximo} itens`;
+
+                }
+
+                else {
+
+                    helperText =
+                        `Escolha até ${complement.maximo} itens`;
+
+                }
+
+            }
+
+
+            group.innerHTML = `
+
+                <div class="product-complement-header">
+
+                    <div>
+
+                        <h3>
+                            ${complement.nome}
+                        </h3>
+
+                        <span>
+                            ${helperText}
+                        </span>
+
+                    </div>
+
+
+                    ${
+                        required
+                        ? `
+                            <span class="complement-required">
+                                Obrigatório
+                            </span>
+                        `
+                        : ""
+                    }
+
+                </div>
+
+
+                <div
+                    class="product-complement-options"
+                ></div>
+
+            `;
+
+
+            const optionsContainer =
+                group.querySelector(
+                    ".product-complement-options"
+                );
+
+
+            /*
+             * Escolha única
+             */
+
+            if (
+                complement.tipo ===
+                "unica"
+            ) {
+
+                renderSingleChoiceOptions(
+                    complement,
+                    optionsContainer
+                );
+
+            }
+
+
+            /*
+             * Múltipla escolha
+             */
+
+            else if (
+                complement.tipo ===
+                "multipla"
+            ) {
+
+                renderMultipleChoiceOptions(
+                    complement,
+                    optionsContainer
+                );
+
+            }
+
+
+            /*
+             * Quantidade
+             */
+
+            else if (
+                complement.tipo ===
+                "quantidade"
+            ) {
+
+                renderQuantityOptions(
+                    complement,
+                    optionsContainer
+                );
+
+            }
+
+
+            productComplements.appendChild(
+                group
+            );
+
+        }
+    );
+
+}
+
+function renderSingleChoiceOptions(
+    complement,
+    container
+) {
+
+    complement.opcoes.forEach(
+        option => {
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+
+            label.className =
+                "product-complement-option";
+
+
+            const price =
+                Number(
+                    option.preco || 0
+                );
+
+
+            label.innerHTML = `
+
+                <div class="complement-option-left">
+
+                    <input
+                        type="radio"
+                        name="complement-${complement.id}"
+                        value="${option.id}"
+                    >
+
+                    <span>
+                        ${option.nome}
+                    </span>
+
+                </div>
+
+
+                ${
+                    price > 0
+                    ? `
+                        <strong>
+                            + ${formatCurrency(price)}
+                        </strong>
+                    `
+                    : ""
+                }
+
+            `;
+
+
+            container.appendChild(
+                label
+            );
+
+        }
+    );
+
+}
+
+function renderMultipleChoiceOptions(
+    complement,
+    container
+) {
+
+    complement.opcoes.forEach(
+        option => {
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+
+            label.className =
+                "product-complement-option";
+
+
+            const price =
+                Number(
+                    option.preco || 0
+                );
+
+
+            label.innerHTML = `
+
+                <div class="complement-option-left">
+
+                    <input
+                        type="checkbox"
+                        class="multiple-complement-option"
+                        data-complement-id="${complement.id}"
+                        value="${option.id}"
+                    >
+
+                    <span>
+                        ${option.nome}
+                    </span>
+
+                </div>
+
+
+                ${
+                    price > 0
+                    ? `
+                        <strong>
+                            + ${formatCurrency(price)}
+                        </strong>
+                    `
+                    : ""
+                }
+
+            `;
+
+
+            const checkbox =
+                label.querySelector(
+                    "input"
+                );
+
+
+            /*
+             * Impede ultrapassar
+             * o máximo configurado.
+             */
+
+            checkbox.addEventListener(
+                "change",
+                () => {
+
+                    const selected =
+                        container.querySelectorAll(
+                            "input:checked"
+                        );
+
+
+                    if (
+                        selected.length >
+                        complement.maximo
+                    ) {
+
+                        checkbox.checked =
+                            false;
+
+
+                        alert(
+                            `Você pode escolher no máximo ${complement.maximo} opção(ões) em "${complement.nome}".`
+                        );
+
+                    }
+
+                }
+            );
+
+
+            container.appendChild(
+                label
+            );
+
+        }
+    );
+
+}
+
+function renderQuantityOptions(
+    complement,
+    container
+) {
+
+    complement.opcoes.forEach(
+        option => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "product-complement-option quantity-complement-option";
+
+
+            const price =
+                Number(
+                    option.preco || 0
+                );
+
+
+            const quantityMax =
+                Number(
+                    option.quantidadeMaxima ?? 1
+                );
+
+
+            item.innerHTML = `
+
+                <div>
+
+                    <span>
+                        ${option.nome}
+                    </span>
+
+                    ${
+                        price > 0
+                        ? `
+                            <div class="complement-option-price">
+                                + ${formatCurrency(price)}
+                            </div>
+                        `
+                        : ""
+                    }
+
+                </div>
+
+
+                <div
+                    class="complement-quantity-selector"
+                    data-option-id="${option.id}"
+                >
+
+                    <button
+                        type="button"
+                        class="complement-quantity-minus"
+                    >
+                        −
+                    </button>
+
+
+                    <span
+                        class="complement-quantity-value"
+                    >
+                        0
+                    </span>
+
+
+                    <button
+                        type="button"
+                        class="complement-quantity-plus"
+                    >
+                        +
+                    </button>
+
+                </div>
+
+            `;
+
+
+            const minusButton =
+                item.querySelector(
+                    ".complement-quantity-minus"
+                );
+
+
+            const plusButton =
+                item.querySelector(
+                    ".complement-quantity-plus"
+                );
+
+
+            const quantityValue =
+                item.querySelector(
+                    ".complement-quantity-value"
+                );
+
+
+            let quantity = 0;
+
+
+            minusButton.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        quantity > 0
+                    ) {
+
+                        quantity--;
+
+                        quantityValue.textContent =
+                            quantity;
+
+                    }
+
+                }
+            );
+
+
+            plusButton.addEventListener(
+                "click",
+                () => {
+
+                    /*
+                     * Primeiro verifica
+                     * o máximo individual.
+                     */
+
+                    if (
+                        quantity >=
+                        quantityMax
+                    ) {
+
+                        alert(
+                            `Máximo de ${quantityMax} unidade(s) para "${option.nome}".`
+                        );
+
+                        return;
+
+                    }
+
+
+                    /*
+                     * Soma todas as quantidades
+                     * deste complemento.
+                     */
+
+                    const quantities =
+                        [
+                            ...container.querySelectorAll(
+                                ".complement-quantity-value"
+                            )
+                        ];
+
+
+                    const total =
+                        quantities.reduce(
+                            (
+                                sum,
+                                element
+                            ) =>
+                                sum +
+                                Number(
+                                    element.textContent
+                                ),
+                            0
+                        );
+
+
+                    if (
+                        total >=
+                        complement.maximo
+                    ) {
+
+                        alert(
+                            `Você pode escolher no máximo ${complement.maximo} item(ns) em "${complement.nome}".`
+                        );
+
+                        return;
+
+                    }
+
+
+                    quantity++;
+
+                    quantityValue.textContent =
+                        quantity;
+
+                }
+            );
+
+
+            container.appendChild(
+                item
+            );
+
+        }
+    );
+
+}
+
+
 
 /* ==================================================
    ATUALIZA PREÇO BOTÃO
