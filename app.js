@@ -30,6 +30,8 @@ let currentProduct = null;
 
 let currentQuantity = 1;
 
+let currentProductComplements = [];
+
 let isStoreOpen = false;
 
 let categories = [];
@@ -392,7 +394,9 @@ async function openProductModal(
 
     currentProduct =
         product;
-
+		
+	currentProductComplements =
+    [];
 
     currentQuantity =
         1;
@@ -479,10 +483,18 @@ async function openProductModal(
         return;
 
     }
+	
+	currentProductComplements =
+    complements;
 
 
     renderProductComplements(
         complements
+    );
+	
+	const complements =
+    await loadProductComplements(
+        productId
     );
 
 }
@@ -941,8 +953,13 @@ function renderSingleChoiceOptions(
 
                     <input
                         type="radio"
-                        name="complement-${complement.id}"
-                        value="${option.id}"
+						name="complement-${complement.id}"
+						value="${option.id}"
+
+						data-complement-id="${complement.id}"
+						data-option-id="${option.id}"
+						data-option-name="${option.nome}"
+						data-option-price="${price}"
                     >
 
                     <span>
@@ -963,6 +980,21 @@ function renderSingleChoiceOptions(
                 }
 
             `;
+			
+			const radio =
+				label.querySelector(
+					"input"
+				);
+
+
+			radio.addEventListener(
+				"change",
+				() => {
+
+					updateAddButtonPrice();
+
+				}
+			);
 
 
             container.appendChild(
@@ -1004,9 +1036,14 @@ function renderMultipleChoiceOptions(
 
                     <input
                         type="checkbox"
-                        class="multiple-complement-option"
-                        data-complement-id="${complement.id}"
-                        value="${option.id}"
+						class="multiple-complement-option"
+
+						data-complement-id="${complement.id}"
+						data-option-id="${option.id}"
+						data-option-name="${option.nome}"
+						data-option-price="${price}"
+
+						value="${option.id}"
                     >
 
                     <span>
@@ -1064,6 +1101,8 @@ function renderMultipleChoiceOptions(
                         );
 
                     }
+					
+					updateAddButtonPrice();
 
                 }
             );
@@ -1131,7 +1170,11 @@ function renderQuantityOptions(
 
                 <div
                     class="complement-quantity-selector"
-                    data-option-id="${option.id}"
+
+					data-complement-id="${complement.id}"
+					data-option-id="${option.id}"
+					data-option-name="${option.nome}"
+					data-option-price="${price}"
                 >
 
                     <button
@@ -1194,6 +1237,8 @@ function renderQuantityOptions(
 
                         quantityValue.textContent =
                             quantity;
+							
+						updateAddButtonPrice();
 
                     }
 
@@ -1269,6 +1314,8 @@ function renderQuantityOptions(
 
                     quantityValue.textContent =
                         quantity;
+						
+					updateAddButtonPrice();
 
                 }
             );
@@ -1291,9 +1338,26 @@ function renderQuantityOptions(
 
 function updateAddButtonPrice() {
 
+    if (!currentProduct) {
+        return;
+    }
+
+
+    const selection =
+        getSelectedComplements();
+
+
+    const unitPrice =
+        Number(
+            currentProduct.preco || 0
+        ) +
+        selection.precoComplementos;
+
+
     const total =
-        currentProduct.preco *
+        unitPrice *
         currentQuantity;
+
 
     addToCartButton.textContent =
         `Adicionar • ${formatCurrency(total)}`;
@@ -1356,24 +1420,55 @@ decreaseQtyButton.addEventListener("click", () => {
    ADICIONAR AO CARRINHO
    ================================================== */
 
-addToCartButton.addEventListener("click", () => {
+addToCartButton.addEventListener(
+    "click",
+    () => {
 
-    const observation =
-        itemObservation.value.trim();
+        /*
+         * Valida complementos obrigatórios.
+         */
 
-    cart.push({
-        id: currentProduct.id,
-        nome: currentProduct.nome,
-        preco: currentProduct.preco,
-        quantidade: currentQuantity,
-        observacao: observation
-    });
+        if (
+            !validateProductComplements()
+        ) {
 
-    updateCart();
+            return;
 
-    productModal.style.display = "none";
+        }
 
-});
+
+        const observation =
+            itemObservation.value.trim();
+
+
+        cart.push({
+
+            id:
+                currentProduct.id,
+
+            nome:
+                currentProduct.nome,
+
+            preco:
+                currentProduct.preco,
+
+            quantidade:
+                currentQuantity,
+
+            observacao:
+                observation
+
+        });
+
+
+        updateCart();
+
+
+        productModal.style.display =
+            "none";
+
+    }
+);
 
 /* ==================================================
    ATUALIZAR CARRINHO
@@ -2472,5 +2567,364 @@ async function loadCategoriesFromFirestore() {
         );
 
     }
+
+}
+
+function getSelectedComplements() {
+
+    const selections =
+        [];
+
+
+    let totalPrice =
+        0;
+
+
+    currentProductComplements.forEach(
+        complement => {
+
+            const selectedOptions =
+                [];
+
+
+            /*
+             * ESCOLHA ÚNICA
+             */
+
+            if (
+                complement.tipo ===
+                "unica"
+            ) {
+
+                const selected =
+                    document.querySelector(
+                        `input[name="complement-${complement.id}"]:checked`
+                    );
+
+
+                if (selected) {
+
+                    const price =
+                        Number(
+                            selected.dataset.optionPrice ||
+                            0
+                        );
+
+
+                    selectedOptions.push({
+
+                        id:
+                            selected.dataset.optionId,
+
+                        nome:
+                            selected.dataset.optionName,
+
+                        preco:
+                            price,
+
+                        quantidade:
+                            1
+
+                    });
+
+
+                    totalPrice +=
+                        price;
+
+                }
+
+            }
+
+
+            /*
+             * MÚLTIPLA ESCOLHA
+             */
+
+            else if (
+                complement.tipo ===
+                "multipla"
+            ) {
+
+                const selected =
+                    document.querySelectorAll(
+                        `input.multiple-complement-option[data-complement-id="${complement.id}"]:checked`
+                    );
+
+
+                selected.forEach(
+                    input => {
+
+                        const price =
+                            Number(
+                                input.dataset.optionPrice ||
+                                0
+                            );
+
+
+                        selectedOptions.push({
+
+                            id:
+                                input.dataset.optionId,
+
+                            nome:
+                                input.dataset.optionName,
+
+                            preco:
+                                price,
+
+                            quantidade:
+                                1
+
+                        });
+
+
+                        totalPrice +=
+                            price;
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * QUANTIDADE
+             */
+
+            else if (
+                complement.tipo ===
+                "quantidade"
+            ) {
+
+                const selectors =
+                    document.querySelectorAll(
+                        `.complement-quantity-selector[data-complement-id="${complement.id}"]`
+                    );
+
+
+                selectors.forEach(
+                    selector => {
+
+                        const quantityElement =
+                            selector.querySelector(
+                                ".complement-quantity-value"
+                            );
+
+
+                        const quantity =
+                            Number(
+                                quantityElement
+                                    ?.textContent ||
+                                0
+                            );
+
+
+                        if (
+                            quantity <= 0
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const price =
+                            Number(
+                                selector.dataset.optionPrice ||
+                                0
+                            );
+
+
+                        selectedOptions.push({
+
+                            id:
+                                selector.dataset.optionId,
+
+                            nome:
+                                selector.dataset.optionName,
+
+                            preco:
+                                price,
+
+                            quantidade:
+                                quantity
+
+                        });
+
+
+                        totalPrice +=
+                            price *
+                            quantity;
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Só inclui o complemento
+             * se alguma opção tiver sido escolhida.
+             */
+
+            if (
+                selectedOptions.length > 0
+            ) {
+
+                selections.push({
+
+                    id:
+                        complement.id,
+
+                    nome:
+                        complement.nome,
+
+                    tipo:
+                        complement.tipo,
+
+                    opcoes:
+                        selectedOptions
+
+                });
+
+            }
+
+        }
+    );
+
+
+    return {
+
+        complementos:
+            selections,
+
+        precoComplementos:
+            totalPrice
+
+    };
+
+}
+
+function validateProductComplements() {
+
+    for (
+        const complement
+        of currentProductComplements
+    ) {
+
+        /*
+         * Se mínimo = 0,
+         * o grupo é opcional.
+         */
+
+        if (
+            complement.minimo <= 0
+        ) {
+
+            continue;
+
+        }
+
+
+        let selectedQuantity =
+            0;
+
+
+        /*
+         * ESCOLHA ÚNICA
+         */
+
+        if (
+            complement.tipo ===
+            "unica"
+        ) {
+
+            const selected =
+                document.querySelector(
+                    `input[name="complement-${complement.id}"]:checked`
+                );
+
+
+            selectedQuantity =
+                selected
+                ? 1
+                : 0;
+
+        }
+
+
+        /*
+         * MÚLTIPLA ESCOLHA
+         */
+
+        else if (
+            complement.tipo ===
+            "multipla"
+        ) {
+
+            selectedQuantity =
+                document.querySelectorAll(
+                    `input.multiple-complement-option[data-complement-id="${complement.id}"]:checked`
+                ).length;
+
+        }
+
+
+        /*
+         * QUANTIDADE
+         */
+
+        else if (
+            complement.tipo ===
+            "quantidade"
+        ) {
+
+            const quantities =
+                [
+                    ...document.querySelectorAll(
+                        `.complement-quantity-selector[data-complement-id="${complement.id}"] .complement-quantity-value`
+                    )
+                ];
+
+
+            selectedQuantity =
+                quantities.reduce(
+                    (
+                        sum,
+                        element
+                    ) =>
+                        sum +
+                        Number(
+                            element.textContent ||
+                            0
+                        ),
+                    0
+                );
+
+        }
+
+
+        /*
+         * Não atingiu o mínimo.
+         */
+
+        if (
+            selectedQuantity <
+            complement.minimo
+        ) {
+
+            alert(
+                `Escolha pelo menos ${complement.minimo} opção(ões) em "${complement.nome}".`
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    return true;
 
 }
