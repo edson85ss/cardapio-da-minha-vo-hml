@@ -492,11 +492,6 @@ async function openProductModal(
         complements
     );
 	
-	const complements =
-    await loadProductComplements(
-        productId
-    );
-
 }
 
 /* ==================================================
