@@ -1433,27 +1433,51 @@ addToCartButton.addEventListener(
 
 
         const observation =
-            itemObservation.value.trim();
+			itemObservation.value.trim();
 
 
-        cart.push({
+		const selection =
+			getSelectedComplements();
 
-            id:
-                currentProduct.id,
 
-            nome:
-                currentProduct.nome,
+		const basePrice =
+			Number(
+				currentProduct.preco || 0
+			);
 
-            preco:
-                currentProduct.preco,
 
-            quantidade:
-                currentQuantity,
+		const unitPrice =
+			basePrice +
+			selection.precoComplementos;
 
-            observacao:
-                observation
 
-        });
+		cart.push({
+
+			id:
+				currentProduct.id,
+
+			nome:
+				currentProduct.nome,
+
+			precoBase:
+				basePrice,
+
+			complementos:
+				selection.complementos,
+
+			precoComplementos:
+				selection.precoComplementos,
+
+			precoUnitario:
+				unitPrice,
+
+			quantidade:
+				currentQuantity,
+
+			observacao:
+				observation
+
+		});
 
 
         updateCart();
@@ -1507,8 +1531,17 @@ function renderCartItems() {
 
     cart.forEach((item, index) => {
 
-        const subtotal =
-            item.preco * item.quantidade;
+        const unitPrice =
+			Number(
+				item.precoUnitario ??
+				item.preco ??
+				0
+			);
+
+
+		const subtotal =
+			unitPrice *
+			item.quantidade;
 
         total += subtotal;
 
@@ -1519,15 +1552,37 @@ function renderCartItems() {
             "cart-item";
 
         div.innerHTML = `
-            <strong>${item.quantidade}x ${item.nome}</strong>
-            <br>
-            <span>${formatCurrency(subtotal)}</span>
-            ${item.observacao ? `<br><small>Obs: ${item.observacao}</small>` : ""}
-            <br>
-            <button class="remove-cart-item" data-index="${index}">
-                Remover
-            </button>
-        `;
+
+			<strong>
+				${item.quantidade}x ${item.nome}
+			</strong>
+
+			${complementsHtml}
+
+			<div class="cart-item-subtotal">
+				${formatCurrency(subtotal)}
+			</div>
+
+			${
+				item.observacao
+				? `
+					<small>
+						Obs: ${item.observacao}
+					</small>
+				`
+				: ""
+			}
+
+			<br>
+
+			<button
+				class="remove-cart-item"
+				data-index="${index}"
+			>
+				Remover
+			</button>
+
+		`;
 
         cartItems.appendChild(div);
 
@@ -1552,6 +1607,85 @@ function renderCartItems() {
             });
 
         });
+		
+		let complementsHtml =
+			"";
+
+
+		if (
+			Array.isArray(
+				item.complementos
+			) &&
+			item.complementos.length > 0
+		) {
+
+			complementsHtml += `
+				<div class="cart-item-complements">
+			`;
+
+
+			item.complementos.forEach(
+				complement => {
+
+					complementsHtml += `
+						<div class="cart-complement-group">
+
+							<strong>
+								${complement.nome}:
+							</strong>
+
+							<div>
+					`;
+
+
+					complement.opcoes.forEach(
+						option => {
+
+							const quantityText =
+								option.quantidade > 1
+								? `${option.quantidade}x `
+								: "";
+
+
+							const optionTotal =
+								Number(
+									option.preco || 0
+								) *
+								Number(
+									option.quantidade || 1
+								);
+
+
+							complementsHtml += `
+								<div>
+									${quantityText}${option.nome}
+									${
+										optionTotal > 0
+										? `(+ ${formatCurrency(optionTotal)})`
+										: ""
+									}
+								</div>
+							`;
+
+						}
+					);
+
+
+					complementsHtml += `
+							</div>
+
+						</div>
+					`;
+
+				}
+			);
+
+
+			complementsHtml += `
+				</div>
+			`;
+
+		}
 
 }
 
@@ -1695,9 +1829,26 @@ sendOrderButton.addEventListener("click", () => {
 }
 
     const total =
-        cart.reduce((sum, item) => {
-            return sum + item.preco * item.quantidade;
-        }, 0);
+		cart.reduce(
+			(sum, item) => {
+
+				const unitPrice =
+					Number(
+						item.precoUnitario ??
+						item.preco ??
+						0
+					);
+
+
+				return (
+					sum +
+					unitPrice *
+					item.quantidade
+				);
+
+			},
+			0
+		);
 		
 	const deliveryFee =
 		deliveryType.value === "Entrega"
@@ -1761,21 +1912,107 @@ sendOrderButton.addEventListener("click", () => {
     message += "%0A--------------------%0A";
     message += "*Itens do pedido:*%0A%0A";
 
-    cart.forEach(item => {
+    cart.forEach(
+		item => {
 
-        const subtotal =
-            item.preco * item.quantidade;
+			const unitPrice =
+				Number(
+					item.precoUnitario ??
+					item.preco ??
+					0
+				);
 
-        message += `${item.quantidade}x ${item.nome}%0A`;
-        message += `Subtotal: ${formatCurrency(subtotal)}%0A`;
 
-        if (item.observacao) {
-            message += `Obs: ${item.observacao}%0A`;
-        }
+			const subtotal =
+				unitPrice *
+				item.quantidade;
 
-        message += `%0A`;
 
-    });
+			message +=
+				`${item.quantidade}x ${item.nome}%0A`;
+
+
+			/*
+			 * Complementos
+			 */
+
+			if (
+				Array.isArray(
+					item.complementos
+				)
+			) {
+
+				item.complementos.forEach(
+					complement => {
+
+						message +=
+							`*${complement.nome}:*%0A`;
+
+
+						complement.opcoes.forEach(
+							option => {
+
+								const quantity =
+									Number(
+										option.quantidade ||
+										1
+									);
+
+
+								const quantityText =
+									quantity > 1
+									? `${quantity}x `
+									: "";
+
+
+								const optionTotal =
+									Number(
+										option.preco || 0
+									) *
+									quantity;
+
+
+								message +=
+									`- ${quantityText}${option.nome}`;
+
+
+								if (
+									optionTotal > 0
+								) {
+
+									message +=
+										` (+ ${formatCurrency(optionTotal)})`;
+
+								}
+
+
+								message +=
+									`%0A`;
+
+							}
+						);
+
+					}
+				);
+
+			}
+
+
+			if (
+				item.observacao
+			) {
+
+				message +=
+					`Obs: ${item.observacao}%0A`;
+
+			}
+
+
+			message +=
+				`Subtotal: ${formatCurrency(subtotal)}%0A%0A`;
+
+		}
+	);
 
     message += "--------------------%0A";
     message += `*Subtotal dos itens:* ${formatCurrency(total)}%0A`;
