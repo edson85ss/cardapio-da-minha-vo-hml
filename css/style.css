@@ -300,7 +300,7 @@ body{
     width: 100%;
     min-height: 80px;
     padding: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     border: 1px solid #ddd;
     border-radius: 12px;
     font-family: inherit;
@@ -713,6 +713,8 @@ body{
     align-items:center;
 
     gap:15px;
+	
+	flex-shrink: 0;
 
 }
 
@@ -741,14 +743,34 @@ body{
    RODAPÉ MODAL PRODUTO
    =================================================== */
 
-.modal-footer{
+.modal-footer {
 
-    display:flex;
+    position: sticky;
 
-    justify-content:space-between;
+    bottom: 0;
 
-    align-items:center;
+    z-index: 20;
 
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: -20px;
+
+    padding: 14px 20px;
+
+    background: white;
+
+    border-top: 1px solid var(--border);
+
+    box-shadow:
+        0 -4px 12px rgba(0, 0, 0, 0.06);
 }
 
 #addToCart{
@@ -766,6 +788,12 @@ body{
     cursor:pointer;
 
     font-weight:600;
+	
+	flex: 1;
+
+    min-height: 46px;
+
+    white-space: nowrap;
 
 }
 
