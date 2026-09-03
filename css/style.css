@@ -954,3 +954,39 @@ body{
     }
 
 }
+
+.cart-item-complements {
+    margin-top: 8px;
+    margin-bottom: 8px;
+
+    padding-left: 8px;
+
+    font-size: 12px;
+
+    color: #666;
+}
+
+
+.cart-complement-group {
+    margin-bottom: 6px;
+}
+
+
+.cart-complement-group strong {
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: var(--text);
+
+    font-size: 12px;
+}
+
+
+.cart-item-subtotal {
+    margin-top: 7px;
+
+    font-weight: 600;
+
+    color: var(--primary);
+}
