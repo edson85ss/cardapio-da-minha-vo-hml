@@ -92,6 +92,21 @@ const storeLogoPreviewWrapper =
 
 const storeActiveInput =
     document.getElementById("storeActive");
+	
+const paymentMethodInput =
+    document.getElementById(
+        "paymentMethodInput"
+    );
+
+const addPaymentMethodButton =
+    document.getElementById(
+        "addPaymentMethodButton"
+    );
+
+const paymentMethodsList =
+    document.getElementById(
+        "paymentMethodsList"
+    );
 
 const openingHoursContainer =
     document.getElementById(
@@ -124,6 +139,8 @@ const days = [
     ["sabado", "Sábado"]
 
 ];
+
+let paymentMethods = [];
 
 
 /* ==================================================
@@ -337,6 +354,21 @@ async function loadStoreConfig() {
 
         const data =
             snapshot.data();
+			
+		paymentMethods =
+			Array.isArray(
+				data.formasPagamento
+			)
+			? [...data.formasPagamento]
+			: [
+				"PIX",
+				"Dinheiro",
+				"Débito",
+				"Crédito"
+			];
+
+
+renderPaymentMethods();
 
 
         storeNameInput.value =
@@ -463,6 +495,25 @@ async function loadStoreConfig() {
         );
 
     }
+
+}
+
+function normalizePaymentMethod(
+    name
+) {
+
+    return name
+        .trim()
+        .toLocaleLowerCase("pt-BR")
+        .normalize("NFD")
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        )
+        .replace(
+            /\s+/g,
+            " "
+        );
 
 }
 
@@ -760,7 +811,10 @@ storeConfigForm.addEventListener(
                     storeActiveInput.checked,
 
                 horarios:
-                    horarios
+                    horarios,
+					
+				formasPagamento:
+					paymentMethods
 
             };
 
@@ -863,6 +917,141 @@ storeConfigForm.addEventListener(
                 "Salvar configurações";
 
         }
+
+    }
+);
+
+function renderPaymentMethods() {
+
+    paymentMethodsList.innerHTML =
+        "";
+
+
+    paymentMethods.forEach(
+        (method, index) => {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "payment-method-row";
+
+
+            row.innerHTML = `
+
+                <span>
+                    ${method}
+                </span>
+
+                <button
+                    type="button"
+                    class="remove-payment-method-button"
+                    data-index="${index}"
+                    aria-label="Remover forma de pagamento"
+                >
+                    ×
+                </button>
+
+            `;
+
+
+            paymentMethodsList
+                .appendChild(row);
+
+        }
+    );
+
+
+    paymentMethodsList
+        .querySelectorAll(
+            ".remove-payment-method-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const index =
+                            Number(
+                                button.dataset.index
+                            );
+
+
+                        paymentMethods.splice(
+                            index,
+                            1
+                        );
+
+
+                        renderPaymentMethods();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+addPaymentMethodButton.addEventListener(
+    "click",
+    () => {
+
+        const name =
+            paymentMethodInput.value.trim();
+
+
+        if (!name) {
+
+            return;
+
+        }
+
+
+        const normalizedName =
+            normalizePaymentMethod(
+                name
+            );
+
+
+        const alreadyExists =
+            paymentMethods.some(
+                method =>
+                    normalizePaymentMethod(
+                        method
+                    ) === normalizedName
+            );
+
+
+        if (alreadyExists) {
+
+            alert(
+                "Esta forma de pagamento já está cadastrada."
+            );
+
+            return;
+
+        }
+
+
+        paymentMethods.push(
+            name
+        );
+
+
+        paymentMethodInput.value =
+            "";
+
+
+        renderPaymentMethods();
+
+
+        paymentMethodInput.focus();
 
     }
 );
