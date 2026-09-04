@@ -36,6 +36,8 @@ let isStoreOpen = false;
 
 let categories = [];
 
+let paymentMethods = [];
+
 /* ==================================================
    ELEMENTOS DA PÁGINA
    ================================================== */
@@ -2628,6 +2630,20 @@ async function loadStoreConfigFromFirestore() {
             data.enderecoRetirada ||
             CONFIG.pickupAddress;
 			
+		paymentMethods =
+			Array.isArray(
+				data.formasPagamento
+			)
+			? [...data.formasPagamento]
+			: [
+				"PIX",
+				"Dinheiro",
+				"Débito",
+				"Crédito"
+			];
+			
+		renderPaymentMethods();
+			
 		/* LOGO */
         CONFIG.logo =
             data.logoUrl ||
@@ -3208,5 +3224,67 @@ function validateProductComplements() {
 
 
     return true;
+
+}
+
+function renderPaymentMethods() {
+
+    paymentMethod.innerHTML = "";
+
+
+    paymentMethods.forEach(
+        method => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            const normalized =
+                method
+                    .trim()
+                    .toLocaleLowerCase(
+                        "pt-BR"
+                    );
+
+
+            if (
+                normalized === "pix"
+            ) {
+
+                option.value =
+                    "PIX";
+
+            }
+            else if (
+                normalized === "dinheiro"
+            ) {
+
+                option.value =
+                    "Dinheiro";
+
+            }
+            else {
+
+                option.value =
+                    method;
+
+            }
+
+
+            option.textContent =
+                method;
+
+
+            paymentMethod.appendChild(
+                option
+            );
+
+        }
+    );
+
+
+    togglePaymentFields();
 
 }
