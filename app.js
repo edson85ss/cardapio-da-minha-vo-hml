@@ -1515,6 +1515,7 @@ function renderCartItems() {
 
     cartItems.innerHTML = "";
 
+
     if (cart.length === 0) {
 
         cartItems.innerHTML =
@@ -1527,165 +1528,214 @@ function renderCartItems() {
 
     }
 
+
     let total = 0;
 
-    cart.forEach((item, index) => {
 
-        const unitPrice =
-			Number(
-				item.precoUnitario ??
-				item.preco ??
-				0
-			);
+    cart.forEach(
+        (item, index) => {
+
+            const unitPrice =
+                Number(
+                    item.precoUnitario ??
+                    item.preco ??
+                    0
+                );
 
 
-		const subtotal =
-			unitPrice *
-			item.quantidade;
+            const subtotal =
+                unitPrice *
+                item.quantidade;
 
-        total += subtotal;
 
-        const div =
-            document.createElement("div");
+            total += subtotal;
 
-        div.className =
-            "cart-item";
 
-        div.innerHTML = `
+            /*
+             * MONTA HTML DOS COMPLEMENTOS
+             */
 
-			<strong>
-				${item.quantidade}x ${item.nome}
-			</strong>
+            let complementsHtml =
+                "";
 
-			${complementsHtml}
 
-			<div class="cart-item-subtotal">
-				${formatCurrency(subtotal)}
-			</div>
+            if (
+                Array.isArray(
+                    item.complementos
+                ) &&
+                item.complementos.length > 0
+            ) {
 
-			${
-				item.observacao
-				? `
-					<small>
-						Obs: ${item.observacao}
-					</small>
-				`
-				: ""
-			}
+                complementsHtml += `
+                    <div class="cart-item-complements">
+                `;
 
-			<br>
 
-			<button
-				class="remove-cart-item"
-				data-index="${index}"
-			>
-				Remover
-			</button>
+                item.complementos.forEach(
+                    complement => {
 
-		`;
+                        complementsHtml += `
+                            <div class="cart-complement-group">
 
-        cartItems.appendChild(div);
+                                <strong>
+                                    ${complement.nome}:
+                                </strong>
 
-    });
+                                <div>
+                        `;
+
+
+                        complement.opcoes.forEach(
+                            option => {
+
+                                const quantity =
+                                    Number(
+                                        option.quantidade ||
+                                        1
+                                    );
+
+
+                                const quantityText =
+                                    quantity > 1
+                                    ? `${quantity}x `
+                                    : "";
+
+
+                                const optionTotal =
+                                    Number(
+                                        option.preco || 0
+                                    ) *
+                                    quantity;
+
+
+                                complementsHtml += `
+                                    <div>
+                                        ${quantityText}${option.nome}
+
+                                        ${
+                                            optionTotal > 0
+                                            ? `(+ ${formatCurrency(optionTotal)})`
+                                            : ""
+                                        }
+                                    </div>
+                                `;
+
+                            }
+                        );
+
+
+                        complementsHtml += `
+                                </div>
+
+                            </div>
+                        `;
+
+                    }
+                );
+
+
+                complementsHtml += `
+                    </div>
+                `;
+
+            }
+
+
+            /*
+             * MONTA ITEM DO CARRINHO
+             */
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "cart-item";
+
+
+            div.innerHTML = `
+
+                <strong>
+                    ${item.quantidade}x ${item.nome}
+                </strong>
+
+
+                ${complementsHtml}
+
+
+                <div class="cart-item-subtotal">
+                    ${formatCurrency(subtotal)}
+                </div>
+
+
+                ${
+                    item.observacao
+                    ? `
+                        <small>
+                            Obs: ${item.observacao}
+                        </small>
+                    `
+                    : ""
+                }
+
+
+                <br>
+
+
+                <button
+                    class="remove-cart-item"
+                    data-index="${index}"
+                >
+                    Remover
+                </button>
+
+            `;
+
+
+            cartItems.appendChild(
+                div
+            );
+
+        }
+    );
+
 
     cartTotal.textContent =
-        `${formatCurrency(total)}`;
+        formatCurrency(total);
+
 
     document
-        .querySelectorAll(".remove-cart-item")
-        .forEach(button => {
+        .querySelectorAll(
+            ".remove-cart-item"
+        )
+        .forEach(
+            button => {
 
-            button.addEventListener("click", () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                const index =
-                    button.dataset.index;
-
-                cart.splice(index, 1);
-
-                updateCart();
-
-            });
-
-        });
-		
-		let complementsHtml =
-			"";
+                        const index =
+                            Number(
+                                button.dataset.index
+                            );
 
 
-		if (
-			Array.isArray(
-				item.complementos
-			) &&
-			item.complementos.length > 0
-		) {
-
-			complementsHtml += `
-				<div class="cart-item-complements">
-			`;
+                        cart.splice(
+                            index,
+                            1
+                        );
 
 
-			item.complementos.forEach(
-				complement => {
+                        updateCart();
 
-					complementsHtml += `
-						<div class="cart-complement-group">
+                    }
+                );
 
-							<strong>
-								${complement.nome}:
-							</strong>
-
-							<div>
-					`;
-
-
-					complement.opcoes.forEach(
-						option => {
-
-							const quantityText =
-								option.quantidade > 1
-								? `${option.quantidade}x `
-								: "";
-
-
-							const optionTotal =
-								Number(
-									option.preco || 0
-								) *
-								Number(
-									option.quantidade || 1
-								);
-
-
-							complementsHtml += `
-								<div>
-									${quantityText}${option.nome}
-									${
-										optionTotal > 0
-										? `(+ ${formatCurrency(optionTotal)})`
-										: ""
-									}
-								</div>
-							`;
-
-						}
-					);
-
-
-					complementsHtml += `
-							</div>
-
-						</div>
-					`;
-
-				}
-			);
-
-
-			complementsHtml += `
-				</div>
-			`;
-
-		}
+            }
+        );
 
 }
 
