@@ -1405,9 +1405,28 @@ body {
     }
 	
 	.product-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+	}
+	
+	.product-bottom-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+
+	.admin-product-price {
+		align-self: flex-start;
+	}
+
+
+	.product-actions button {
+		flex: 1;
+	}
 	
 	.product-order-controls {
         width: 28px;
