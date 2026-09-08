@@ -355,6 +355,48 @@
 
             </label>
 			
+			<div class="product-stock-section">
+
+				<label class="switch-row">
+
+					<input
+						type="checkbox"
+						id="productControlsStock"
+					>
+
+					<span>
+						Controlar estoque
+					</span>
+
+				</label>
+
+
+				<div
+					id="productStockField"
+					class="admin-form-group product-stock-field"
+				>
+
+					<label for="productStock">
+						Quantidade disponível
+					</label>
+
+					<input
+						type="number"
+						id="productStock"
+						min="0"
+						step="1"
+						inputmode="numeric"
+						value="0"
+					>
+
+					<small>
+						Informe a quantidade disponível deste produto.
+					</small>
+
+				</div>
+
+			</div>
+			
 			<div
 				id="productComplementsSection"
 				class="product-complements-section"

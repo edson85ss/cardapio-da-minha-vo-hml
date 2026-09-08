@@ -100,6 +100,21 @@ const productImageInput =
 
 const productActiveInput =
     document.getElementById("productActive");
+	
+const productControlsStockInput =
+    document.getElementById(
+        "productControlsStock"
+    );
+
+const productStockInput =
+    document.getElementById(
+        "productStock"
+    );
+
+const productStockField =
+    document.getElementById(
+        "productStockField"
+    );
 
 const productImagePreview =
     document.getElementById("productImagePreview");
@@ -335,6 +350,14 @@ productForm.addEventListener(
                 productPriceInput.value
             );
 			
+		const controlsStock =
+			productControlsStockInput.checked;
+
+		const stock =
+			Number(
+				productStockInput.value
+			);
+			
 		const selectedCategory =
 			adminCategories.find(
 				category =>
@@ -351,6 +374,24 @@ productForm.addEventListener(
 
 			productFormMessage.textContent =
 				"Preencha os campos obrigatórios.";
+
+			productFormMessage.className =
+				"form-message error";
+
+			return;
+
+		}
+		
+		if (
+			controlsStock &&
+			(
+				!Number.isInteger(stock) ||
+				stock < 0
+			)
+		) {
+
+			productFormMessage.textContent =
+				"Informe uma quantidade de estoque inteira e igual ou maior que zero.";
 
 			productFormMessage.className =
 				"form-message error";
@@ -412,6 +453,14 @@ productForm.addEventListener(
 
                             ativo:
                                 productActiveInput.checked,
+								
+							controlaEstoque:
+								controlsStock,
+
+							estoque:
+								controlsStock
+									? stock
+									: 0,
 
                             imagemUrl:
                                 ""
@@ -482,6 +531,14 @@ productForm.addEventListener(
 
 					ativo:
 						productActiveInput.checked
+						
+					controlaEstoque:
+						controlsStock,
+
+					estoque:
+						controlsStock
+							? stock
+							: 0,
 
 				};
 
@@ -817,6 +874,14 @@ function openProductForm() {
     productIdInput.value = "";
 
     productActiveInput.checked = true;
+	
+	productControlsStockInput.checked =
+		false;
+
+	productStockInput.value =
+		0;
+
+	updateStockFieldVisibility();
 
     productImagePreviewWrapper
         .classList.remove("visible");
@@ -1248,18 +1313,48 @@ function renderAdminProducts() {
                         </div>
 
 
-                        <span class="
-                            product-status
-                            ${product.ativo === false ? "inactive" : "active"}
-                        ">
+                        <div class="product-status-area">
 
-                            ${
-                                product.ativo === false
-                                ? "Inativo"
-                                : "Ativo"
-                            }
+							<span class="
+								product-status
+								${product.ativo === false ? "inactive" : "active"}
+							">
 
-                        </span>
+								${
+									product.ativo === false
+									? "Inativo"
+									: "Ativo"
+								}
+
+							</span>
+
+
+							${
+								product.controlaEstoque === true
+								?
+								`
+								<span class="
+									product-stock-status
+									${
+										Number(product.estoque || 0) === 0
+										? "empty"
+										: ""
+									}
+								">
+
+									${
+										Number(product.estoque || 0) === 0
+										? "Esgotado"
+										: `Estoque: ${Number(product.estoque || 0)}`
+									}
+
+								</span>
+								`
+								:
+								""
+							}
+
+						</div>
 
                     </div>
 
@@ -1405,6 +1500,16 @@ async function openEditProductForm(
 
         productActiveInput.checked =
             product.ativo !== false;
+			
+		productControlsStockInput.checked =
+			product.controlaEstoque === true;
+
+		productStockInput.value =
+			Number(
+				product.estoque || 0
+			);
+
+		updateStockFieldVisibility();
 
 
         /*
@@ -3011,3 +3116,27 @@ async function deleteProductComplementAssociations(
     await batch.commit();
 
 }
+
+function updateStockFieldVisibility() {
+
+    if (
+        productControlsStockInput.checked
+    ) {
+
+        productStockField.style.display =
+            "";
+
+    }
+    else {
+
+        productStockField.style.display =
+            "none";
+
+    }
+
+}
+
+productControlsStockInput.addEventListener(
+    "change",
+    updateStockFieldVisibility
+);

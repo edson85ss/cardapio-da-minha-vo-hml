@@ -2637,3 +2637,66 @@ body {
 .remove-payment-method-button:hover {
     color: #d4432b;
 }
+
+/* ==================================================
+   ESTOQUE DE PRODUTOS
+   ================================================== */
+
+.product-stock-section {
+    margin-top: 8px;
+    margin-bottom: 20px;
+}
+
+
+.product-stock-field {
+    margin-top: 12px;
+}
+
+
+.product-stock-field small {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #777;
+
+    font-size: 12px;
+}
+
+
+.product-stock-field input {
+    max-width: 180px;
+}
+
+
+.product-status-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    flex-wrap: wrap;
+}
+
+
+.product-stock-status {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    background: #eef5f2;
+
+    color: #4b5454;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.product-stock-status.empty {
+    background: #fde9e6;
+
+    color: #d4432b;
+}
