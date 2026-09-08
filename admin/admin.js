@@ -530,7 +530,7 @@ productForm.addEventListener(
 						price,
 
 					ativo:
-						productActiveInput.checked
+						productActiveInput.checked,
 						
 					controlaEstoque:
 						controlsStock,
