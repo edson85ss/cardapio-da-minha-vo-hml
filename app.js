@@ -1383,20 +1383,62 @@ window.addEventListener("click", (event) => {
 
 });
 
+function getCurrentProductStockLimit() {
+
+    if (
+        !currentProduct ||
+        currentProduct.controlaEstoque !== true
+    ) {
+        return null;
+    }
+
+    const estoque =
+        Number(
+            currentProduct.estoque ?? 0
+        );
+
+    return Math.max(
+        0,
+        Math.floor(estoque)
+    );
+
+}
+
 /* ==================================================
    QUANTIDADE
    ================================================== */
 
-increaseQtyButton.addEventListener("click", () => {
+increaseQtyButton.addEventListener(
+    "click",
+    () => {
 
-    currentQuantity++;
+        const stockLimit =
+            getCurrentProductStockLimit();
 
-    modalQty.textContent =
-        currentQuantity;
 
-    updateAddButtonPrice();
+        if (
+            stockLimit !== null &&
+            currentQuantity >= stockLimit
+        ) {
 
-});
+            alert(
+                `Quantidade disponível atingida.`
+            );
+
+            return;
+
+        }
+
+
+        currentQuantity++;
+
+        modalQty.textContent =
+            currentQuantity;
+
+        updateAddButtonPrice();
+
+    }
+);
 
 decreaseQtyButton.addEventListener("click", () => {
 
@@ -1420,6 +1462,23 @@ decreaseQtyButton.addEventListener("click", () => {
 addToCartButton.addEventListener(
     "click",
     () => {
+		
+		const stockLimit =
+			getCurrentProductStockLimit();
+
+
+		if (
+			stockLimit !== null &&
+			currentQuantity > stockLimit
+		) {
+
+			alert(
+				`Quantidade disponível atingida.`
+			);
+
+			return;
+
+		}
 
         /*
          * Valida complementos obrigatórios.
@@ -2490,6 +2549,25 @@ async function loadProductsFromFirestore() {
             if (data.ativo === false) {
                 return;
             }
+			
+			const controlaEstoque =
+				data.controlaEstoque === true;
+
+			const estoque =
+				Number(data.estoque ?? 0);
+
+
+			/*
+			 * Produtos com controle de estoque
+			 * e quantidade zerada não aparecem
+			 * no cardápio público.
+			 */
+			if (
+				controlaEstoque &&
+				estoque <= 0
+			) {
+				return;
+			}
 
 
             /*
@@ -2519,10 +2597,16 @@ async function loadProductsFromFirestore() {
                     data.imagemUrl || "",
 
                 ativo:
-                    data.ativo !== false,
+					data.ativo !== false,
 
-                ordem:
-                    Number(data.ordem || 0)
+				controlaEstoque:
+					controlaEstoque,
+
+				estoque:
+					estoque,
+
+				ordem:
+					Number(data.ordem || 0)
 
             });
 
