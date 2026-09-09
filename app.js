@@ -7,7 +7,8 @@ import {
     query,
     orderBy,
     doc,
-    getDoc
+    getDoc,
+    runTransaction
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -1904,10 +1905,229 @@ document
     });
 	
 /* ==================================================
+   BAIXAR ESTOQUE DO PEDIDO
+   ================================================== */
+
+async function decreaseStockForCart() {
+
+    /*
+     * Agrupa a quantidade solicitada por produto.
+     *
+     * Isso é importante porque o mesmo produto pode
+     * aparecer mais de uma vez no carrinho.
+     */
+
+    const requestedQuantities = {};
+
+    cart.forEach(item => {
+
+        const productId =
+            item.id;
+
+        const quantity =
+            Number(item.quantidade || 0);
+
+        if (!requestedQuantities[productId]) {
+            requestedQuantities[productId] = 0;
+        }
+
+        requestedQuantities[productId] +=
+            quantity;
+
+    });
+
+
+    const productIds =
+        Object.keys(requestedQuantities);
+
+
+    /*
+     * Nenhum produto no carrinho.
+     */
+
+    if (productIds.length === 0) {
+        return {
+            success: true
+        };
+    }
+
+
+    try {
+
+        await runTransaction(
+            db,
+            async transaction => {
+
+                const productReferences = [];
+
+
+                /*
+                 * Primeiro fazemos todas as leituras.
+                 *
+                 * O Firestore exige que as leituras da
+                 * transação sejam feitas antes das escritas.
+                 */
+
+                for (
+                    const productId of productIds
+                ) {
+
+                    const productReference =
+                        doc(
+                            db,
+                            "lojas",
+                            "da-minha-vo",
+                            "produtos",
+                            productId
+                        );
+
+                    const snapshot =
+                        await transaction.get(
+                            productReference
+                        );
+
+
+                    if (!snapshot.exists()) {
+
+                        throw new Error(
+                            `O produto "${productId}" não foi encontrado.`
+                        );
+
+                    }
+
+
+                    productReferences.push({
+                        productId,
+                        reference:
+                            productReference,
+                        data:
+                            snapshot.data()
+                    });
+
+                }
+
+
+                /*
+                 * Agora validamos e calculamos
+                 * as novas quantidades.
+                 */
+
+                const stockUpdates = [];
+
+
+                for (
+                    const product
+                    of productReferences
+                ) {
+
+                    /*
+                     * Produto sem controle de estoque:
+                     * não altera nada.
+                     */
+
+                    if (
+                        product.data.controlaEstoque !== true
+                    ) {
+                        continue;
+                    }
+
+
+                    const currentStock =
+                        Number(
+                            product.data.estoque ?? 0
+                        );
+
+
+                    const requestedQuantity =
+                        requestedQuantities[
+                            product.productId
+                        ];
+
+
+                    /*
+                     * O estoque pode ter mudado
+                     * desde que o cliente abriu o produto.
+                     */
+
+                    if (
+                        currentStock <
+                        requestedQuantity
+                    ) {
+
+                        throw new Error(
+                            `Estoque insuficiente para "${product.data.nome || "este produto"}".`
+                        );
+
+                    }
+
+
+                    const newStock =
+                        currentStock -
+                        requestedQuantity;
+
+
+                    stockUpdates.push({
+                        reference:
+                            product.reference,
+                        estoque:
+                            newStock
+                    });
+
+                }
+
+
+                /*
+                 * Somente depois de todas as validações
+                 * fazemos as alterações.
+                 */
+
+                stockUpdates.forEach(
+                    update => {
+
+                        transaction.update(
+                            update.reference,
+                            {
+                                estoque:
+                                    update.estoque
+                            }
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        return {
+            success: true
+        };
+
+    }
+    catch (error) {
+
+        console.error(
+            "Erro ao baixar estoque:",
+            error
+        );
+
+
+        return {
+            success: false,
+            error
+        };
+
+    }
+
+}
+	
+/* ==================================================
    ENVIAR PEDIDO PELO WHATSAPP
    ================================================== */
 
-sendOrderButton.addEventListener("click", () => {
+sendOrderButton.addEventListener(
+    "click",
+    async () => {
 	
 	clearAllErrors();
 	
@@ -2134,15 +2354,82 @@ sendOrderButton.addEventListener("click", () => {
 
 	message += `*TOTAL:* ${formatCurrency(finalTotal)}%0A`;
 
-    const whatsappUrl =
-        `https://wa.me/${CONFIG.whatsappNumber}?text=${message}`;
+    /*
+	 * Abre uma aba em branco imediatamente.
+	 *
+	 * Isso evita que o navegador bloqueie a abertura
+	 * do WhatsApp enquanto aguardamos a transação
+	 * do Firestore.
+	 */
 
-    window.open(whatsappUrl, "_blank");
+	const whatsappWindow =
+		window.open(
+			"about:blank",
+			"_blank"
+		);
+
+
+	if (!whatsappWindow) {
+
+		alert(
+			"Não foi possível abrir o WhatsApp. Verifique se o navegador está bloqueando novas abas."
+		);
+
+		return;
+
+	}
+
+
+	/*
+	 * Baixa o estoque de todos os produtos
+	 * controlados presentes no carrinho.
+	 */
+
+	const stockResult =
+		await decreaseStockForCart();
+
+
+	if (!stockResult.success) {
+
+		whatsappWindow.close();
+
+
+		const errorMessage =
+			stockResult.error?.message || "";
+
+
+		alert(
+			errorMessage ||
+			"Não foi possível confirmar o estoque dos produtos. O pedido não foi enviado."
+		);
+
+
+		return;
+
+	}
+
+
+	/*
+	 * Estoque confirmado.
+	 *
+	 * Agora podemos abrir o WhatsApp.
+	 */
+
+	const whatsappUrl =
+		`https://wa.me/${CONFIG.whatsappNumber}?text=${message}`;
+
+
+	whatsappWindow.location.href =
+		whatsappUrl;
+
 
 	clearCartFromLocalStorage();
 
+
 	setTimeout(() => {
+
 		location.reload();
+
 	}, 1000);
 
 });
