@@ -1737,7 +1737,13 @@ function renderCartItems() {
             div.innerHTML = `
 
                 <strong>
-                    ${item.quantidade}x ${item.nome}
+                    ${item.quantidade}x ${item.nome} — ${formatCurrency(
+						Number(
+							item.precoBase ??
+							item.preco ??
+							0
+						)
+					)}
                 </strong>
 
 
@@ -2162,7 +2168,13 @@ sendOrderButton.addEventListener(
 
 
 			message +=
-				`${item.quantidade}x ${item.nome}%0A`;
+				`${item.quantidade}x ${item.nome} — ${formatCurrency(
+					Number(
+						item.precoBase ??
+						item.preco ??
+						0
+					)
+				)}%0A`;
 
 
 			/*
