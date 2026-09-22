@@ -1,4 +1,4 @@
-import { db }
+import { firebaseApp, db }
 from "./firebase-config.js";
 
 import {
@@ -7,15 +7,32 @@ import {
     query,
     orderBy,
     doc,
-    getDoc,
-    runTransaction
+    getDoc
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+import {
+    getFunctions,
+    httpsCallable
+}
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-functions.js";
 
 console.log(
     "Firebase conectado:",
     db
 );
+
+const functions =
+    getFunctions(
+        firebaseApp,
+        "southamerica-east1"
+    );
+
+const decreaseStock =
+    httpsCallable(
+        functions,
+        "decreaseStock"
+    );
 
 /* ==================================================
    VARIÁVEIS GLOBAIS
@@ -1911,13 +1928,15 @@ document
 async function decreaseStockForCart() {
 
     /*
-     * Agrupa a quantidade solicitada por produto.
+     * Monta a lista de produtos e quantidades
+     * que serão enviados para a Cloud Function.
      *
-     * Isso é importante porque o mesmo produto pode
-     * aparecer mais de uma vez no carrinho.
+     * O mesmo produto pode aparecer mais de uma vez
+     * no carrinho, por isso agrupamos as quantidades.
      */
 
     const requestedQuantities = {};
+
 
     cart.forEach(item => {
 
@@ -1927,9 +1946,11 @@ async function decreaseStockForCart() {
         const quantity =
             Number(item.quantidade || 0);
 
+
         if (!requestedQuantities[productId]) {
             requestedQuantities[productId] = 0;
         }
+
 
         requestedQuantities[productId] +=
             quantity;
@@ -1937,170 +1958,51 @@ async function decreaseStockForCart() {
     });
 
 
-    const productIds =
-        Object.keys(requestedQuantities);
+    const items =
+        Object.entries(
+            requestedQuantities
+        ).map(
+            ([productId, quantity]) => ({
+                productId,
+                quantity
+            })
+        );
 
 
     /*
      * Nenhum produto no carrinho.
      */
 
-    if (productIds.length === 0) {
+    if (items.length === 0) {
+
         return {
             success: true
         };
+
     }
 
 
     try {
 
-        await runTransaction(
-            db,
-            async transaction => {
+        /*
+         * Envia o carrinho inteiro para a Cloud Function.
+         *
+         * A própria Function fará:
+         *
+         * 1. leitura dos produtos;
+         * 2. validação dos estoques;
+         * 3. atualização atômica dos estoques.
+         */
 
-                const productReferences = [];
-
-
-                /*
-                 * Primeiro fazemos todas as leituras.
-                 *
-                 * O Firestore exige que as leituras da
-                 * transação sejam feitas antes das escritas.
-                 */
-
-                for (
-                    const productId of productIds
-                ) {
-
-                    const productReference =
-                        doc(
-                            db,
-                            "lojas",
-                            "da-minha-vo",
-                            "produtos",
-                            productId
-                        );
-
-                    const snapshot =
-                        await transaction.get(
-                            productReference
-                        );
-
-
-                    if (!snapshot.exists()) {
-
-                        throw new Error(
-                            `O produto "${productId}" não foi encontrado.`
-                        );
-
-                    }
-
-
-                    productReferences.push({
-                        productId,
-                        reference:
-                            productReference,
-                        data:
-                            snapshot.data()
-                    });
-
-                }
-
-
-                /*
-                 * Agora validamos e calculamos
-                 * as novas quantidades.
-                 */
-
-                const stockUpdates = [];
-
-
-                for (
-                    const product
-                    of productReferences
-                ) {
-
-                    /*
-                     * Produto sem controle de estoque:
-                     * não altera nada.
-                     */
-
-                    if (
-                        product.data.controlaEstoque !== true
-                    ) {
-                        continue;
-                    }
-
-
-                    const currentStock =
-                        Number(
-                            product.data.estoque ?? 0
-                        );
-
-
-                    const requestedQuantity =
-                        requestedQuantities[
-                            product.productId
-                        ];
-
-
-                    /*
-                     * O estoque pode ter mudado
-                     * desde que o cliente abriu o produto.
-                     */
-
-                    if (
-                        currentStock <
-                        requestedQuantity
-                    ) {
-
-                        throw new Error(
-                            `Estoque insuficiente para "${product.data.nome || "este produto"}".`
-                        );
-
-                    }
-
-
-                    const newStock =
-                        currentStock -
-                        requestedQuantity;
-
-
-                    stockUpdates.push({
-                        reference:
-                            product.reference,
-                        estoque:
-                            newStock
-                    });
-
-                }
-
-
-                /*
-                 * Somente depois de todas as validações
-                 * fazemos as alterações.
-                 */
-
-                stockUpdates.forEach(
-                    update => {
-
-                        transaction.update(
-                            update.reference,
-                            {
-                                estoque:
-                                    update.estoque
-                            }
-                        );
-
-                    }
-                );
-
-            }
-        );
+        const result =
+            await decreaseStock({
+                items
+            });
 
 
         return {
-            success: true
+            success: true,
+            data: result.data
         };
 
     }
