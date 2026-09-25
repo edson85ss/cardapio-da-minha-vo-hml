@@ -1928,21 +1928,19 @@ document
     });
 	
 /* ==================================================
-   BAIXAR ESTOQUE DO PEDIDO
+   REGISTRAR PEDIDO E BAIXAR ESTOQUE
    ================================================== */
 
-async function decreaseStockForCart() {
+async function decreaseStockForCart(pedido) {
 
     /*
-     * Monta a lista de produtos e quantidades
-     * que serão enviados para a Cloud Function.
+     * Agrupa a quantidade solicitada por produto.
      *
-     * O mesmo produto pode aparecer mais de uma vez
-     * no carrinho, por isso agrupamos as quantidades.
+     * Isso é importante porque o mesmo produto pode
+     * aparecer mais de uma vez no carrinho.
      */
 
     const requestedQuantities = {};
-
 
     cart.forEach(item => {
 
@@ -1952,11 +1950,12 @@ async function decreaseStockForCart() {
         const quantity =
             Number(item.quantidade || 0);
 
-
         if (!requestedQuantities[productId]) {
-            requestedQuantities[productId] = 0;
-        }
 
+            requestedQuantities[productId] =
+                0;
+
+        }
 
         requestedQuantities[productId] +=
             quantity;
@@ -1982,7 +1981,11 @@ async function decreaseStockForCart() {
     if (items.length === 0) {
 
         return {
-            success: true
+            success: false,
+            error: {
+                message:
+                    "O carrinho está vazio."
+            }
         };
 
     }
@@ -1991,38 +1994,49 @@ async function decreaseStockForCart() {
     try {
 
         /*
-         * Envia o carrinho inteiro para a Cloud Function.
+         * A Cloud Function faz atomicamente:
          *
-         * A própria Function fará:
-         *
-         * 1. leitura dos produtos;
-         * 2. validação dos estoques;
-         * 3. atualização atômica dos estoques.
+         * 1. valida o estoque;
+         * 2. baixa o estoque;
+         * 3. gera o número do pedido;
+         * 4. grava o pedido.
          */
 
         const result =
             await decreaseStock({
-                items
+
+                items,
+
+                pedido
+
             });
 
 
         return {
+
             success: true,
-            data: result.data
+
+            data:
+                result.data
+
         };
 
     }
+
     catch (error) {
 
         console.error(
-            "Erro ao baixar estoque:",
+            "Erro ao registrar pedido:",
             error
         );
 
 
         return {
+
             success: false,
+
             error
+
         };
 
     }
@@ -2269,82 +2283,456 @@ sendOrderButton.addEventListener(
 	message += `*TOTAL:* ${formatCurrency(finalTotal)}%0A`;
 
     /*
-	 * Abre uma aba em branco imediatamente.
-	 *
-	 * Isso evita que o navegador bloqueie a abertura
-	 * do WhatsApp enquanto aguardamos a transação
-	 * do Firestore.
-	 */
+     * Abre uma aba em branco imediatamente.
+     *
+     * Isso evita que o navegador bloqueie a abertura
+     * do WhatsApp enquanto aguardamos a Cloud Function.
+     */
 
-	const whatsappWindow =
-		window.open(
-			"about:blank",
-			"_blank"
-		);
-
-
-	if (!whatsappWindow) {
-
-		alert(
-			"Não foi possível abrir o WhatsApp. Verifique se o navegador está bloqueando novas abas."
-		);
-
-		return;
-
-	}
+    const whatsappWindow =
+        window.open(
+            "about:blank",
+            "_blank"
+        );
 
 
-	/*
-	 * Baixa o estoque de todos os produtos
-	 * controlados presentes no carrinho.
-	 */
+    if (!whatsappWindow) {
 
-	const stockResult =
-		await decreaseStockForCart();
+        alert(
+            "Não foi possível abrir o WhatsApp. Verifique se o navegador está bloqueando novas abas."
+        );
 
+        return;
 
-	if (!stockResult.success) {
-
-		whatsappWindow.close();
+    }
 
 
-		const errorMessage =
-			stockResult.error?.message || "";
+    /*
+     * Monta os dados que serão gravados
+     * no pedido.
+     */
+
+    const selectedChangeOption =
+        document.querySelector(
+            'input[name="needsChange"]:checked'
+        );
 
 
-		alert(
-			errorMessage ||
-			"Não foi possível confirmar o estoque dos produtos. O pedido não foi enviado."
-		);
+    const needsChange =
+        selectedChangeOption
+            ? selectedChangeOption.value
+            : "Não";
 
 
-		return;
+    const pedido = {
 
-	}
+        cliente: {
 
+            nome:
+                customerName.value.trim(),
 
-	/*
-	 * Estoque confirmado.
-	 *
-	 * Agora podemos abrir o WhatsApp.
-	 */
+            telefone:
+                customerPhone.value.trim()
 
-	const whatsappUrl =
-		`https://wa.me/${CONFIG.whatsappNumber}?text=${message}`;
+        },
 
 
-	whatsappWindow.location.href =
-		whatsappUrl;
+        entrega: {
+
+            tipo:
+                deliveryType.value,
+
+            endereco:
+                deliveryType.value === "Entrega"
+                    ? customerAddress.value.trim()
+                    : CONFIG.pickupAddress
+
+        },
 
 
-	clearCartFromLocalStorage();
+        pagamento: {
+
+            forma:
+                paymentMethod.value,
+
+            trocoPara:
+                paymentMethod.value === "Dinheiro" &&
+                needsChange === "Sim"
+                    ? changeFor.value.trim()
+                    : ""
+
+        },
 
 
-	setTimeout(() => {
+        itens:
+            cart.map(item => ({
 
-		location.reload();
+                productId:
+                    item.id,
 
-	}, 1000);
+                nome:
+                    item.nome,
+
+                precoBase:
+                    Number(
+                        item.precoBase ??
+                        item.preco ??
+                        0
+                    ),
+
+                quantidade:
+                    Number(
+                        item.quantidade || 0
+                    ),
+
+                complementos:
+                    Array.isArray(
+                        item.complementos
+                    )
+                        ? item.complementos
+                        : [],
+
+                precoComplementos:
+                    Number(
+                        item.precoComplementos || 0
+                    ),
+
+                precoUnitario:
+                    Number(
+                        item.precoUnitario ??
+                        item.preco ??
+                        0
+                    ),
+
+                subtotal:
+                    Number(
+                        item.precoUnitario ??
+                        item.preco ??
+                        0
+                    ) *
+                    Number(
+                        item.quantidade || 0
+                    ),
+
+                observacao:
+                    item.observacao || ""
+
+            })),
+
+
+        subtotal:
+            Number(total),
+
+
+        taxaEntrega:
+            Number(deliveryFee),
+
+
+        total:
+            Number(finalTotal)
+
+    };
+
+
+    /*
+     * Registra o pedido e baixa o estoque
+     * através da Cloud Function.
+     */
+
+    const stockResult =
+        await decreaseStockForCart(
+            pedido
+        );
+
+
+    if (!stockResult.success) {
+
+        whatsappWindow.close();
+
+
+        const errorMessage =
+            stockResult.error?.message || "";
+
+
+        alert(
+            errorMessage ||
+            "Não foi possível registrar o pedido. Verifique o estoque e tente novamente."
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+     * Número gerado pelo servidor.
+     */
+
+    const pedidoNumero =
+        stockResult.data?.pedido?.numero;
+
+
+    if (!pedidoNumero) {
+
+        whatsappWindow.close();
+
+
+        alert(
+            "O pedido foi processado, mas não foi possível obter o número do pedido. Entre em contato com a loja."
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+     * Agora montamos a mensagem do WhatsApp.
+     *
+     * O número do pedido é incluído somente
+     * depois que o servidor confirmou o registro.
+     */
+
+    let whatsappMessage = "";
+
+    whatsappMessage +=
+        `>>> *NOVO PEDIDO Nº ${pedidoNumero}* <<<%0A%0A`;
+
+
+    whatsappMessage +=
+        `*Cliente:* ${customerName.value.trim()}%0A`;
+
+
+    whatsappMessage +=
+        `*Telefone:* ${customerPhone.value.trim()}%0A%0A`;
+
+
+    whatsappMessage +=
+        `*Entrega ou retirada:* ${deliveryType.value}%0A`;
+
+
+    if (
+        deliveryType.value === "Entrega"
+    ) {
+
+        whatsappMessage +=
+            `*Endereço:* ${customerAddress.value.trim()}%0A`;
+
+    }
+
+    else {
+
+        whatsappMessage +=
+            `*Retirar em:* ${CONFIG.pickupAddress}%0A`;
+
+    }
+
+
+    whatsappMessage +=
+        `%0A*Forma de pagamento:* ${paymentMethod.value}%0A`;
+
+
+    if (
+        paymentMethod.value === "PIX"
+    ) {
+
+        whatsappMessage +=
+            `*PIX:* Chave: ${CONFIG.pixKey} | Titular: ${CONFIG.pixOwner}%0A`;
+
+    }
+
+
+    if (
+        paymentMethod.value === "Dinheiro"
+    ) {
+
+        whatsappMessage +=
+            `*Precisa de troco:* ${needsChange}%0A`;
+
+
+        if (
+            needsChange === "Sim"
+        ) {
+
+            whatsappMessage +=
+                `*Troco para:* ${changeFor.value.trim()}%0A`;
+
+        }
+
+    }
+
+
+    whatsappMessage +=
+        "%0A--------------------%0A";
+
+
+    whatsappMessage +=
+        "*Itens do pedido:*%0A%0A";
+
+
+    cart.forEach(
+        item => {
+
+            const basePrice =
+                Number(
+                    item.precoBase ??
+                    item.preco ??
+                    0
+                );
+
+
+            const unitPrice =
+                Number(
+                    item.precoUnitario ??
+                    item.preco ??
+                    0
+                );
+
+
+            const subtotal =
+                unitPrice *
+                item.quantidade;
+
+
+            /*
+             * Produto + preço base
+             */
+
+            whatsappMessage +=
+                `${item.quantidade}x ${item.nome} — ${formatCurrency(basePrice)}%0A`;
+
+
+            /*
+             * Complementos
+             */
+
+            if (
+                Array.isArray(
+                    item.complementos
+                )
+            ) {
+
+                item.complementos.forEach(
+                    complement => {
+
+                        whatsappMessage +=
+                            `*${complement.nome}:*%0A`;
+
+
+                        complement.opcoes.forEach(
+                            option => {
+
+                                const quantity =
+                                    Number(
+                                        option.quantidade ||
+                                        1
+                                    );
+
+
+                                const quantityText =
+                                    quantity > 1
+                                        ? `${quantity}x `
+                                        : "";
+
+
+                                const optionTotal =
+                                    Number(
+                                        option.preco || 0
+                                    ) *
+                                    quantity;
+
+
+                                whatsappMessage +=
+                                    `- ${quantityText}${option.nome}`;
+
+
+                                if (
+                                    optionTotal > 0
+                                ) {
+
+                                    whatsappMessage +=
+                                        ` (+ ${formatCurrency(optionTotal)})`;
+
+                                }
+
+
+                                whatsappMessage +=
+                                    `%0A`;
+
+                            }
+                        );
+
+                    }
+                );
+
+            }
+
+
+            if (
+                item.observacao
+            ) {
+
+                whatsappMessage +=
+                    `Obs: ${item.observacao}%0A`;
+
+            }
+
+
+            whatsappMessage +=
+                `Subtotal: ${formatCurrency(subtotal)}%0A%0A`;
+
+        }
+    );
+
+
+    whatsappMessage +=
+        "--------------------%0A";
+
+
+    whatsappMessage +=
+        `*Subtotal dos itens:* ${formatCurrency(total)}%0A`;
+
+
+    if (
+        deliveryType.value === "Entrega"
+    ) {
+
+        whatsappMessage +=
+            `*Taxa de entrega:* ${formatCurrency(deliveryFee)}%0A`;
+
+    }
+
+
+    whatsappMessage +=
+        `*TOTAL:* ${formatCurrency(finalTotal)}%0A`;
+
+
+    /*
+     * Pedido registrado e estoque baixado.
+     * Agora envia para o WhatsApp.
+     */
+
+    const whatsappUrl =
+        `https://wa.me/${CONFIG.whatsappNumber}?text=${whatsappMessage}`;
+
+
+    whatsappWindow.location.href =
+        whatsappUrl;
+
+
+    clearCartFromLocalStorage();
+
+
+    setTimeout(
+        () => {
+
+            location.reload();
+
+        },
+        1000
+    );
 
 });
 
