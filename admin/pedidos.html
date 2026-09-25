@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Pedidos - Administração</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+    <div class="admin-layout">
+
+        <!-- ==========================================
+             MENU LATERAL
+             ========================================== -->
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+
+                <div class="sidebar-logo">
+                    🍽️
+                </div>
+
+                <div>
+                    <strong>
+                        Cardápio Digital
+                    </strong>
+
+                    <small>
+                        Administração
+                    </small>
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-menu">
+
+                <a
+                    href="produtos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">▦</span>
+                    Produtos
+                </a>
+
+
+                <a
+                    href="categorias.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">☷</span>
+                    Categorias
+                </a>
+
+
+                <a
+                    href="complementos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">＋</span>
+                    Complementos
+                </a>
+
+
+                <a
+                    href="pedidos.html"
+                    class="menu-item active"
+                >
+                    <span class="menu-icon">▤</span>
+                    Pedidos
+                </a>
+
+
+                <a
+                    href="configuracoes.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">⚙</span>
+                    Configurações
+                </a>
+
+
+                <a
+                    href="../"
+                    target="_blank"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">↗</span>
+                    Ver cardápio
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-footer">
+
+                <button
+                    id="logoutButton"
+                    class="logout-button"
+                >
+                    <span>↪</span>
+                    Sair
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <div
+            id="sidebarOverlay"
+            class="sidebar-overlay"
+        ></div>
+
+
+        <!-- ==========================================
+             CONTEÚDO PRINCIPAL
+             ========================================== -->
+
+        <main class="admin-main">
+
+            <!-- TOPO -->
+
+            <header class="admin-header">
+
+                <button
+                    id="menuButton"
+                    class="mobile-menu-button"
+                    aria-label="Abrir menu"
+                >
+                    ☰
+                </button>
+
+                <div>
+
+                    <h1>
+                        Pedidos
+                    </h1>
+
+                    <p>
+                        Consulte os pedidos registrados pelo cardápio.
+                    </p>
+
+                </div>
+
+            </header>
+
+
+            <!-- ======================================
+                 LISTAGEM DE PEDIDOS
+                 ====================================== -->
+
+            <section class="admin-content">
+
+                <div class="page-actions">
+
+                    <div class="page-actions-top">
+
+                        <div>
+
+                            <h2>
+                                Pedidos registrados
+                            </h2>
+
+                            <p>
+                                Consulte os dados e detalhes dos pedidos realizados.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="products-panel">
+
+                    <div
+                        id="ordersList"
+                        class="admin-orders-list"
+                    >
+
+                        <div class="empty-state">
+
+                            <div class="empty-icon">
+                                ⏳
+                            </div>
+
+                            <h3>
+                                Carregando pedidos...
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- ==========================================
+         MODAL DETALHES DO PEDIDO
+         ========================================== -->
+
+    <div
+        id="orderDetailsModal"
+        class="admin-modal"
+    >
+
+        <div
+            class="admin-modal-overlay"
+            id="orderDetailsModalOverlay"
+        ></div>
+
+
+        <div class="admin-modal-card">
+
+            <!-- CABEÇALHO DO MODAL -->
+
+            <div class="admin-modal-header">
+
+                <div>
+
+                    <h2 id="orderDetailsTitle">
+                        Detalhes do pedido
+                    </h2>
+
+                    <p>
+                        Consulte todas as informações do pedido registrado.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="closeOrderDetailsModal"
+                    class="modal-close-button"
+                    aria-label="Fechar"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <!-- CONTEÚDO DOS DETALHES -->
+
+            <div
+                id="orderDetailsContent"
+                class="order-details-content"
+            >
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        ⏳
+                    </div>
+
+                    <h3>
+                        Carregando detalhes...
+                    </h3>
+
+                </div>
+
+            </div>
+
+
+            <!-- AÇÕES DO MODAL -->
+
+            <div class="admin-modal-actions">
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="closeOrderDetailsButton"
+                >
+                    Fechar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         JAVASCRIPT DA PÁGINA
+         ========================================== -->
+
+    <script
+        type="module"
+        src="pedidos.js"
+    ></script>
+
+</body>
+
+</html>
