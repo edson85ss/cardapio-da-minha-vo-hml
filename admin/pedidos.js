@@ -10,9 +10,10 @@ import {
     collection,
     getDocs,
     query,
-    orderBy
+    orderBy,
+    doc,
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-
 
 /* ==================================================
    ELEMENTOS DA PÁGINA
@@ -55,6 +56,9 @@ const closeOrderDetailsButton =
 
 const orderDetailsContent =
     document.getElementById("orderDetailsContent");
+	
+const deleteOrderButton =
+    document.getElementById("deleteOrderButton");
 
 
 /* ==================================================
@@ -66,6 +70,8 @@ const orderDetailsContent =
 // os dados completos ao abrir o modal.
 
 let adminOrders = [];
+
+let currentOrderId = null;
 
 
 /* ==================================================
@@ -573,7 +579,8 @@ function openOrderDetails(orderId) {
         return;
 
     }
-
+	
+	currentOrderId = order.id;
 
     orderDetailsTitle.textContent =
         `Pedido #${order.numero ?? "—"}`;
@@ -1078,6 +1085,85 @@ function buildOrderDetailsHTML(order) {
 
 }
 
+/* ==================================================
+   EXCLUI PEDIDO
+   ================================================== */
+
+async function deleteCurrentOrder() {
+
+    if (!currentOrderId) {
+        return;
+    }
+
+    const order =
+        adminOrders.find(
+            item =>
+                item.id === currentOrderId
+        );
+
+    if (!order) {
+        return;
+    }
+
+    const confirmed =
+        confirm(
+            `Deseja realmente excluir o pedido #${order.numero ?? "—"}?\n\n` +
+            `A exclusão do pedido não restaura automaticamente o estoque. ` +
+            `Se necessário, a reposição deverá ser feita manualmente no módulo de estoque.\n\n` +
+            `Esta ação não pode ser desfeita.`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    deleteOrderButton.disabled = true;
+    deleteOrderButton.textContent = "Excluindo...";
+
+    try {
+
+        const orderReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pedidos",
+                currentOrderId
+            );
+
+        await deleteDoc(
+            orderReference
+        );
+
+        currentOrderId = null;
+
+        closeOrderDetailsModal();
+
+        await loadOrders();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao excluir pedido:",
+            error
+        );
+
+        alert(
+            "Não foi possível excluir o pedido."
+        );
+
+    }
+
+    finally {
+
+        deleteOrderButton.disabled = false;
+        deleteOrderButton.textContent = "Excluir pedido";
+
+    }
+
+}
 
 /* ==================================================
    FECHA MODAL DE DETALHES
@@ -1088,9 +1174,14 @@ function closeOrderDetailsModal() {
     orderDetailsModal.classList.remove(
         "open"
     );
-
+	
+	currentOrderId = null;
 }
 
+deleteOrderButton.addEventListener(
+    "click",
+    deleteCurrentOrder
+);
 
 closeOrderDetailsModalButton.addEventListener(
     "click",

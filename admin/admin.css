@@ -1357,6 +1357,35 @@ body {
     cursor: pointer;
 }
 
+.delete-order-button {
+
+    min-height: 42px;
+
+    padding: 0 18px;
+
+    border:
+        1px solid #f1c7c2;
+
+    border-radius: 10px;
+
+    background: #fff;
+
+    color: var(--danger);
+
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+.delete-order-button:hover {
+    background: #fdecec;
+}
+
+.delete-order-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 
 /* MOBILE */
 
