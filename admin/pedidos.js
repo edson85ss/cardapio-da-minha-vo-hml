@@ -74,15 +74,41 @@ let adminOrders = [];
 
 function formatCurrency(value) {
 
+    let numericValue;
+
+    if (typeof value === "string") {
+
+        const normalizedValue =
+            value.trim().replace(/R\$\s?/g, "");
+
+        numericValue =
+            normalizedValue.includes(",")
+                ? Number(
+                    normalizedValue
+                        .replace(/\./g, "")
+                        .replace(",", ".")
+                )
+                : Number(normalizedValue);
+
+    }
+
+    else {
+
+        numericValue = Number(value || 0);
+
+    }
+
+    if (!Number.isFinite(numericValue)) {
+        numericValue = 0;
+    }
+
     return new Intl.NumberFormat(
         "pt-BR",
         {
             style: "currency",
             currency: "BRL"
         }
-    ).format(
-        Number(value || 0)
-    );
+    ).format(numericValue);
 
 }
 

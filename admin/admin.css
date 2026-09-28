@@ -2719,3 +2719,318 @@ body {
 
     color: #d4432b;
 }
+
+/* ==================================================
+   PEDIDOS — LISTAGEM E DETALHES
+   ================================================== */
+
+.orders-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.orders-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.orders-table th,
+.orders-table td {
+    padding: 13px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.orders-table th {
+    background: #fafafa;
+    color: var(--text-light);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.orders-table th:first-child,
+.orders-table td:first-child {
+    padding-left: 4px;
+    width: 108px;
+}
+
+.orders-table th:last-child,
+.orders-table td:last-child {
+    padding-right: 4px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.orders-table th:nth-child(2),
+.orders-table td:nth-child(2) {
+    width: 160px;
+    white-space: nowrap;
+}
+
+.orders-table th:nth-child(3),
+.orders-table td:nth-child(3) {
+    min-width: 170px;
+}
+
+.orders-table th:nth-child(4),
+.orders-table td:nth-child(4) {
+    width: 150px;
+    white-space: nowrap;
+}
+
+.orders-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.orders-table tbody tr:hover {
+    background: #fcfcfc;
+}
+
+.order-number-button {
+    min-width: 70px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid #f0cbc5;
+    border-radius: 8px;
+    background: #fff7f5;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.order-number-button:hover {
+    background: #fff0ec;
+    border-color: var(--primary);
+}
+
+.order-number-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212,67,43,.12);
+}
+
+.order-total {
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* MODAL DE DETALHES */
+
+.order-details-modal .admin-modal-card {
+    width: calc(100% - 32px);
+    max-width: 720px;
+}
+
+.order-details-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.order-detail-section {
+    padding-bottom: 17px;
+    border-bottom: 1px solid var(--border);
+}
+
+.order-detail-section:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.order-detail-section h3 {
+    margin-bottom: 13px;
+    font-size: 14px;
+}
+
+.order-detail-field {
+    display: grid;
+    grid-template-columns: minmax(125px, 150px) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 7px 0;
+}
+
+.order-detail-field span,
+.order-detail-complements > span,
+.order-detail-observation > span {
+    color: var(--text-light);
+    font-size: 12px;
+}
+
+.order-detail-field strong {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.order-detail-product {
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fcfcfc;
+}
+
+.order-detail-product:last-child {
+    margin-bottom: 0;
+}
+
+.order-detail-product-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.order-detail-product-header strong:first-child {
+    min-width: 0;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.order-detail-product-header strong:last-child {
+    flex-shrink: 0;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.order-detail-product-info {
+    margin-top: 6px;
+    color: var(--text-light);
+    font-size: 12px;
+}
+
+.order-detail-complements {
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px dashed var(--border);
+}
+
+.order-detail-complements > span {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.order-detail-complement-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 4px 0;
+    font-size: 12px;
+}
+
+.order-detail-complement-line span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.order-detail-complement-line span:last-child {
+    flex-shrink: 0;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.order-detail-observation {
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+}
+
+.order-detail-observation > span {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.order-detail-observation p {
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.order-detail-totals {
+    padding-top: 3px;
+}
+
+.order-detail-total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 0;
+    font-size: 13px;
+}
+
+.order-detail-grand-total {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 15px;
+}
+
+.order-detail-grand-total strong {
+    color: var(--primary);
+    font-size: 17px;
+}
+
+@media(max-width: 700px) {
+
+    .orders-table {
+        min-width: 640px;
+    }
+
+    .orders-table th,
+    .orders-table td {
+        padding: 12px 10px;
+    }
+
+    .orders-table th:first-child,
+    .orders-table td:first-child {
+        padding-left: 2px;
+    }
+
+    .orders-table th:last-child,
+    .orders-table td:last-child {
+        padding-right: 2px;
+    }
+
+    .order-details-modal .admin-modal-card {
+        width: 100%;
+        max-width: none;
+    }
+
+    .order-detail-field {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+}
+
+@media(max-width: 600px) {
+
+    .order-detail-product {
+        padding: 12px;
+    }
+
+    .order-detail-product-header {
+        gap: 10px;
+    }
+
+    .order-detail-complement-line,
+    .order-detail-total-line {
+        gap: 10px;
+    }
+
+}
