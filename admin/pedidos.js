@@ -11,6 +11,11 @@ import {
     getDocs,
     query,
     orderBy,
+    where,
+    limit,
+    startAfter,
+    endBefore,
+    limitToLast,
     doc,
     deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
@@ -33,6 +38,36 @@ const logoutButton =
 
 const ordersList =
     document.getElementById("ordersList");
+	
+const orderNumberFilter =
+    document.getElementById("orderNumberFilter");
+
+const orderStartDateFilter =
+    document.getElementById("orderStartDateFilter");
+
+const orderEndDateFilter =
+    document.getElementById("orderEndDateFilter");
+
+const searchOrdersButton =
+    document.getElementById("searchOrdersButton");
+
+const clearOrdersFiltersButton =
+    document.getElementById("clearOrdersFiltersButton");
+
+const ordersFilterMessage =
+    document.getElementById("ordersFilterMessage");
+
+const ordersPagination =
+    document.getElementById("ordersPagination");
+
+const previousOrdersPageButton =
+    document.getElementById("previousOrdersPageButton");
+
+const nextOrdersPageButton =
+    document.getElementById("nextOrdersPageButton");
+
+const ordersPageInfo =
+    document.getElementById("ordersPageInfo");
 
 
 /* ==================================================
@@ -72,6 +107,26 @@ const deleteOrderButton =
 let adminOrders = [];
 
 let currentOrderId = null;
+
+const PAGE_SIZE = 25;
+
+let currentPage = 1;
+
+let currentPageFirstDoc = null;
+
+let currentPageLastDoc = null;
+
+let hasNextPage = false;
+
+let activeOrderFilters = {
+
+    number: null,
+
+    startDate: null,
+
+    endDate: null
+
+};
 
 
 /* ==================================================
@@ -281,12 +336,293 @@ logoutButton.addEventListener(
     }
 );
 
+/* ==================================================
+   FILTROS DE PEDIDOS
+   ================================================== */
+
+function clearOrderFilterMessage() {
+
+    ordersFilterMessage.textContent = "";
+
+    ordersFilterMessage.classList.remove(
+        "error"
+    );
+
+}
+
+
+function showOrderFilterError(message) {
+
+    ordersFilterMessage.textContent =
+        message;
+
+    ordersFilterMessage.classList.add(
+        "error"
+    );
+
+}
+
+
+function createLocalDate(
+    value,
+    endOfDay = false
+) {
+
+    const [
+        year,
+        month,
+        day
+    ] = value.split("-").map(Number);
+
+
+    return endOfDay
+
+        ? new Date(
+            year,
+            month - 1,
+            day,
+            23,
+            59,
+            59,
+            999
+        )
+
+        : new Date(
+            year,
+            month - 1,
+            day,
+            0,
+            0,
+            0,
+            0
+        );
+
+}
+
+
+function applyOrderFilters() {
+
+    clearOrderFilterMessage();
+
+
+    const numberText =
+        orderNumberFilter.value.trim();
+
+    const startDateText =
+        orderStartDateFilter.value;
+
+    const endDateText =
+        orderEndDateFilter.value;
+
+
+    /*
+       Número e período não são combinados.
+    */
+
+    if (
+        numberText &&
+        (
+            startDateText ||
+            endDateText
+        )
+    ) {
+
+        showOrderFilterError(
+            "Informe o número do pedido ou um período de datas."
+        );
+
+        return;
+
+    }
+
+
+    /*
+       Busca por número.
+    */
+
+    if (numberText) {
+
+        if (
+            !/^\d+$/.test(numberText)
+        ) {
+
+            showOrderFilterError(
+                "Informe um número de pedido válido."
+            );
+
+            return;
+
+        }
+
+
+        const numberValue =
+            Number(numberText);
+
+
+        if (
+            !Number.isSafeInteger(
+                numberValue
+            ) ||
+            numberValue < 1
+        ) {
+
+            showOrderFilterError(
+                "Informe um número de pedido válido."
+            );
+
+            return;
+
+        }
+
+
+        activeOrderFilters = {
+
+            number:
+                numberValue,
+
+            startDate:
+                null,
+
+            endDate:
+                null
+
+        };
+
+        loadOrders();
+
+        return;
+
+    }
+
+
+    /*
+       Busca por período.
+    */
+
+    if (
+        startDateText ||
+        endDateText
+    ) {
+
+        if (
+            !startDateText ||
+            !endDateText
+        ) {
+
+            showOrderFilterError(
+                "Informe a data inicial e a data final."
+            );
+
+            return;
+
+        }
+
+
+        const startDate =
+            createLocalDate(
+                startDateText
+            );
+
+        const endDate =
+            createLocalDate(
+                endDateText,
+                true
+            );
+
+
+        if (
+            startDate > endDate
+        ) {
+
+            showOrderFilterError(
+                "A data inicial não pode ser posterior à data final."
+            );
+
+            return;
+
+        }
+
+
+        activeOrderFilters = {
+
+            number:
+                null,
+
+            startDate:
+                startDate,
+
+            endDate:
+                endDate
+
+        };
+
+        loadOrders();
+
+        return;
+
+    }
+
+
+    /*
+       Sem filtros.
+    */
+
+    activeOrderFilters = {
+
+        number:
+            null,
+
+        startDate:
+            null,
+
+        endDate:
+            null
+
+    };
+
+    loadOrders();
+
+}
+
+
+function clearOrderFilters() {
+
+    orderNumberFilter.value =
+        "";
+
+    orderStartDateFilter.value =
+        "";
+
+    orderEndDateFilter.value =
+        "";
+
+    activeOrderFilters = {
+
+        number:
+            null,
+
+        startDate:
+            null,
+
+        endDate:
+            null
+
+    };
+
+    clearOrderFilterMessage();
+
+    loadOrders();
+
+}
+
 
 /* ==================================================
    CARREGA PEDIDOS DO FIRESTORE
    ================================================== */
 
-async function loadOrders() {
+async function loadOrders(
+    direction = "first"
+) {
 
     try {
 
@@ -295,6 +631,29 @@ async function loadOrders() {
                 Carregando pedidos...
             </div>
         `;
+
+
+        /*
+           Quando uma nova busca começa,
+           voltamos para a primeira página.
+        */
+
+        if (
+            direction === "first"
+        ) {
+
+            currentPage = 1;
+
+            currentPageFirstDoc =
+                null;
+
+            currentPageLastDoc =
+                null;
+
+            hasNextPage =
+                false;
+
+        }
 
 
         const ordersReference =
@@ -306,16 +665,145 @@ async function loadOrders() {
             );
 
 
-        // Ordena do pedido mais recente
-        // para o mais antigo.
+        const constraints = [];
 
-        const ordersQuery =
-            query(
-                ordersReference,
+
+        /*
+           Busca exata por número.
+           Não usamos orderBy neste caso.
+        */
+
+        if (
+            activeOrderFilters.number !==
+            null
+        ) {
+
+            constraints.push(
+                where(
+                    "numero",
+                    "==",
+                    activeOrderFilters.number
+                )
+            );
+
+        }
+
+        else {
+
+            /*
+               Filtro por intervalo.
+            */
+
+            if (
+                activeOrderFilters.startDate
+            ) {
+
+                constraints.push(
+                    where(
+                        "criadoEm",
+                        ">=",
+                        activeOrderFilters.startDate
+                    )
+                );
+
+            }
+
+
+            if (
+                activeOrderFilters.endDate
+            ) {
+
+                constraints.push(
+                    where(
+                        "criadoEm",
+                        "<=",
+                        activeOrderFilters.endDate
+                    )
+                );
+
+            }
+
+
+            /*
+               Mantém a ordem mais recente
+               primeiro.
+            */
+
+            constraints.push(
                 orderBy(
                     "criadoEm",
                     "desc"
                 )
+            );
+
+        }
+
+
+        /*
+           Paginação.
+        */
+
+        if (
+            direction === "next" &&
+            currentPageLastDoc
+        ) {
+
+            constraints.push(
+                startAfter(
+                    currentPageLastDoc
+                )
+            );
+
+        }
+
+
+        if (
+            direction === "previous" &&
+            currentPageFirstDoc
+        ) {
+
+            constraints.push(
+                endBefore(
+                    currentPageFirstDoc
+                )
+            );
+
+        }
+
+
+        /*
+           Para avançar, buscamos 26 registros.
+           O 26º serve apenas para saber
+           se existe uma próxima página.
+        */
+
+        if (
+            direction === "previous"
+        ) {
+
+            constraints.push(
+                limitToLast(
+                    PAGE_SIZE
+                )
+            );
+
+        }
+
+        else {
+
+            constraints.push(
+                limit(
+                    PAGE_SIZE + 1
+                )
+            );
+
+        }
+
+
+        const ordersQuery =
+            query(
+                ordersReference,
+                ...constraints
             );
 
 
@@ -325,23 +813,95 @@ async function loadOrders() {
             );
 
 
-        adminOrders = [];
+        let documents =
+            snapshot.docs;
 
 
-        snapshot.forEach(
-            documentSnapshot => {
+        /*
+           Se estivermos avançando ou
+           carregando a primeira página:
+        */
 
-                adminOrders.push({
+        if (
+            direction !== "previous"
+        ) {
+
+            hasNextPage =
+                documents.length >
+                PAGE_SIZE;
+
+
+            if (
+                hasNextPage
+            ) {
+
+                documents =
+                    documents.slice(
+                        0,
+                        PAGE_SIZE
+                    );
+
+            }
+
+        }
+
+        else {
+
+            /*
+               Se estamos voltando,
+               sabemos que existe uma
+               página à frente.
+            */
+
+            hasNextPage =
+                true;
+
+        }
+
+
+        adminOrders =
+            documents.map(
+                documentSnapshot => ({
 
                     id:
                         documentSnapshot.id,
 
                     ...documentSnapshot.data()
 
-                });
+                })
+            );
 
-            }
-        );
+
+        /*
+           Atualiza os cursores da página
+           atualmente exibida.
+        */
+
+        currentPageFirstDoc =
+            documents[0] ?? null;
+
+        currentPageLastDoc =
+            documents[
+                documents.length - 1
+            ] ?? null;
+
+
+        if (
+            direction === "next"
+        ) {
+
+            currentPage += 1;
+
+        }
+
+
+        if (
+            direction === "previous"
+        ) {
+
+            currentPage -= 1;
+
+        }
 
 
         renderOrders();
@@ -355,15 +915,24 @@ async function loadOrders() {
             error
         );
 
+
         ordersList.innerHTML = `
             <div class="empty-state">
-                <h3>Não foi possível carregar os pedidos.</h3>
+
+                <h3>
+                    Não foi possível carregar os pedidos.
+                </h3>
 
                 <p>
                     Verifique sua conexão e tente atualizar a página.
                 </p>
+
             </div>
         `;
+
+
+        ordersPagination.hidden =
+            true;
 
     }
 
@@ -402,6 +971,8 @@ function renderOrders() {
 
             </div>
         `;
+		
+		updateOrdersPagination();
 
         return;
 
@@ -523,6 +1094,39 @@ function renderOrders() {
 
 
     setupOrderButtons();
+	
+	updateOrdersPagination();
+
+}
+
+/* ==================================================
+   ATUALIZA PAGINAÇÃO
+   ================================================== */
+
+function updateOrdersPagination() {
+
+    const shouldShowPagination =
+        adminOrders.length > 0 &&
+        (
+            currentPage > 1 ||
+            hasNextPage
+        );
+
+
+    ordersPagination.hidden =
+        !shouldShowPagination;
+
+
+    previousOrdersPageButton.disabled =
+        currentPage <= 1;
+
+
+    nextOrdersPageButton.disabled =
+        !hasNextPage;
+
+
+    ordersPageInfo.textContent =
+        `Página ${currentPage}`;
 
 }
 
@@ -1199,6 +1803,54 @@ orderDetailsModalOverlay.addEventListener(
     "click",
     closeOrderDetailsModal
 );
+
+searchOrdersButton.addEventListener(
+    "click",
+    applyOrderFilters
+);
+
+
+clearOrdersFiltersButton.addEventListener(
+    "click",
+    clearOrderFilters
+);
+
+previousOrdersPageButton.addEventListener(
+    "click",
+    () => {
+
+        if (
+            currentPage > 1
+        ) {
+
+            loadOrders(
+                "previous"
+            );
+
+        }
+
+    }
+);
+
+
+nextOrdersPageButton.addEventListener(
+    "click",
+    () => {
+
+        if (
+            hasNextPage
+        ) {
+
+            loadOrders(
+                "next"
+            );
+
+        }
+
+    }
+);
+
+
 
 
 /* ==================================================

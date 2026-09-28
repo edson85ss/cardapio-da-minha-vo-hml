@@ -186,26 +186,153 @@
 
                 <div class="products-panel">
 
-                    <div
-                        id="ordersList"
-                        class="admin-orders-list"
-                    >
+			<!-- ==========================================
+				 FILTROS
+				 ========================================== -->
 
-                        <div class="empty-state">
+			<div class="orders-filter-panel">
 
-                            <div class="empty-icon">
-                                ⏳
-                            </div>
+				<div class="orders-filter-fields">
 
-                            <h3>
-                                Carregando pedidos...
-                            </h3>
+					<div class="orders-filter-field">
 
-                        </div>
+						<label for="orderNumberFilter">
+							Número do pedido
+						</label>
 
-                    </div>
+						<input
+							type="number"
+							id="orderNumberFilter"
+							min="1"
+							step="1"
+							inputmode="numeric"
+							placeholder="Ex.: 1004"
+						>
 
-                </div>
+					</div>
+
+
+					<div class="orders-filter-field">
+
+						<label for="orderStartDateFilter">
+							Data inicial
+						</label>
+
+						<input
+							type="date"
+							id="orderStartDateFilter"
+						>
+
+					</div>
+
+
+					<div class="orders-filter-field">
+
+						<label for="orderEndDateFilter">
+							Data final
+						</label>
+
+						<input
+							type="date"
+							id="orderEndDateFilter"
+						>
+
+					</div>
+
+				</div>
+
+
+				<div class="orders-filter-actions">
+
+					<button
+						type="button"
+						class="primary-action-button"
+						id="searchOrdersButton"
+					>
+						Buscar
+					</button>
+
+					<button
+						type="button"
+						class="secondary-button"
+						id="clearOrdersFiltersButton"
+					>
+						Limpar
+					</button>
+
+				</div>
+
+
+				<p
+					id="ordersFilterMessage"
+					class="orders-filter-message"
+				></p>
+
+			</div>
+
+
+			<!-- ==========================================
+				 LISTAGEM
+				 ========================================== -->
+
+			<div
+				id="ordersList"
+				class="admin-orders-list"
+			>
+
+				<div class="empty-state">
+
+					<div class="empty-icon">
+						⏳
+					</div>
+
+					<h3>
+						Carregando pedidos...
+					</h3>
+
+				</div>
+
+			</div>
+
+
+			<!-- ==========================================
+				 PAGINAÇÃO
+				 ========================================== -->
+
+			<div
+				id="ordersPagination"
+				class="orders-pagination"
+				hidden
+			>
+
+				<button
+					type="button"
+					class="secondary-button"
+					id="previousOrdersPageButton"
+				>
+					← Anterior
+				</button>
+
+
+				<span
+					id="ordersPageInfo"
+					class="orders-page-info"
+				>
+					Página 1
+				</span>
+
+
+				<button
+					type="button"
+					class="secondary-button"
+					id="nextOrdersPageButton"
+				>
+					Próxima →
+				</button>
+
+			</div>
+
+		</div>
 
             </section>
 
