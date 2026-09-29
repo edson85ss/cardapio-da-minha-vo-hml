@@ -53,6 +53,9 @@ const searchOrdersButton =
 
 const clearOrdersFiltersButton =
     document.getElementById("clearOrdersFiltersButton");
+	
+const exportOrdersCsvButton =
+    document.getElementById("exportOrdersCsvButton");
 
 const ordersFilterMessage =
     document.getElementById("ordersFilterMessage");
@@ -612,6 +615,608 @@ function clearOrderFilters() {
     clearOrderFilterMessage();
 
     loadOrders();
+
+}
+
+
+/* ==================================================
+   EXPORTAÇÃO CSV
+   ================================================== */
+
+function normalizeExportValue(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+
+    /*
+       Firestore Timestamp
+    */
+
+    if (
+        value &&
+        typeof value.toDate === "function"
+    ) {
+
+        return value.toDate().toLocaleString(
+            "pt-BR"
+        );
+
+    }
+
+
+    /*
+       Date nativo
+    */
+
+    if (
+        value instanceof Date
+    ) {
+
+        return value.toLocaleString(
+            "pt-BR"
+        );
+
+    }
+
+
+    /*
+       Arrays
+    */
+
+    if (
+        Array.isArray(value)
+    ) {
+
+        return JSON.stringify(
+            value.map(
+                item =>
+                    normalizeExportObject(item)
+            ),
+            null,
+            0
+        );
+
+    }
+
+
+    /*
+       Objetos
+    */
+
+    if (
+        typeof value === "object"
+    ) {
+
+        return JSON.stringify(
+            normalizeExportObject(value),
+            null,
+            0
+        );
+
+    }
+
+
+    return String(value);
+
+}
+
+
+function normalizeExportObject(object) {
+
+    if (
+        object === null ||
+        object === undefined
+    ) {
+
+        return object;
+
+    }
+
+
+    if (
+        object &&
+        typeof object.toDate === "function"
+    ) {
+
+        return object.toDate().toLocaleString(
+            "pt-BR"
+        );
+
+    }
+
+
+    if (
+        object instanceof Date
+    ) {
+
+        return object.toLocaleString(
+            "pt-BR"
+        );
+
+    }
+
+
+    if (
+        Array.isArray(object)
+    ) {
+
+        return object.map(
+            item =>
+                normalizeExportObject(item)
+        );
+
+    }
+
+
+    if (
+        typeof object === "object"
+    ) {
+
+        const normalized = {};
+
+        Object.keys(object).forEach(
+            key => {
+
+                normalized[key] =
+                    normalizeExportObject(
+                        object[key]
+                    );
+
+            }
+        );
+
+        return normalized;
+
+    }
+
+
+    return object;
+
+}
+
+
+function escapeCsvValue(value) {
+
+    const text =
+        String(value ?? "");
+
+
+    /*
+       CSV com separador ;
+       adequado ao Excel em ambiente
+       pt-BR.
+    */
+
+    return `"${text.replace(
+        /"/g,
+        '""'
+    )}"`;
+
+}
+
+
+function createOrdersCsv(orders) {
+
+    if (
+        !orders.length
+    ) {
+
+        return null;
+
+    }
+
+
+    /*
+       Mantemos os principais campos
+       conhecidos do snapshot no início.
+       Campos adicionais existentes no
+       documento também serão exportados.
+    */
+
+    const preferredFields = [
+
+        "numero",
+        "criadoEm",
+        "cliente",
+        "entrega",
+        "pagamento",
+        "itens",
+        "subtotal",
+        "taxaEntrega",
+        "total"
+
+    ];
+
+
+    /*
+       Descobre eventuais campos adicionais
+       sem perder nenhum dado do documento.
+    */
+
+    const additionalFields = [
+        ...new Set(
+            orders.flatMap(
+                order =>
+                    Object.keys(order)
+            )
+        )
+    ].filter(
+        field =>
+            !preferredFields.includes(field)
+    );
+
+
+    const fields = [
+        ...preferredFields.filter(
+            field =>
+                orders.some(
+                    order =>
+                        Object.prototype.hasOwnProperty.call(
+                            order,
+                            field
+                        )
+                )
+        ),
+        ...additionalFields
+    ];
+
+
+    const header =
+        fields
+            .map(
+                field =>
+                    escapeCsvValue(field)
+            )
+            .join(";");
+
+
+    const rows =
+        orders.map(
+            order =>
+                fields
+                    .map(
+                        field =>
+                            escapeCsvValue(
+                                normalizeExportValue(
+                                    order[field]
+                                )
+                            )
+                    )
+                    .join(";")
+        );
+
+
+    /*
+       BOM UTF-8 para melhor compatibilidade
+       com Excel.
+    */
+
+    return "\uFEFF" +
+        header +
+        "\r\n" +
+        rows.join("\r\n");
+
+}
+
+
+function getOrdersExportFilename() {
+
+    const now =
+        new Date();
+
+
+    const year =
+        now.getFullYear();
+
+    const month =
+        String(
+            now.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            now.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const hour =
+        String(
+            now.getHours()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const minute =
+        String(
+            now.getMinutes()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    return `pedidos-${year}-${month}-${day}-${hour}-${minute}.csv`;
+
+}
+
+
+async function exportOrdersCsv() {
+
+    try {
+
+        /*
+           Sem filtro significa exportar toda
+           a coleção. Pedimos confirmação antes
+           da leitura para evitar uma exportação
+           acidentalmente grande.
+        */
+
+        const exportingAllOrders =
+            activeOrderFilters.number === null &&
+            activeOrderFilters.startDate === null &&
+            activeOrderFilters.endDate === null;
+
+
+        if (
+            exportingAllOrders
+        ) {
+
+            const confirmed =
+                confirm(
+                    "Nenhum filtro está aplicado.\n\n" +
+                    "O CSV será gerado com todos os pedidos disponíveis.\n\n" +
+                    "Deseja continuar?"
+                );
+
+
+            if (
+                !confirmed
+            ) {
+
+                return;
+
+            }
+
+        }
+
+
+        exportOrdersCsvButton.disabled =
+            true;
+
+        exportOrdersCsvButton.textContent =
+            "Exportando...";
+
+
+        const ordersReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pedidos"
+            );
+
+
+        const constraints = [];
+
+
+        /*
+           Número
+        */
+
+        if (
+            activeOrderFilters.number !== null
+        ) {
+
+            constraints.push(
+                where(
+                    "numero",
+                    "==",
+                    activeOrderFilters.number
+                )
+            );
+
+        }
+
+        else {
+
+            /*
+               Data inicial
+            */
+
+            if (
+                activeOrderFilters.startDate
+            ) {
+
+                constraints.push(
+                    where(
+                        "criadoEm",
+                        ">=",
+                        activeOrderFilters.startDate
+                    )
+                );
+
+            }
+
+
+            /*
+               Data final
+            */
+
+            if (
+                activeOrderFilters.endDate
+            ) {
+
+                constraints.push(
+                    where(
+                        "criadoEm",
+                        "<=",
+                        activeOrderFilters.endDate
+                    )
+                );
+
+            }
+
+
+            /*
+               Mantemos a mesma ordenação
+               utilizada na listagem.
+            */
+
+            constraints.push(
+                orderBy(
+                    "criadoEm",
+                    "desc"
+                )
+            );
+
+        }
+
+
+        /*
+           IMPORTANTE:
+           não aplicamos limit().
+           A exportação deve trazer todos
+           os registros correspondentes.
+        */
+
+        const exportQuery =
+            query(
+                ordersReference,
+                ...constraints
+            );
+
+
+        const snapshot =
+            await getDocs(
+                exportQuery
+            );
+
+
+        const orders =
+            snapshot.docs.map(
+                documentSnapshot => ({
+
+                    id:
+                        documentSnapshot.id,
+
+                    ...documentSnapshot.data()
+
+                })
+            );
+
+
+        if (
+            orders.length === 0
+        ) {
+
+            alert(
+                "Nenhum pedido encontrado para exportação."
+            );
+
+            return;
+
+        }
+
+
+        const csv =
+            createOrdersCsv(
+                orders
+            );
+
+
+        if (
+            !csv
+        ) {
+
+            alert(
+                "Não foi possível gerar o arquivo CSV."
+            );
+
+            return;
+
+        }
+
+
+        const blob =
+            new Blob(
+                [csv],
+                {
+                    type:
+                        "text/csv;charset=utf-8;"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+
+        link.href =
+            url;
+
+        link.download =
+            getOrdersExportFilename();
+
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        link.remove();
+
+
+        URL.revokeObjectURL(
+            url
+        );
+
+
+        alert(
+            `${orders.length} pedido(s) exportado(s) com sucesso.`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao exportar pedidos:",
+            error
+        );
+
+
+        alert(
+            "Não foi possível exportar os pedidos."
+        );
+
+    }
+
+    finally {
+
+        exportOrdersCsvButton.disabled =
+            false;
+
+        exportOrdersCsvButton.textContent =
+            "Exportar CSV";
+
+    }
 
 }
 
@@ -1850,7 +2455,10 @@ nextOrdersPageButton.addEventListener(
     }
 );
 
-
+exportOrdersCsvButton.addEventListener(
+    "click",
+    exportOrdersCsv
+);
 
 
 /* ==================================================
