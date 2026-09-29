@@ -16,6 +16,7 @@ import {
     startAfter,
     endBefore,
     limitToLast,
+	getCountFromServer,
     doc,
     deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
@@ -112,6 +113,8 @@ let adminOrders = [];
 let currentOrderId = null;
 
 const PAGE_SIZE = 25;
+
+const MAX_EXPORT_ORDERS = 1000;
 
 let currentPage = 1;
 
@@ -1081,23 +1084,136 @@ async function exportOrdersCsv() {
 
 
         /*
-           IMPORTANTE:
-           não aplicamos limit().
-           A exportação deve trazer todos
-           os registros correspondentes.
-        */
+		   Primeiro contamos quantos pedidos
+		   correspondem ao filtro.
 
-        const exportQuery =
-            query(
-                ordersReference,
-                ...constraints
-            );
+		   Não usamos orderBy no count(),
+		   pois ele não é necessário para
+		   determinar a quantidade.
+		*/
+
+		const countConstraints = [];
 
 
-        const snapshot =
-            await getDocs(
-                exportQuery
-            );
+		/*
+		   Busca por número
+		*/
+
+		if (
+			activeOrderFilters.number !== null
+		) {
+
+			countConstraints.push(
+				where(
+					"numero",
+					"==",
+					activeOrderFilters.number
+				)
+			);
+
+		}
+
+		else {
+
+			/*
+			   Filtro por data inicial
+			*/
+
+			if (
+				activeOrderFilters.startDate
+			) {
+
+				countConstraints.push(
+					where(
+						"criadoEm",
+						">=",
+						activeOrderFilters.startDate
+					)
+				);
+
+			}
+
+
+			/*
+			   Filtro por data final
+			*/
+
+			if (
+				activeOrderFilters.endDate
+			) {
+
+				countConstraints.push(
+					where(
+						"criadoEm",
+						"<=",
+						activeOrderFilters.endDate
+					)
+				);
+
+			}
+
+		}
+
+
+		/*
+		   Query utilizada somente para obter
+		   a quantidade de documentos.
+		*/
+
+		const countQuery =
+			query(
+				ordersReference,
+				...countConstraints
+			);
+
+
+		const countSnapshot =
+			await getCountFromServer(
+				countQuery
+			);
+
+
+		const totalOrdersToExport =
+			countSnapshot.data().count;
+
+
+		/*
+		   Proteção contra exportações muito grandes.
+		*/
+
+		if (
+			totalOrdersToExport >
+			MAX_EXPORT_ORDERS
+		) {
+
+			alert(
+				`Foram encontrados ${totalOrdersToExport.toLocaleString("pt-BR")} pedidos para exportação.\n\n` +
+				`Por segurança, o limite para uma única exportação é de ${MAX_EXPORT_ORDERS.toLocaleString("pt-BR")} pedidos.\n\n` +
+				`Refine o período de consulta e faça a exportação em partes.`
+			);
+
+			return;
+
+		}
+
+
+		/*
+		   Agora fazemos a consulta real,
+		   somente porque sabemos que está
+		   dentro do limite.
+		*/
+
+		const exportQuery =
+			query(
+				ordersReference,
+				...constraints
+			);
+
+
+		const snapshot =
+			await getDocs(
+				exportQuery
+			);
 
 
         const orders =
