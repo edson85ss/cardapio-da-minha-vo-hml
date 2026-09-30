@@ -1363,15 +1363,19 @@ function updateAddButtonPrice() {
 
 
     const unitPrice =
-        Number(
-            currentProduct.preco || 0
-        ) +
-        selection.precoComplementos;
+		roundMoney(
+			Number(
+				currentProduct.preco || 0
+			) +
+			selection.precoComplementos
+		);
 
 
-    const total =
-        unitPrice *
-        currentQuantity;
+	const total =
+		roundMoney(
+			unitPrice *
+			currentQuantity
+		);
 
 
     addToCartButton.textContent =
@@ -1520,14 +1524,18 @@ addToCartButton.addEventListener(
 
 
 		const basePrice =
-			Number(
-				currentProduct.preco || 0
+			roundMoney(
+				Number(
+					currentProduct.preco || 0
+				)
 			);
 
 
 		const unitPrice =
-			basePrice +
-			selection.precoComplementos;
+			roundMoney(
+				basePrice +
+				selection.precoComplementos
+			);
 
 
 		cart.push({
@@ -1539,16 +1547,18 @@ addToCartButton.addEventListener(
 				currentProduct.nome,
 
 			precoBase:
-				basePrice,
+				roundMoney(basePrice),
 
 			complementos:
 				selection.complementos,
 
 			precoComplementos:
-				selection.precoComplementos,
+				roundMoney(
+					selection.precoComplementos
+				),
 
 			precoUnitario:
-				unitPrice,
+				roundMoney(unitPrice),
 
 			quantidade:
 				currentQuantity,
@@ -2082,34 +2092,51 @@ sendOrderButton.addEventListener(
 }
 
     const total =
-		cart.reduce(
-			(sum, item) => {
+		roundMoney(
+			cart.reduce(
+				(sum, item) => {
 
-				const unitPrice =
-					Number(
-						item.precoUnitario ??
-						item.preco ??
-						0
+					const unitPrice =
+						roundMoney(
+							Number(
+								item.precoUnitario ??
+								item.preco ??
+								0
+							)
+						);
+
+					const itemSubtotal =
+						roundMoney(
+							unitPrice *
+							Number(
+								item.quantidade || 0
+							)
+						);
+
+					return roundMoney(
+						sum +
+						itemSubtotal
 					);
 
-
-				return (
-					sum +
-					unitPrice *
-					item.quantidade
-				);
-
-			},
-			0
+				},
+				0
+			)
 		);
-		
+
+
 	const deliveryFee =
-		deliveryType.value === "Entrega"
-			? CONFIG.deliveryFee
-			: 0;
+		roundMoney(
+			deliveryType.value === "Entrega"
+				? CONFIG.deliveryFee
+				: 0
+		);
+
 
 	const finalTotal =
-		total + deliveryFee;
+		roundMoney(
+			total +
+			deliveryFee
+		);
 
     let message = "";
 
@@ -2374,11 +2401,13 @@ sendOrderButton.addEventListener(
                     item.nome,
 
                 precoBase:
-                    Number(
-                        item.precoBase ??
-                        item.preco ??
-                        0
-                    ),
+					roundMoney(
+						Number(
+							item.precoBase ??
+							item.preco ??
+							0
+						)
+					),
 
                 quantidade:
                     Number(
@@ -2393,26 +2422,32 @@ sendOrderButton.addEventListener(
                         : [],
 
                 precoComplementos:
-                    Number(
-                        item.precoComplementos || 0
-                    ),
+					roundMoney(
+						Number(
+							item.precoComplementos || 0
+						)
+					),
 
                 precoUnitario:
-                    Number(
-                        item.precoUnitario ??
-                        item.preco ??
-                        0
-                    ),
+					roundMoney(
+						Number(
+							item.precoUnitario ??
+							item.preco ??
+							0
+						)
+					),
 
                 subtotal:
-                    Number(
-                        item.precoUnitario ??
-                        item.preco ??
-                        0
-                    ) *
-                    Number(
-                        item.quantidade || 0
-                    ),
+					roundMoney(
+						Number(
+							item.precoUnitario ??
+							item.preco ??
+							0
+						) *
+						Number(
+							item.quantidade || 0
+						)
+					),
 
                 observacao:
                     item.observacao || ""
@@ -2421,15 +2456,15 @@ sendOrderButton.addEventListener(
 
 
         subtotal:
-            Number(total),
+			roundMoney(total),
 
 
-        taxaEntrega:
-            Number(deliveryFee),
+		taxaEntrega:
+			roundMoney(deliveryFee),
 
 
-        total:
-            Number(finalTotal)
+		total:
+			roundMoney(finalTotal)
 
     };
 
@@ -2735,6 +2770,23 @@ sendOrderButton.addEventListener(
     );
 
 });
+
+function roundMoney(value) {
+
+    const numericValue =
+        Number(value);
+
+    if (!Number.isFinite(numericValue)) {
+
+        return 0;
+
+    }
+
+    return Math.round(
+        (numericValue + Number.EPSILON) * 100
+    ) / 100;
+
+}
 
 function formatCurrency(value) {
     return value.toLocaleString("pt-BR", {
