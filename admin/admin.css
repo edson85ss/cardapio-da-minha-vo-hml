@@ -2951,6 +2951,97 @@ body {
 }
 
 /* ==================================================
+   PEDIDOS — AVISO DE RETENÇÃO
+   ================================================== */
+
+.orders-retention-notice {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    margin-top: 14px;
+
+    padding: 13px 15px;
+
+    border:
+        1px solid var(--border);
+
+    border-left:
+        4px solid var(--primary);
+
+    border-radius:
+        10px;
+
+    background:
+        #faf7f5;
+
+}
+
+
+.orders-retention-icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 22px;
+
+    height: 22px;
+
+    border-radius:
+        50%;
+
+    background:
+        rgba(212, 67, 43, 0.10);
+
+    color:
+        var(--primary);
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+}
+
+
+.orders-retention-notice strong {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size:
+        12px;
+
+}
+
+
+.orders-retention-notice p {
+
+    margin: 0;
+
+    color:
+        var(--text-light);
+
+    font-size:
+        12px;
+
+    line-height:
+        1.5;
+
+}
+
+
+/* ==================================================
    PEDIDOS — LISTAGEM E DETALHES
    ================================================== */
 
@@ -3266,6 +3357,13 @@ body {
 
         flex:
             1;
+
+    }
+	
+	.orders-retention-notice {
+
+	padding:
+		12px;
 
     }
 
