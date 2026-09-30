@@ -875,20 +875,67 @@ function createOrdersCsv(orders) {
             .join(";");
 
 
-    const rows =
-        orders.map(
-            order =>
-                fields
-                    .map(
-                        field =>
-                            escapeCsvValue(
+    const monetaryFields = [
+    "subtotal",
+    "taxaEntrega",
+    "total"
+];
+
+
+const rows =
+    orders.map(
+        order =>
+            fields
+                .map(
+                    field => {
+
+                        let value;
+
+
+                        if (
+                            monetaryFields.includes(
+                                field
+                            )
+                        ) {
+
+                            const numericValue =
+                                Number(
+                                    order[field] ?? 0
+                                );
+
+
+                            value =
+                                Number.isFinite(
+                                    numericValue
+                                )
+                                    ? numericValue
+                                        .toFixed(2)
+                                        .replace(
+                                            ".",
+                                            ","
+                                        )
+                                    : "0,00";
+
+                        }
+
+                        else {
+
+                            value =
                                 normalizeExportValue(
                                     order[field]
-                                )
-                            )
-                    )
-                    .join(";")
-        );
+                                );
+
+                        }
+
+
+                        return escapeCsvValue(
+                            value
+                        );
+
+                    }
+                )
+                .join(";")
+    );
 
 
     /*
