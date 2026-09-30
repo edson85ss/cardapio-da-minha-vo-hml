@@ -114,7 +114,7 @@ let currentOrderId = null;
 
 const PAGE_SIZE = 25;
 
-const MAX_EXPORT_ORDERS = 1000;
+const MAX_EXPORT_ORDERS = 2;
 
 let currentPage = 1;
 
