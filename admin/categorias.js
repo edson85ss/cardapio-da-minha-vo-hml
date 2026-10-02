@@ -83,6 +83,8 @@ const categoryFormMessage =
 
 const saveCategoryButton =
     document.getElementById("saveCategoryButton");
+	
+let currentEditingCategoryName = "";
 
 
 /* ==================================================
@@ -343,6 +345,8 @@ function openNewCategoryModal() {
     categoryForm.reset();
 
     categoryIdInput.value = "";
+	
+	currentEditingCategoryName = "";
 
     categoryActiveInput.checked =
         true;
@@ -432,6 +436,9 @@ async function openEditCategoryModal(
 
         categoryNameInput.value =
             category.nome || "";
+			
+		currentEditingCategoryName =
+			category.nome || "";
 
         categoryActiveInput.checked =
             category.ativo !== false;
@@ -488,6 +495,96 @@ categoryModalOverlay.addEventListener(
     closeCategoryForm
 );
 
+/* ==================================================
+   SINCRONIZA NOME DA CATEGORIA NOS PRODUTOS
+   ================================================== */
+
+async function updateProductsCategoryName(
+    categoryId,
+    categoryName
+) {
+
+    const productsReference =
+        collection(
+            db,
+            "lojas",
+            "da-minha-vo",
+            "produtos"
+        );
+
+
+    const productsQuery =
+        query(
+            productsReference,
+            where(
+                "categoriaId",
+                "==",
+                categoryId
+            )
+        );
+
+
+    const productsSnapshot =
+        await getDocs(
+            productsQuery
+        );
+
+
+    if (
+        productsSnapshot.empty
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+       O Firestore permite no máximo
+       500 operações por batch.
+    */
+
+    const documents =
+        productsSnapshot.docs;
+
+
+    for (
+        let i = 0;
+        i < documents.length;
+        i += 500
+    ) {
+
+        const batch =
+            writeBatch(db);
+
+
+        const batchDocuments =
+            documents.slice(
+                i,
+                i + 500
+            );
+
+
+        batchDocuments.forEach(
+            productDocument => {
+
+                batch.update(
+                    productDocument.ref,
+                    {
+                        categoria:
+                            categoryName
+                    }
+                );
+
+            }
+        );
+
+
+        await batch.commit();
+
+    }
+
+}
 
 /* ==================================================
    SALVAR
@@ -540,15 +637,33 @@ categoryForm.addEventListener(
                     );
 
                 await updateDoc(
-                    categoryReference,
-                    {
-                        nome:
-                            name,
+					categoryReference,
+					{
+						nome:
+							name,
 
-                        ativo:
-                            categoryActiveInput.checked
-                    }
-                );
+						ativo:
+							categoryActiveInput.checked
+					}
+				);
+
+
+				/*
+				 * Se o nome foi alterado, atualiza
+				 * o snapshot nos produtos associados.
+				 */
+
+				if (
+					name !==
+					currentEditingCategoryName
+				) {
+
+					await updateProductsCategoryName(
+						categoryId,
+						name
+					);
+
+				}
 
             }
 
