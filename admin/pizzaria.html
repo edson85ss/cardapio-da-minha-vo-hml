@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Pizzaria - Administração</title>
+
+    <link rel="stylesheet" href="admin.css">
+
+</head>
+
+
+<body>
+
+    <div class="admin-layout">
+
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+
+                <div class="sidebar-logo">
+                    🍽️
+                </div>
+
+                <div>
+
+                    <strong>
+                        Cardápio Digital
+                    </strong>
+
+                    <small>
+                        Administração
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-menu">
+
+                <a
+                    href="produtos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">▦</span>
+                    Produtos
+                </a>
+
+
+                <a
+                    href="categorias.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">☷</span>
+                    Categorias
+                </a>
+
+
+                <a
+                    href="complementos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">＋</span>
+                    Complementos
+                </a>
+
+
+                <a
+                    href="pizzaria.html"
+                    class="menu-item active"
+                >
+                    <span class="menu-icon">🍕</span>
+                    Pizzaria
+                </a>
+
+
+                <a
+                    href="pedidos.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">▤</span>
+                    Pedidos
+                </a>
+
+
+                <a
+                    href="configuracoes.html"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">⚙</span>
+                    Configurações
+                </a>
+
+
+                <a
+                    href="../"
+                    target="_blank"
+                    class="menu-item"
+                >
+                    <span class="menu-icon">↗</span>
+                    Ver cardápio
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-footer">
+
+                <button
+                    id="logoutButton"
+                    class="logout-button"
+                >
+                    <span>↪</span>
+                    Sair
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <div
+            id="sidebarOverlay"
+            class="sidebar-overlay"
+        ></div>
+
+
+        <main class="admin-main">
+
+
+            <header class="admin-header">
+
+                <button
+                    id="menuButton"
+                    class="mobile-menu-button"
+                    aria-label="Abrir menu"
+                >
+                    ☰
+                </button>
+
+
+                <div>
+
+                    <h1>
+                        Pizzaria
+                    </h1>
+
+                    <p>
+                        Configure os recursos específicos do cardápio de pizzas.
+                    </p>
+
+                </div>
+
+            </header>
+
+
+            <section class="admin-content">
+
+
+                <div class="settings-section">
+
+                    <div class="settings-section-header">
+
+                        <h2>
+                            Configuração
+                        </h2>
+
+                        <p>
+                            Em breve você poderá configurar as regras específicas
+                            de montagem e cobrança das pizzas.
+                        </p>
+
+                    </div>
+
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            🍕
+                        </div>
+
+                        <h3>
+                            Módulo de pizzaria
+                        </h3>
+
+                        <p>
+                            As configurações de pizzas serão disponibilizadas
+                            nas próximas etapas.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script
+        type="module"
+        src="pizzaria.js"
+    ></script>
+
+</body>
+
+</html>

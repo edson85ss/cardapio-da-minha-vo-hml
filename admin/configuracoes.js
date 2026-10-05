@@ -48,6 +48,9 @@ const logoutButton =
 
 const storeConfigForm =
     document.getElementById("storeConfigForm");
+	
+const storeCardapioTypeInput =
+    document.getElementById("storeCardapioType");
 
 const storeNameInput =
     document.getElementById("storeName");
@@ -354,6 +357,11 @@ async function loadStoreConfig() {
 
         const data =
             snapshot.data();
+			
+		storeCardapioTypeInput.value =
+			data.tipoCardapio === "pizzaria"
+				? "pizzaria"
+				: "geral";
 			
 		paymentMethods =
 			Array.isArray(
@@ -774,6 +782,9 @@ storeConfigForm.addEventListener(
 
 
             const updateData = {
+				
+				tipoCardapio:
+					storeCardapioTypeInput.value,
 
                 nomeLoja:
                     storeNameInput.value.trim(),
