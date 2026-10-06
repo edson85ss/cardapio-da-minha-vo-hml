@@ -4173,3 +4173,350 @@ body {
         20px;
 
 }
+
+/* ==================================================
+   PRODUTO - TIPO
+   ================================================== */
+
+.product-type-options {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+}
+
+
+.product-type-option {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding:
+        10px 14px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        10px;
+
+    background:
+        var(--surface);
+
+    cursor:
+        pointer;
+
+    font-size:
+        14px;
+
+}
+
+
+.product-type-option input {
+
+    width:
+        auto;
+
+}
+
+
+.product-pizza-section {
+
+    display:
+        none;
+
+    margin:
+        22px 0;
+
+    padding:
+        18px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        14px;
+
+    background:
+        #fafafa;
+
+}
+
+
+.product-pizza-section.visible {
+
+    display:
+        block;
+
+}
+
+
+.product-pizza-section-header {
+
+    margin-bottom:
+        18px;
+
+}
+
+
+.product-pizza-section-header h3 {
+
+    margin:
+        0 0 5px;
+
+    font-size:
+        16px;
+
+}
+
+
+.product-pizza-section-header p {
+
+    margin:
+        0;
+
+    color:
+        var(--text-light);
+
+    font-size:
+        12px;
+
+}
+
+
+.product-pizza-selection-group {
+
+    padding:
+        16px;
+
+    background:
+        var(--surface);
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        12px;
+
+}
+
+
+.product-pizza-selection-group
++ .product-pizza-selection-group {
+
+    margin-top:
+        14px;
+
+}
+
+
+.product-pizza-selection-group h4 {
+
+    margin:
+        0 0 12px;
+
+    font-size:
+        14px;
+
+}
+
+
+.product-pizza-mode-option {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+    margin-bottom:
+        9px;
+
+    font-size:
+        13px;
+
+    cursor:
+        pointer;
+
+}
+
+
+.product-pizza-mode-option input {
+
+    width:
+        auto;
+
+}
+
+
+.product-pizza-options-list {
+
+    display:
+        none;
+
+    max-height:
+        240px;
+
+    overflow-y:
+        auto;
+
+    margin-top:
+        12px;
+
+    padding:
+        10px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        10px;
+
+    background:
+        #fafafa;
+
+}
+
+
+.product-pizza-options-list.visible {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        6px;
+
+}
+
+
+.product-pizza-checkbox-option {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        9px;
+
+    padding:
+        8px 10px;
+
+    border-radius:
+        8px;
+
+    cursor:
+        pointer;
+
+    font-size:
+        13px;
+
+}
+
+
+.product-pizza-checkbox-option:hover {
+
+    background:
+        #f5f6f8;
+
+}
+
+
+.product-pizza-checkbox-option input {
+
+    width:
+        auto;
+
+}
+
+
+.product-pizza-checkbox-option small {
+
+    margin-left:
+        5px;
+
+    color:
+        var(--text-light);
+
+    font-size:
+        11px;
+
+}
+
+
+.product-pizza-options-empty {
+
+    padding:
+        10px;
+
+    color:
+        var(--text-light);
+
+    font-size:
+        12px;
+
+}
+
+
+.product-type-badge {
+
+    display:
+        inline-block;
+
+    margin-left:
+        7px;
+
+    padding:
+        3px 7px;
+
+    border-radius:
+        6px;
+
+    background:
+        #fff2ee;
+
+    color:
+        var(--primary);
+
+    font-size:
+        11px;
+
+    font-weight:
+        600;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .product-type-options {
+
+        flex-direction:
+            column;
+
+    }
+
+
+    .product-type-option {
+
+        width:
+            100%;
+
+    }
+
+
+}
+

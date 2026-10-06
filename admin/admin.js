@@ -27,6 +27,7 @@ import {
     addDoc,
     updateDoc,
 	deleteDoc,
+	deleteField,
 	writeBatch
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
@@ -94,6 +95,31 @@ const productDescriptionInput =
 
 const productPriceInput =
     document.getElementById("productPrice");
+	
+const productPriceGroup =
+    document.getElementById(
+        "productPriceGroup"
+    );
+
+const productTypeGroup =
+    document.getElementById(
+        "productTypeGroup"
+    );
+
+const productPizzaSection =
+    document.getElementById(
+        "productPizzaSection"
+    );
+
+const productPizzaTypesList =
+    document.getElementById(
+        "productPizzaTypesList"
+    );
+
+const productPizzaFlavorsList =
+    document.getElementById(
+        "productPizzaFlavorsList"
+    );
 
 const productImageInput =
     document.getElementById("productImage");
@@ -202,6 +228,13 @@ let adminProducts = [];
 let adminCategories = [];
 
 let selectedCategoryId = "all";
+
+let pizzariaTypes = [];
+
+let pizzariaFlavors = [];
+
+let storeCardapioType =
+    "geral";
 	
 
 /* ==================================================
@@ -230,6 +263,8 @@ onAuthStateChanged(
          * Usuário autenticado:
          * pode carregar os produtos.
          */
+		 
+		await loadPizzariaProductData();
 
         await loadCategoryFilters();
 
@@ -350,6 +385,14 @@ productForm.addEventListener(
                 productPriceInput.value
             );
 			
+		const productType =
+			getSelectedProductType();
+
+
+		const isPizza =
+			productType ===
+			"pizza";
+			
 		const controlsStock =
 			productControlsStockInput.checked;
 
@@ -369,7 +412,10 @@ productForm.addEventListener(
         if (
 			!productNameInput.value.trim() ||
 			!productCategoryInput.value ||
-			Number.isNaN(price)
+			(
+				!isPizza &&
+				Number.isNaN(price)
+			)
 		) {
 
 			productFormMessage.textContent =
@@ -397,6 +443,127 @@ productForm.addEventListener(
 				"form-message error";
 
 			return;
+
+		}
+		
+		
+		let pizzaTypeIds = [];
+
+		let pizzaFlavorIds = [];
+
+
+		if (isPizza) {
+
+			const activePizzaTypes =
+				pizzariaTypes.filter(
+					type =>
+						type.ativo !== false
+				);
+
+
+			const activePizzaFlavors =
+				pizzariaFlavors.filter(
+					flavor =>
+						flavor.ativo !== false
+				);
+
+
+			if (
+				activePizzaTypes.length === 0
+			) {
+
+				productFormMessage.textContent =
+					"Cadastre pelo menos um tipo de pizza ativo antes de criar um produto Pizza.";
+
+				productFormMessage.className =
+					"form-message error";
+
+				return;
+
+			}
+
+
+			if (
+				activePizzaFlavors.length === 0
+			) {
+
+				productFormMessage.textContent =
+					"Cadastre pelo menos um sabor de pizza ativo antes de criar um produto Pizza.";
+
+				productFormMessage.className =
+					"form-message error";
+
+				return;
+
+			}
+
+
+			const pizzaTypesMode =
+				document.querySelector(
+					'input[name="productPizzaTypesMode"]:checked'
+				)?.value || "all";
+
+
+			const pizzaFlavorsMode =
+				document.querySelector(
+					'input[name="productPizzaFlavorsMode"]:checked'
+				)?.value || "all";
+
+
+			if (
+				pizzaTypesMode ===
+				"specific"
+			) {
+
+				pizzaTypeIds =
+					getSelectedPizzaIds(
+						".product-pizza-type-checkbox"
+					);
+
+
+				if (
+					pizzaTypeIds.length === 0
+				) {
+
+					productFormMessage.textContent =
+						"Selecione pelo menos um tipo de pizza ou utilize \"Todos os tipos ativos\".";
+
+					productFormMessage.className =
+						"form-message error";
+
+					return;
+
+				}
+
+			}
+
+
+			if (
+				pizzaFlavorsMode ===
+				"specific"
+			) {
+
+				pizzaFlavorIds =
+					getSelectedPizzaIds(
+						".product-pizza-flavor-checkbox"
+					);
+
+
+				if (
+					pizzaFlavorIds.length === 0
+				) {
+
+					productFormMessage.textContent =
+						"Selecione pelo menos um sabor ou utilize \"Todos os sabores ativos\".";
+
+					productFormMessage.className =
+						"form-message error";
+
+					return;
+
+				}
+
+			}
 
 		}
 
@@ -429,10 +596,11 @@ productForm.addEventListener(
                             "produtos"
                         ),
                         {
-                            nome:
-                                productNameInput.value.trim(),
+                          
+							nome:
+								productNameInput.value.trim(),
 
-                            categoriaId:
+							categoriaId:
 								productCategoryInput.value,
 
 							categoria:
@@ -440,20 +608,22 @@ productForm.addEventListener(
 									? selectedCategory.nome
 									: "",
 
-                            descricao:
-                                productDescriptionInput.value.trim(),
+							descricao:
+								productDescriptionInput.value.trim(),
 
-                            preco:
-                                price,
+							preco:
+								isPizza
+									? 0
+									: price,
 
-                            ordem:
-                                getNextOrderForCategory(
-								productCategoryInput.value
-							),
+							ordem:
+								getNextOrderForCategory(
+									productCategoryInput.value
+								),
 
-                            ativo:
-                                productActiveInput.checked,
-								
+							ativo:
+								productActiveInput.checked,
+
 							controlaEstoque:
 								controlsStock,
 
@@ -462,8 +632,27 @@ productForm.addEventListener(
 									? stock
 									: 0,
 
-                            imagemUrl:
-                                ""
+							imagemUrl:
+								"",
+
+							tipoProduto:
+								productType,
+
+							...(isPizza
+								? {
+									pizzaria: {
+
+										tiposPizzaIds:
+											pizzaTypeIds,
+
+										saboresIds:
+											pizzaFlavorIds
+
+									}
+								}
+								: {}
+							)
+						}
                         }
                     );
 
@@ -534,11 +723,30 @@ productForm.addEventListener(
 						
 					controlaEstoque:
 						controlsStock,
+						
+					tipoProduto:
+						productType,
+						
+					preco:
+						isPizza
+							? 0
+							: price,
 
 					estoque:
 						controlsStock
 							? stock
 							: 0,
+							
+					pizzaria:
+						isPizza
+							? {
+								tiposPizzaIds:
+									pizzaTypeIds,
+
+								saboresIds:
+									pizzaFlavorIds
+							}
+							: deleteField()
 
 				};
 
@@ -739,6 +947,173 @@ async function loadCategoryFilters() {
 }
 
 /* ==================================================
+   CARREGA DADOS DA PIZZARIA PARA PRODUTOS
+   ================================================== */
+
+async function loadPizzariaProductData() {
+
+    try {
+
+        const storeReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo"
+            );
+
+
+        const storeSnapshot =
+            await getDoc(
+                storeReference
+            );
+
+
+        if (!storeSnapshot.exists()) {
+
+            storeCardapioType =
+                "geral";
+
+            updateProductTypeInterface();
+
+            return;
+
+        }
+
+
+        const storeData =
+            storeSnapshot.data();
+
+
+        storeCardapioType =
+            storeData.tipoCardapio ===
+            "pizzaria"
+
+                ? "pizzaria"
+                : "geral";
+
+
+        /*
+         * Produtos do tipo Pizza somente
+         * fazem sentido quando a loja utiliza
+         * o modo pizzaria.
+         */
+
+        updateProductTypeInterface();
+
+
+        if (
+            storeCardapioType !==
+            "pizzaria"
+        ) {
+
+            return;
+
+        }
+
+
+        const typesReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pizzaria",
+                "configuracao",
+                "tiposPizza"
+            );
+
+
+        const flavorsReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pizzaria",
+                "configuracao",
+                "sabores"
+            );
+
+
+        const [
+            typesSnapshot,
+            flavorsSnapshot
+        ] =
+            await Promise.all([
+
+                getDocs(
+                    query(
+                        typesReference,
+                        orderBy(
+                            "ordem",
+                            "asc"
+                        )
+                    )
+                ),
+
+                getDocs(
+                    query(
+                        flavorsReference,
+                        orderBy(
+                            "ordem",
+                            "asc"
+                        )
+                    )
+                )
+
+            ]);
+
+
+        pizzariaTypes = [];
+
+        typesSnapshot.forEach(
+            documentSnapshot => {
+
+                pizzariaTypes.push({
+
+                    id:
+                        documentSnapshot.id,
+
+                    ...documentSnapshot.data()
+
+                });
+
+            }
+        );
+
+
+        pizzariaFlavors = [];
+
+        flavorsSnapshot.forEach(
+            documentSnapshot => {
+
+                pizzariaFlavors.push({
+
+                    id:
+                        documentSnapshot.id,
+
+                    ...documentSnapshot.data()
+
+                });
+
+            }
+        );
+
+
+        renderProductPizzaOptions();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar dados da pizzaria para produtos:",
+            error
+        );
+
+    }
+
+}
+
+/* ==================================================
    CARREGA PRODUTOS
    ================================================== */
 
@@ -870,6 +1245,54 @@ function setupEditButtons() {
 function openProductForm() {
 
     productForm.reset();
+	
+	const normalProductRadio =
+		document.querySelector(
+			'input[name="productType"][value="normal"]'
+		);
+
+
+	if (normalProductRadio) {
+
+		normalProductRadio.checked =
+			true;
+
+	}
+
+
+	const allTypesRadio =
+		document.querySelector(
+			'input[name="productPizzaTypesMode"][value="all"]'
+		);
+
+
+	if (allTypesRadio) {
+
+		allTypesRadio.checked =
+			true;
+
+	}
+
+
+	const allFlavorsRadio =
+		document.querySelector(
+			'input[name="productPizzaFlavorsMode"][value="all"]'
+		);
+
+
+	if (allFlavorsRadio) {
+
+		allFlavorsRadio.checked =
+			true;
+
+	}
+
+
+	updateProductTypeUI();
+
+	updateProductPizzaSelectionVisibility();
+
+	renderProductPizzaOptions();
 
     productIdInput.value = "";
 
@@ -1309,6 +1732,16 @@ function renderAdminProducts() {
                             <span class="product-category">
                                 ${product.categoria || "Sem categoria"}
                             </span>
+							
+							${
+								product.tipoProduto === "pizza"
+									? `
+										<span class="product-type-badge">
+											Pizza
+										</span>
+									`
+									: ""
+							}
 
                         </div>
 
@@ -1363,13 +1796,20 @@ function renderAdminProducts() {
 
                         <strong class="admin-product-price">
 
-                            ${formatCurrency(
-                                Number(
-                                    product.preco || 0
-                                )
-                            )}
+							${
+								product.tipoProduto ===
+								"pizza"
 
-                        </strong>
+									? "Calculado pelos sabores"
+
+									: formatCurrency(
+										Number(
+											product.preco || 0
+										)
+									)
+							}
+
+						</strong>
 
 
                         <div class="product-actions">
@@ -1475,9 +1915,64 @@ async function openEditProductForm(
 
         const product =
             snapshot.data();
+			
+		const isPizza =
+			product.tipoProduto ===
+			"pizza";
+
+
+		const selectedPizzaTypeIds =
+			Array.isArray(
+				product.pizzaria?.tiposPizzaIds
+			)
+
+				? product.pizzaria.tiposPizzaIds
+				: [];
+
+
+		const selectedPizzaFlavorIds =
+			Array.isArray(
+				product.pizzaria?.saboresIds
+			)
+
+				? product.pizzaria.saboresIds
+				: [];
 
 
         productForm.reset();
+		
+		const pizzaRadio =
+			document.querySelector(
+				'input[name="productType"][value="pizza"]'
+			);
+
+		const normalRadio =
+			document.querySelector(
+				'input[name="productType"][value="normal"]'
+			);
+
+
+		if (isPizza) {
+
+			if (pizzaRadio) {
+
+				pizzaRadio.checked =
+					true;
+
+			}
+
+		}
+
+		else {
+
+			if (normalRadio) {
+
+				normalRadio.checked =
+					true;
+
+			}
+
+		}
 
         productIdInput.value =
             productId;
@@ -1549,6 +2044,83 @@ async function openEditProductForm(
 
         productFormMessage.className =
             "form-message";
+			
+			
+		const typeMode =
+			selectedPizzaTypeIds.length > 0
+				? "specific"
+				: "all";
+
+
+		const flavorMode =
+			selectedPizzaFlavorIds.length > 0
+				? "specific"
+				: "all";
+
+
+		const specificTypesRadio =
+			document.querySelector(
+				'input[name="productPizzaTypesMode"][value="specific"]'
+			);
+
+
+		const allTypesModeRadio =
+			document.querySelector(
+				'input[name="productPizzaTypesMode"][value="all"]'
+			);
+
+
+		if (typeMode === "specific") {
+
+			specificTypesRadio.checked =
+				true;
+
+		}
+
+		else {
+
+			allTypesModeRadio.checked =
+				true;
+
+		}
+
+
+		const specificFlavorsRadio =
+			document.querySelector(
+				'input[name="productPizzaFlavorsMode"][value="specific"]'
+			);
+
+
+		const allFlavorsModeRadio =
+			document.querySelector(
+				'input[name="productPizzaFlavorsMode"][value="all"]'
+			);
+
+
+		if (flavorMode === "specific") {
+
+			specificFlavorsRadio.checked =
+				true;
+
+		}
+
+		else {
+
+			allFlavorsModeRadio.checked =
+				true;
+
+		}
+
+
+		renderProductPizzaOptions(
+			selectedPizzaTypeIds,
+			selectedPizzaFlavorIds
+		);
+
+
+		updateProductTypeUI();
+
+		updateProductPizzaSelectionVisibility();
 
 
         productFormModal.classList.add(
@@ -3140,3 +3712,397 @@ productControlsStockInput.addEventListener(
     "change",
     updateStockFieldVisibility
 );
+
+/* ==================================================
+   INTERFACE DO TIPO DE PRODUTO
+   ================================================== */
+
+function updateProductTypeInterface() {
+
+    /*
+     * O tipo Pizza só fica disponível quando
+     * a loja está configurada como pizzaria.
+     */
+
+    if (
+        storeCardapioType ===
+        "pizzaria"
+    ) {
+
+        productTypeGroup.style.display =
+            "";
+
+    }
+
+    else {
+
+        productTypeGroup.style.display =
+            "none";
+
+
+        const normalRadio =
+            document.querySelector(
+                'input[name="productType"][value="normal"]'
+            );
+
+
+        if (normalRadio) {
+
+            normalRadio.checked =
+                true;
+
+        }
+
+    }
+
+
+    updateProductTypeUI();
+
+}
+
+function getSelectedProductType() {
+
+    const selected =
+        document.querySelector(
+            'input[name="productType"]:checked'
+        );
+
+
+    return selected
+        ? selected.value
+        : "normal";
+
+}
+
+function updateProductTypeUI() {
+
+    const isPizza =
+        getSelectedProductType() ===
+        "pizza";
+
+
+    if (isPizza) {
+
+        productPizzaSection.classList.add(
+            "visible"
+        );
+
+
+        productPriceGroup.style.display =
+            "none";
+
+
+        productPriceInput.required =
+            false;
+
+
+        renderProductPizzaOptions();
+
+    }
+
+    else {
+
+        productPizzaSection.classList.remove(
+            "visible"
+        );
+
+
+        productPriceGroup.style.display =
+            "";
+
+
+        productPriceInput.required =
+            true;
+
+    }
+
+}
+
+document
+    .querySelectorAll(
+        'input[name="productType"]'
+    )
+    .forEach(
+        radio => {
+
+            radio.addEventListener(
+                "change",
+                updateProductTypeUI
+            );
+
+        }
+    );
+	
+/* ==================================================
+   RENDERIZA OPÇÕES DA PIZZA
+   ================================================== */
+
+function renderProductPizzaOptions(
+    selectedTypeIds = [],
+    selectedFlavorIds = []
+) {
+
+    renderProductPizzaTypes(
+        selectedTypeIds
+    );
+
+
+    renderProductPizzaFlavors(
+        selectedFlavorIds
+    );
+
+}
+
+function renderProductPizzaTypes(
+    selectedIds = []
+) {
+
+    productPizzaTypesList.innerHTML =
+        "";
+
+
+    if (
+        pizzariaTypes.length === 0
+    ) {
+
+        productPizzaTypesList.innerHTML = `
+
+            <div class="product-pizza-options-empty">
+
+                Nenhum tipo de pizza foi cadastrado.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    pizzariaTypes.forEach(
+        type => {
+
+            const checked =
+                selectedIds.includes(
+                    type.id
+                );
+
+
+            const inactive =
+                type.ativo === false;
+
+
+            const item =
+                document.createElement(
+                    "label"
+                );
+
+
+            item.className =
+                "product-pizza-checkbox-option";
+
+
+            item.innerHTML = `
+
+                <input
+                    type="checkbox"
+                    class="product-pizza-type-checkbox"
+                    value="${type.id}"
+                    ${checked ? "checked" : ""}
+                    ${
+                        inactive && !checked
+                            ? "disabled"
+                            : ""
+                    }
+                >
+
+                <span>
+
+                    ${escapeHtml(
+                        type.nome || ""
+                    )}
+
+                    ${
+                        inactive
+                            ? `<small>(Inativo)</small>`
+                            : ""
+                    }
+
+                </span>
+
+            `;
+
+
+            productPizzaTypesList
+                .appendChild(item);
+
+        }
+    );
+
+}
+
+function renderProductPizzaFlavors(
+    selectedIds = []
+) {
+
+    productPizzaFlavorsList.innerHTML =
+        "";
+
+
+    if (
+        pizzariaFlavors.length === 0
+    ) {
+
+        productPizzaFlavorsList.innerHTML = `
+
+            <div class="product-pizza-options-empty">
+
+                Nenhum sabor de pizza foi cadastrado.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    pizzariaFlavors.forEach(
+        flavor => {
+
+            const checked =
+                selectedIds.includes(
+                    flavor.id
+                );
+
+
+            const inactive =
+                flavor.ativo === false;
+
+
+            const item =
+                document.createElement(
+                    "label"
+                );
+
+
+            item.className =
+                "product-pizza-checkbox-option";
+
+
+            item.innerHTML = `
+
+                <input
+                    type="checkbox"
+                    class="product-pizza-flavor-checkbox"
+                    value="${flavor.id}"
+                    ${checked ? "checked" : ""}
+                    ${
+                        inactive && !checked
+                            ? "disabled"
+                            : ""
+                    }
+                >
+
+                <span>
+
+                    ${escapeHtml(
+                        flavor.nome || ""
+                    )}
+
+                    ${
+                        inactive
+                            ? `<small>(Inativo)</small>`
+                            : ""
+                    }
+
+                </span>
+
+            `;
+
+
+            productPizzaFlavorsList
+                .appendChild(item);
+
+        }
+    );
+
+}
+
+document
+    .querySelectorAll(
+        'input[name="productPizzaTypesMode"]'
+    )
+    .forEach(
+        radio => {
+
+            radio.addEventListener(
+                "change",
+                updateProductPizzaSelectionVisibility
+            );
+
+        }
+    );
+
+
+document
+    .querySelectorAll(
+        'input[name="productPizzaFlavorsMode"]'
+    )
+    .forEach(
+        radio => {
+
+            radio.addEventListener(
+                "change",
+                updateProductPizzaSelectionVisibility
+            );
+
+        }
+    );
+
+
+function updateProductPizzaSelectionVisibility() {
+
+    const typeMode =
+        document.querySelector(
+            'input[name="productPizzaTypesMode"]:checked'
+        )?.value || "all";
+
+
+    const flavorMode =
+        document.querySelector(
+            'input[name="productPizzaFlavorsMode"]:checked'
+        )?.value || "all";
+
+
+    productPizzaTypesList.classList.toggle(
+        "visible",
+        typeMode === "specific"
+    );
+
+
+    productPizzaFlavorsList.classList.toggle(
+        "visible",
+        flavorMode === "specific"
+    );
+
+}
+
+function getSelectedPizzaIds(
+    selector
+) {
+
+    return [
+        ...document.querySelectorAll(
+            `${selector}:checked`
+        )
+    ]
+    .map(
+        checkbox =>
+            checkbox.value
+    );
+
+}
+

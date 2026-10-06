@@ -286,6 +286,62 @@
 				</select>
 
             </div>
+			
+			<!-- ==========================================
+				 TIPO DE PRODUTO
+				 ========================================== -->
+
+			<div
+				id="productTypeGroup"
+				class="admin-form-group"
+			>
+
+				<label>
+					Tipo de produto
+				</label>
+
+
+				<div class="product-type-options">
+
+					<label class="product-type-option">
+
+						<input
+							type="radio"
+							name="productType"
+							value="normal"
+							checked
+						>
+
+						<span>
+							Produto comum
+						</span>
+
+					</label>
+
+
+					<label class="product-type-option">
+
+						<input
+							type="radio"
+							name="productType"
+							value="pizza"
+						>
+
+						<span>
+							Pizza
+						</span>
+
+					</label>
+
+				</div>
+
+
+				<small class="form-help">
+					Produtos comuns utilizam o fluxo atual.
+					Produtos do tipo Pizza utilizam o configurador específico de pizzaria.
+				</small>
+
+			</div>
 
 
             <div class="admin-form-group">
@@ -300,9 +356,139 @@
                 ></textarea>
 
             </div>
+			
+			
+			<!-- ==========================================
+				 CONFIGURAÇÃO DA PIZZA
+				 ========================================== -->
+
+			<div
+				id="productPizzaSection"
+				class="product-pizza-section"
+			>
 
 
-            <div class="admin-form-group">
+				<div class="product-pizza-section-header">
+
+					<div>
+
+						<h3>
+							Configuração da pizza
+						</h3>
+
+						<p>
+							Defina quais tipos e sabores estarão disponíveis
+							para este produto.
+						</p>
+
+					</div>
+
+				</div>
+
+
+				<!-- TIPOS -->
+
+				<div class="product-pizza-selection-group">
+
+					<h4>
+						Tipos disponíveis
+					</h4>
+
+
+					<label class="product-pizza-mode-option">
+
+						<input
+							type="radio"
+							name="productPizzaTypesMode"
+							value="all"
+							checked
+						>
+
+						<span>
+							Todos os tipos ativos
+						</span>
+
+					</label>
+
+
+					<label class="product-pizza-mode-option">
+
+						<input
+							type="radio"
+							name="productPizzaTypesMode"
+							value="specific"
+						>
+
+						<span>
+							Selecionar tipos específicos
+						</span>
+
+					</label>
+
+
+					<div
+						id="productPizzaTypesList"
+						class="product-pizza-options-list"
+					></div>
+
+				</div>
+
+
+				<!-- SABORES -->
+
+				<div class="product-pizza-selection-group">
+
+					<h4>
+						Sabores disponíveis
+					</h4>
+
+
+					<label class="product-pizza-mode-option">
+
+						<input
+							type="radio"
+							name="productPizzaFlavorsMode"
+							value="all"
+							checked
+						>
+
+						<span>
+							Todos os sabores ativos
+						</span>
+
+					</label>
+
+
+					<label class="product-pizza-mode-option">
+
+						<input
+							type="radio"
+							name="productPizzaFlavorsMode"
+							value="specific"
+						>
+
+						<span>
+							Selecionar sabores específicos
+						</span>
+
+					</label>
+
+
+					<div
+						id="productPizzaFlavorsList"
+						class="product-pizza-options-list"
+					></div>
+
+				</div>
+
+
+			</div>
+
+
+            <div
+				id="productPriceGroup"
+				class="admin-form-group"
+			>
 
 				<label for="productPrice">
 					Preço
