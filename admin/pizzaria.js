@@ -2491,19 +2491,19 @@ pizzaFlavorForm.addEventListener(
 
 
             if (
-                !Number.isFinite(price) ||
-                price < 0
-            ) {
+				!Number.isFinite(price) ||
+				price <= 0
+			) {
 
-                showMessage(
-                    pizzaFlavorFormMessage,
-                    "Todos os preços devem ser valores válidos.",
-                    "error"
-                );
+				showMessage(
+					pizzaFlavorFormMessage,
+					"O preço deve ser maior que R$ 0,00.",
+					"error"
+				);
 
-                return;
+				return;
 
-            }
+			}
 
 
             prices[typeId] =

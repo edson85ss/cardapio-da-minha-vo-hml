@@ -3715,6 +3715,52 @@ body {
 
     width: 100%;
 
+    height: 42px;
+
+    padding:
+        0 14px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        10px;
+
+    background:
+        var(--surface);
+
+    color:
+        var(--text);
+
+    font-size:
+        14px;
+
+    outline:
+        none;
+
+    transition:
+        .2s;
+
+}
+
+
+.pizza-flavor-search input:focus {
+
+    border-color:
+        var(--primary);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(212, 67, 43, .10);
+
+}
+
+
+.pizza-flavor-search input::placeholder {
+
+    color:
+        var(--text-light);
+
 }
 
 
@@ -4007,10 +4053,65 @@ body {
 
     width: 100%;
 
-    text-align: right;
+    height: 40px;
+
+    padding:
+        0 12px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        9px;
+
+    background:
+        var(--surface);
+
+    color:
+        var(--text);
+
+    font-size:
+        14px;
+
+    text-align:
+        right;
+
+    outline:
+        none;
+
+    transition:
+        .2s;
 
 }
 
+
+.pizza-flavor-type-price input:focus {
+
+    border-color:
+        var(--primary);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(212, 67, 43, .10);
+
+}
+
+
+.pizza-flavor-type-price input:disabled {
+
+    background:
+        #f3f3f3;
+
+    color:
+        var(--text-light);
+
+    opacity:
+        .65;
+
+    cursor:
+        not-allowed;
+
+}
 
 .pizza-flavor-type-price input:disabled {
 
@@ -4064,4 +4165,11 @@ body {
 
 }
 
+.pizza-flavor-modal-card
+.pizza-flavor-prices-section
++ .switch-row {
 
+    margin-top:
+        20px;
+
+}
