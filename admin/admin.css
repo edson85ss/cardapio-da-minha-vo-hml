@@ -3697,3 +3697,371 @@ body {
     }
 
 }
+
+/* ==================================================
+   SABORES - PIZZARIA
+   ================================================== */
+
+.pizza-flavor-search {
+
+    margin-top: 16px;
+
+    max-width: 420px;
+
+}
+
+
+.pizza-flavor-search input {
+
+    width: 100%;
+
+}
+
+
+.pizza-flavors-panel {
+
+    min-height: 300px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, .03);
+
+    padding: 20px;
+
+}
+
+
+.pizza-flavors-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+
+.pizza-flavor-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 14px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 14px;
+
+    background: var(--surface);
+
+}
+
+
+.pizza-flavor-order-controls {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+
+.pizza-flavor-order-button {
+
+    width: 34px;
+
+    height: 30px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 7px;
+
+    background: var(--surface);
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+}
+
+
+.pizza-flavor-order-button:hover:not(:disabled) {
+
+    background: #f5f6f8;
+
+}
+
+
+.pizza-flavor-order-button:disabled {
+
+    opacity: .3;
+
+    cursor: default;
+
+}
+
+
+.pizza-flavor-main {
+
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 14px;
+
+}
+
+
+.pizza-flavor-info {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+
+.pizza-flavor-name {
+
+    font-size: 15px;
+
+}
+
+
+.pizza-flavor-description {
+
+    color: var(--text-light);
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.pizza-flavor-price-count {
+
+    color: var(--text-light);
+
+    font-size: 12px;
+
+}
+
+
+.pizza-flavor-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+.pizza-flavor-modal-card {
+
+    max-width: 720px;
+
+}
+
+
+.pizza-flavor-prices-section {
+
+    margin-top: 22px;
+
+    padding: 16px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    background: #fafafa;
+
+}
+
+
+.pizza-flavor-prices-header h3 {
+
+    margin: 0 0 4px;
+
+    font-size: 15px;
+
+}
+
+
+.pizza-flavor-prices-header p {
+
+    margin: 0 0 16px;
+
+    color: var(--text-light);
+
+    font-size: 12px;
+
+}
+
+
+.pizza-flavor-types {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+}
+
+
+.pizza-flavor-type-row {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        150px;
+
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 11px 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
+    background: var(--surface);
+
+}
+
+
+.pizza-flavor-type-check {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+}
+
+
+.pizza-flavor-type-check input {
+
+    width: auto;
+
+}
+
+
+.pizza-flavor-type-price {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: var(--text-light);
+
+    font-size: 13px;
+
+}
+
+
+.pizza-flavor-type-price input {
+
+    min-width: 0;
+
+    width: 100%;
+
+    text-align: right;
+
+}
+
+
+.pizza-flavor-type-price input:disabled {
+
+    background: #f3f3f3;
+
+    opacity: .6;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .pizza-flavor-item {
+
+        align-items: flex-start;
+
+        flex-wrap: wrap;
+
+    }
+
+
+    .pizza-flavor-main {
+
+        width: calc(100% - 48px);
+
+        align-items: flex-start;
+
+    }
+
+
+    .pizza-flavor-actions {
+
+        width: 100%;
+
+        justify-content: flex-end;
+
+        padding-left: 48px;
+
+    }
+
+
+    .pizza-flavor-type-row {
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            120px;
+
+        gap: 10px;
+
+    }
+
+}
+
+

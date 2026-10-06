@@ -401,48 +401,76 @@
                  ========================================== -->
 
             <div
-                id="pizzaPanelSabores"
-                class="pizza-tab-panel"
-            >
+				id="pizzaPanelSabores"
+				class="pizza-tab-panel"
+			>
+
+				<div class="page-actions">
+
+					<div class="page-actions-top">
+
+						<div>
+
+							<h2>
+								Sabores
+							</h2>
+
+							<p>
+								Cadastre os sabores e defina os preços conforme o tipo de pizza.
+							</p>
+
+						</div>
 
 
-                <div class="settings-section">
+						<button
+							type="button"
+							id="newPizzaFlavorButton"
+							class="primary-action-button"
+						>
+							+ Novo sabor
+						</button>
 
-                    <div class="settings-section-header">
-
-                        <h2>
-                            Sabores
-                        </h2>
-
-                        <p>
-                            O cadastro dos sabores e seus preços por tipo
-                            de pizza será implementado na próxima etapa.
-                        </p>
-
-                    </div>
+					</div>
 
 
-                    <div class="empty-state">
+					<div class="pizza-flavor-search">
 
-                        <div class="empty-icon">
-                            🍕
-                        </div>
+						<input
+							type="search"
+							id="pizzaFlavorSearch"
+							placeholder="Pesquisar sabor..."
+							autocomplete="off"
+						>
 
-                        <h3>
-                            Cadastro de sabores
-                        </h3>
+					</div>
 
-                        <p>
-                            Esta etapa será implementada após a validação
-                            dos tipos de pizza.
-                        </p>
-
-                    </div>
-
-                </div>
+				</div>
 
 
-            </div>
+				<div class="pizza-flavors-panel">
+
+					<div
+						id="pizzaFlavorsList"
+						class="pizza-flavors-list"
+					>
+
+						<div class="empty-state">
+
+							<div class="empty-icon">
+								⏳
+							</div>
+
+							<h3>
+								Carregando sabores...
+							</h3>
+
+						</div>
+
+					</div>
+
+				</div>
+
+			</div>
 
 
         </section>
@@ -603,6 +631,175 @@
                 <button
                     type="submit"
                     id="savePizzaTypeButton"
+                    class="primary-action-button"
+                >
+                    Salvar
+                </button>
+
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+     MODAL SABOR
+     ========================================== -->
+
+<div
+    id="pizzaFlavorModal"
+    class="admin-modal"
+>
+
+    <div
+        id="pizzaFlavorModalOverlay"
+        class="admin-modal-overlay"
+    ></div>
+
+
+    <div
+        class="admin-modal-card pizza-flavor-modal-card"
+    >
+
+
+        <div class="admin-modal-header">
+
+            <div>
+
+                <h2 id="pizzaFlavorFormTitle">
+                    Novo sabor
+                </h2>
+
+                <p>
+                    Cadastre o sabor e os preços para os tipos disponíveis.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closePizzaFlavorModal"
+                class="modal-close-button"
+                aria-label="Fechar"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="pizzaFlavorForm">
+
+
+            <input
+                type="hidden"
+                id="pizzaFlavorId"
+            >
+
+
+            <div class="admin-form-group">
+
+                <label for="pizzaFlavorName">
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    id="pizzaFlavorName"
+                    maxlength="80"
+                    placeholder="Ex.: Calabresa"
+                    required
+                >
+
+            </div>
+
+
+            <div class="admin-form-group">
+
+                <label for="pizzaFlavorDescription">
+                    Descrição / ingredientes
+                </label>
+
+                <textarea
+                    id="pizzaFlavorDescription"
+                    maxlength="500"
+                    rows="4"
+                    placeholder="Ex.: Molho de tomate, muçarela, calabresa, cebola e orégano"
+                ></textarea>
+
+            </div>
+
+
+            <div class="pizza-flavor-prices-section">
+
+                <div class="pizza-flavor-prices-header">
+
+                    <div>
+
+                        <h3>
+                            Preço e disponibilidade por tipo
+                        </h3>
+
+                        <p>
+                            Marque os tipos em que este sabor está disponível
+                            e informe o preço correspondente.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="pizzaFlavorTypes"
+                    class="pizza-flavor-types"
+                ></div>
+
+            </div>
+
+
+            <label class="switch-row">
+
+                <input
+                    type="checkbox"
+                    id="pizzaFlavorActive"
+                    checked
+                >
+
+                <span>
+                    Sabor ativo
+                </span>
+
+            </label>
+
+
+            <div
+                id="pizzaFlavorFormMessage"
+                class="form-message"
+            ></div>
+
+
+            <div class="admin-modal-actions">
+
+
+                <button
+                    type="button"
+                    id="cancelPizzaFlavorButton"
+                    class="secondary-button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    type="submit"
+                    id="savePizzaFlavorButton"
                     class="primary-action-button"
                 >
                     Salvar
