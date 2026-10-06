@@ -3660,3 +3660,40 @@ body {
     }
 
 }
+
+/* ==================================================
+   LIMITES DE SABORES - PIZZARIA
+   ================================================== */
+
+.pizza-flavor-limits {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, 1fr);
+
+    gap: 20px;
+
+    align-items: start;
+
+}
+
+
+.pizza-flavor-limits .admin-form-group {
+
+    min-width: 0;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .pizza-flavor-limits {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}

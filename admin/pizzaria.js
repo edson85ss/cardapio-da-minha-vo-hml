@@ -498,13 +498,14 @@ async function loadPizzaTypes() {
     try {
 
         const typesReference =
-            collection(
-                db,
-                "lojas",
-                STORE_ID,
-                "pizzaria",
-                "tiposPizza"
-            );
+			collection(
+				db,
+				"lojas",
+				STORE_ID,
+				"pizzaria",
+				"configuracao",
+				"tiposPizza"
+			);
 
 
         const typesQuery =
@@ -1128,14 +1129,15 @@ pizzaTypeForm.addEventListener(
             if (typeId) {
 
                 const reference =
-                    doc(
-                        db,
-                        "lojas",
-                        STORE_ID,
-                        "pizzaria",
-                        "tiposPizza",
-                        typeId
-                    );
+					doc(
+						db,
+						"lojas",
+						STORE_ID,
+						"pizzaria",
+						"configuracao",
+						"tiposPizza",
+						typeId
+					);
 
 
                 await updateDoc(
@@ -1168,7 +1170,8 @@ pizzaTypeForm.addEventListener(
                         "lojas",
                         STORE_ID,
                         "pizzaria",
-                        "tiposPizza"
+                        "configuracao",
+						"tiposPizza"
                     ),
                     {
                         ...typeData,
@@ -1241,14 +1244,15 @@ async function togglePizzaType(
     try {
 
         const reference =
-            doc(
-                db,
-                "lojas",
-                STORE_ID,
-                "pizzaria",
-                "tiposPizza",
-                typeId
-            );
+			doc(
+				db,
+				"lojas",
+				STORE_ID,
+				"pizzaria",
+				"configuracao",
+				"tiposPizza",
+				typeId
+			);
 
 
         await updateDoc(
@@ -1329,25 +1333,27 @@ async function reorderPizzaType(
     try {
 
         const currentReference =
-            doc(
-                db,
-                "lojas",
-                STORE_ID,
-                "pizzaria",
-                "tiposPizza",
-                current.id
-            );
+			doc(
+				db,
+				"lojas",
+				STORE_ID,
+				"pizzaria",
+				"configuracao",
+				"tiposPizza",
+				current.id
+			);
 
 
         const targetReference =
-            doc(
-                db,
-                "lojas",
-                STORE_ID,
-                "pizzaria",
-                "tiposPizza",
-                target.id
-            );
+			doc(
+				db,
+				"lojas",
+				STORE_ID,
+				"pizzaria",
+				"configuracao",
+				"tiposPizza",
+				target.id
+			);
 
 
         const batch =
