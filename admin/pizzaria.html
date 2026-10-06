@@ -12,158 +12,224 @@
 
     <title>Pizzaria - Administração</title>
 
-    <link rel="stylesheet" href="admin.css">
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
 
 </head>
 
 
 <body>
 
-    <div class="admin-layout">
+<div class="admin-layout">
 
 
-        <aside class="sidebar" id="sidebar">
+    <!-- ==========================================
+         MENU LATERAL
+         ========================================== -->
 
-            <div class="sidebar-header">
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
 
-                <div class="sidebar-logo">
-                    🍽️
-                </div>
+        <div class="sidebar-header">
 
-                <div>
+            <div class="sidebar-logo">
+                🍽️
+            </div>
 
-                    <strong>
-                        Cardápio Digital
-                    </strong>
+            <div>
 
-                    <small>
-                        Administração
-                    </small>
+                <strong>
+                    Cardápio Digital
+                </strong>
 
-                </div>
+                <small>
+                    Administração
+                </small>
 
             </div>
 
-
-            <nav class="sidebar-menu">
-
-                <a
-                    href="produtos.html"
-                    class="menu-item"
-                >
-                    <span class="menu-icon">▦</span>
-                    Produtos
-                </a>
+        </div>
 
 
-                <a
-                    href="categorias.html"
-                    class="menu-item"
-                >
-                    <span class="menu-icon">☷</span>
-                    Categorias
-                </a>
+        <nav class="sidebar-menu">
 
 
-                <a
-                    href="complementos.html"
-                    class="menu-item"
-                >
-                    <span class="menu-icon">＋</span>
-                    Complementos
-                </a>
+            <a
+                href="produtos.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">▦</span>
+                Produtos
+            </a>
 
 
-                <a
-                    href="pizzaria.html"
-                    class="menu-item active"
-                >
-                    <span class="menu-icon">🍕</span>
+            <a
+                href="categorias.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">☷</span>
+                Categorias
+            </a>
+
+
+            <a
+                href="complementos.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">＋</span>
+                Complementos
+            </a>
+
+
+            <a
+                href="pizzaria.html"
+                class="menu-item active"
+            >
+                <span class="menu-icon">🍕</span>
+                Pizzaria
+            </a>
+
+
+            <a
+                href="pedidos.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">▤</span>
+                Pedidos
+            </a>
+
+
+            <a
+                href="configuracoes.html"
+                class="menu-item"
+            >
+                <span class="menu-icon">⚙</span>
+                Configurações
+            </a>
+
+
+            <a
+                href="../"
+                target="_blank"
+                class="menu-item"
+            >
+                <span class="menu-icon">↗</span>
+                Ver cardápio
+            </a>
+
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <button
+                id="logoutButton"
+                class="logout-button"
+            >
+
+                <span>
+                    ↪
+                </span>
+
+                Sair
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+    ></div>
+
+
+    <!-- ==========================================
+         CONTEÚDO PRINCIPAL
+         ========================================== -->
+
+    <main class="admin-main">
+
+
+        <header class="admin-header">
+
+            <button
+                id="menuButton"
+                class="mobile-menu-button"
+                aria-label="Abrir menu"
+            >
+                ☰
+            </button>
+
+
+            <div>
+
+                <h1>
                     Pizzaria
-                </a>
+                </h1>
+
+                <p>
+                    Configure os recursos específicos do cardápio de pizzas.
+                </p>
+
+            </div>
+
+        </header>
 
 
-                <a
-                    href="pedidos.html"
-                    class="menu-item"
-                >
-                    <span class="menu-icon">▤</span>
-                    Pedidos
-                </a>
+        <section class="admin-content">
 
 
-                <a
-                    href="configuracoes.html"
-                    class="menu-item"
-                >
-                    <span class="menu-icon">⚙</span>
-                    Configurações
-                </a>
+            <!-- ==========================================
+                 ABAS
+                 ========================================== -->
 
-
-                <a
-                    href="../"
-                    target="_blank"
-                    class="menu-item"
-                >
-                    <span class="menu-icon">↗</span>
-                    Ver cardápio
-                </a>
-
-            </nav>
-
-
-            <div class="sidebar-footer">
+            <div class="pizza-tabs">
 
                 <button
-                    id="logoutButton"
-                    class="logout-button"
+                    type="button"
+                    class="pizza-tab active"
+                    data-tab="configuracao"
                 >
-                    <span>↪</span>
-                    Sair
+                    Configuração
+                </button>
+
+
+                <button
+                    type="button"
+                    class="pizza-tab"
+                    data-tab="tipos"
+                >
+                    Tipos de pizza
+                </button>
+
+
+                <button
+                    type="button"
+                    class="pizza-tab"
+                    data-tab="sabores"
+                >
+                    Sabores
                 </button>
 
             </div>
 
-        </aside>
 
+            <!-- ==========================================
+                 ABA CONFIGURAÇÃO
+                 ========================================== -->
 
-        <div
-            id="sidebarOverlay"
-            class="sidebar-overlay"
-        ></div>
-
-
-        <main class="admin-main">
-
-
-            <header class="admin-header">
-
-                <button
-                    id="menuButton"
-                    class="mobile-menu-button"
-                    aria-label="Abrir menu"
-                >
-                    ☰
-                </button>
-
-
-                <div>
-
-                    <h1>
-                        Pizzaria
-                    </h1>
-
-                    <p>
-                        Configure os recursos específicos do cardápio de pizzas.
-                    </p>
-
-                </div>
-
-            </header>
-
-
-            <section class="admin-content">
+            <div
+                id="pizzaPanelConfiguracao"
+                class="pizza-tab-panel active"
+            >
 
 
                 <div class="settings-section">
@@ -171,12 +237,186 @@
                     <div class="settings-section-header">
 
                         <h2>
-                            Configuração
+                            Configuração da pizzaria
                         </h2>
 
                         <p>
-                            Em breve você poderá configurar as regras específicas
-                            de montagem e cobrança das pizzas.
+                            Defina as regras gerais utilizadas pelo módulo
+                            de pizzaria.
+                        </p>
+
+                    </div>
+
+
+                    <form id="pizzaConfigForm">
+
+
+                        <div class="switch-row">
+
+                            <input
+                                type="checkbox"
+                                id="pizzaModuleActive"
+                            >
+
+                            <label for="pizzaModuleActive">
+
+                                Módulo de pizzaria ativo
+
+                            </label>
+
+                        </div>
+
+
+                        <div class="admin-form-group">
+
+                            <label for="pizzaPricingRule">
+
+                                Cobrança de pizzas com múltiplos sabores
+
+                            </label>
+
+
+                            <select id="pizzaPricingRule">
+
+                                <option value="maior">
+                                    Cobrar pelo sabor de maior valor
+                                </option>
+
+                                <option value="media">
+                                    Cobrar pela média dos valores dos sabores
+                                </option>
+
+                            </select>
+
+
+                            <small class="form-help">
+
+                                Exemplo: sabores de R$ 40,00 e R$ 50,00.
+                                Na opção "maior", a pizza custa R$ 50,00.
+                                Na opção "média", custa R$ 45,00.
+
+                            </small>
+
+                        </div>
+
+
+                        <div
+                            id="pizzaConfigMessage"
+                            class="form-message"
+                        ></div>
+
+
+                        <div class="admin-modal-actions">
+
+                            <button
+                                type="submit"
+                                id="savePizzaConfigButton"
+                                class="primary-action-button"
+                            >
+                                Salvar configuração
+                            </button>
+
+                        </div>
+
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+            <!-- ==========================================
+                 ABA TIPOS
+                 ========================================== -->
+
+            <div
+                id="pizzaPanelTipos"
+                class="pizza-tab-panel"
+            >
+
+
+                <div class="page-actions">
+
+
+                    <div class="page-actions-top">
+
+                        <div>
+
+                            <h2>
+                                Tipos de pizza
+                            </h2>
+
+                            <p>
+                                Cadastre os tipos e defina quantos sabores
+                                podem ser escolhidos em cada um.
+                            </p>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            id="newPizzaTypeButton"
+                            class="primary-action-button"
+                        >
+                            + Novo tipo
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="pizza-types-panel">
+
+                    <div
+                        id="pizzaTypesList"
+                        class="pizza-types-list"
+                    >
+
+                        <div class="empty-state">
+
+                            <div class="empty-icon">
+                                ⏳
+                            </div>
+
+                            <h3>
+                                Carregando tipos...
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- ==========================================
+                 ABA SABORES
+                 ========================================== -->
+
+            <div
+                id="pizzaPanelSabores"
+                class="pizza-tab-panel"
+            >
+
+
+                <div class="settings-section">
+
+                    <div class="settings-section-header">
+
+                        <h2>
+                            Sabores
+                        </h2>
+
+                        <p>
+                            O cadastro dos sabores e seus preços por tipo
+                            de pizza será implementado na próxima etapa.
                         </p>
 
                     </div>
@@ -189,12 +429,12 @@
                         </div>
 
                         <h3>
-                            Módulo de pizzaria
+                            Cadastro de sabores
                         </h3>
 
                         <p>
-                            As configurações de pizzas serão disponibilizadas
-                            nas próximas etapas.
+                            Esta etapa será implementada após a validação
+                            dos tipos de pizza.
                         </p>
 
                     </div>
@@ -202,17 +442,189 @@
                 </div>
 
 
-            </section>
+            </div>
 
-        </main>
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- ==========================================
+     MODAL TIPO DE PIZZA
+     ========================================== -->
+
+<div
+    id="pizzaTypeModal"
+    class="admin-modal"
+>
+
+    <div
+        id="pizzaTypeModalOverlay"
+        class="admin-modal-overlay"
+    ></div>
+
+
+    <div class="admin-modal-card">
+
+
+        <div class="admin-modal-header">
+
+            <div>
+
+                <h2 id="pizzaTypeFormTitle">
+                    Novo tipo de pizza
+                </h2>
+
+                <p>
+                    Defina o nome e a quantidade permitida de sabores.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closePizzaTypeModal"
+                class="modal-close-button"
+                aria-label="Fechar"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="pizzaTypeForm">
+
+
+            <input
+                type="hidden"
+                id="pizzaTypeId"
+            >
+
+
+            <div class="admin-form-group">
+
+                <label for="pizzaTypeName">
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    id="pizzaTypeName"
+                    maxlength="80"
+                    placeholder="Ex.: Grande"
+                    required
+                >
+
+            </div>
+
+
+            <div class="admin-form-row">
+
+
+                <div class="admin-form-group">
+
+                    <label for="pizzaTypeMinFlavors">
+                        Mínimo de sabores
+                    </label>
+
+                    <input
+                        type="number"
+                        id="pizzaTypeMinFlavors"
+                        min="1"
+                        step="1"
+                        value="1"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="admin-form-group">
+
+                    <label for="pizzaTypeMaxFlavors">
+                        Máximo de sabores
+                    </label>
+
+                    <input
+                        type="number"
+                        id="pizzaTypeMaxFlavors"
+                        min="1"
+                        step="1"
+                        value="1"
+                        required
+                    >
+
+                </div>
+
+
+            </div>
+
+
+            <label class="switch-row">
+
+                <input
+                    type="checkbox"
+                    id="pizzaTypeActive"
+                    checked
+                >
+
+                <span>
+                    Tipo ativo
+                </span>
+
+            </label>
+
+
+            <div
+                id="pizzaTypeFormMessage"
+                class="form-message"
+            ></div>
+
+
+            <div class="admin-modal-actions">
+
+
+                <button
+                    type="button"
+                    id="cancelPizzaTypeButton"
+                    class="secondary-button"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    type="submit"
+                    id="savePizzaTypeButton"
+                    class="primary-action-button"
+                >
+                    Salvar
+                </button>
+
+
+            </div>
+
+
+        </form>
+
 
     </div>
 
+</div>
 
-    <script
-        type="module"
-        src="pizzaria.js"
-    ></script>
+
+<script
+    type="module"
+    src="pizzaria.js"
+></script>
+
 
 </body>
 

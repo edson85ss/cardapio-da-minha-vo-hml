@@ -3385,3 +3385,278 @@ body {
     }
 
 }
+
+/* ==================================================
+   MÓDULO PIZZARIA
+   ================================================== */
+
+.pizza-tabs {
+
+    display: flex;
+
+    gap: 6px;
+
+    margin-bottom: 22px;
+
+    padding: 5px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+}
+
+
+.pizza-tab {
+
+    flex: 1;
+
+    min-height: 42px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: var(--text-light);
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+}
+
+
+.pizza-tab.active {
+
+    background: #fff2ee;
+
+    color: var(--primary);
+
+}
+
+
+.pizza-tab:hover {
+
+    background: #f5f6f8;
+
+}
+
+
+.pizza-tab.active:hover {
+
+    background: #fff2ee;
+
+}
+
+
+.pizza-tab-panel {
+
+    display: none;
+
+}
+
+
+.pizza-tab-panel.active {
+
+    display: block;
+
+}
+
+
+.pizza-types-panel {
+
+    min-height: 300px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, .03);
+
+    padding: 20px;
+
+}
+
+
+.pizza-types-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+
+.pizza-type-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 14px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 14px;
+
+    background: var(--surface);
+
+}
+
+
+.pizza-type-order-controls {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+
+.pizza-type-order-button {
+
+    width: 34px;
+
+    height: 30px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 7px;
+
+    background: var(--surface);
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+}
+
+
+.pizza-type-order-button:hover:not(:disabled) {
+
+    background: #f5f6f8;
+
+}
+
+
+.pizza-type-order-button:disabled {
+
+    opacity: .3;
+
+    cursor: default;
+
+}
+
+
+.pizza-type-main {
+
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 14px;
+
+}
+
+
+.pizza-type-name {
+
+    display: block;
+
+    font-size: 15px;
+
+    margin-bottom: 4px;
+
+}
+
+
+.pizza-type-info {
+
+    color: var(--text-light);
+
+    font-size: 12px;
+
+}
+
+
+.pizza-type-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+@media(max-width: 600px) {
+
+    .pizza-tabs {
+
+        flex-direction: column;
+
+    }
+
+
+    .pizza-tab {
+
+        flex: none;
+
+        width: 100%;
+
+    }
+
+
+    .pizza-type-item {
+
+        align-items: flex-start;
+
+        flex-wrap: wrap;
+
+    }
+
+
+    .pizza-type-main {
+
+        align-items: flex-start;
+
+        width: calc(100% - 48px);
+
+    }
+
+
+    .pizza-type-actions {
+
+        width: 100%;
+
+        justify-content: flex-end;
+
+        padding-left: 48px;
+
+    }
+
+}
