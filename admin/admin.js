@@ -653,7 +653,6 @@ productForm.addEventListener(
 								: {}
 							)
 						}
-                        }
                     );
 
 
@@ -715,8 +714,6 @@ productForm.addEventListener(
 					descricao:
 						productDescriptionInput.value.trim(),
 
-					preco:
-						price,
 
 					ativo:
 						productActiveInput.checked,
@@ -3796,8 +3793,6 @@ function updateProductTypeUI() {
             false;
 
 
-        renderProductPizzaOptions();
-
     }
 
     else {
@@ -4106,3 +4101,37 @@ function getSelectedPizzaIds(
 
 }
 
+
+/* ==================================================
+   ESCAPA HTML
+   ================================================== */
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value || ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
