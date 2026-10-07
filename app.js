@@ -56,6 +56,27 @@ let categories = [];
 
 let paymentMethods = [];
 
+let storeCardapioType = "geral";
+
+let pizzariaConfig = {
+    ativo: false,
+    regraCobrancaSabores: "maior"
+};
+
+let pizzariaTypes = [];
+
+let pizzariaFlavors = [];
+
+let currentPizzaType = null;
+
+let currentPizzaFlavorCount = null;
+
+let currentPizzaSelectedFlavors = [];
+
+let currentPizzaBorderComplement = null;
+
+let currentPizzaBorderOption = null;
+
 /* ==================================================
    ELEMENTOS DA PÁGINA
    ================================================== */
@@ -204,6 +225,10 @@ document.addEventListener(
          */
 
         await loadStoreConfigFromFirestore();
+
+        injectPizzaConfiguratorStyles();
+
+        await loadPizzariaPublicConfig();
 
 		applyStoreColors();
 
@@ -362,20 +387,63 @@ function renderProducts() {
         card.className =
             "product-card";
 
+
+        const isPizza =
+            product.tipoProduto === "pizza";
+
+
+        let priceHtml;
+
+
+        if (isPizza) {
+
+            const startingPrice =
+                getPizzaStartingPrice(product);
+
+
+            priceHtml =
+                startingPrice !== null
+
+                    ? `A partir de ${formatCurrency(startingPrice)}`
+
+                    : "Consulte a disponibilidade";
+
+        }
+
+        else {
+
+            priceHtml =
+                formatCurrency(
+                    Number(
+                        product.preco || 0
+                    )
+                );
+
+        }
+
+
+        const description =
+            isPizza && !product.descricao
+
+                ? "Monte sua pizza escolhendo o tipo, os sabores e a borda."
+
+                : product.descricao;
+
+
         card.innerHTML = `
 
             <div class="product-info">
 
                 <div class="product-name">
-                    ${product.nome}
+                    ${escapeHtml(product.nome)}
                 </div>
 
                 <div class="product-price">
-                    ${formatCurrency(product.preco)}
+                    ${priceHtml}
                 </div>
 
                 <div class="product-description">
-                    ${product.descricao}
+                    ${escapeHtml(description)}
                 </div>
 
             </div>
@@ -383,22 +451,30 @@ function renderProducts() {
             <img
                 class="product-image"
                 src="${product.imagem}"
-                alt="${product.nome}"
+                alt="${escapeHtml(product.nome)}"
             >
 
         `;
 
-        card.addEventListener("click", () => {
 
-             openProductModal(product);
+        card.addEventListener(
+            "click",
+            () => {
 
-        });
+                openProductModal(product);
 
-        productsContainer.appendChild(card);
+            }
+        );
+
+
+        productsContainer.appendChild(
+            card
+        );
 
     });
 
 }
+
 
 /* ==================================================
    ABRIR MODAL PRODUTO
@@ -411,12 +487,13 @@ async function openProductModal(
     itemObservation.value =
         "";
 
-
     currentProduct =
         product;
-		
-	currentProductComplements =
-    [];
+
+    currentProductComplements =
+        [];
+
+    resetPizzaState();
 
     currentQuantity =
         1;
@@ -425,29 +502,45 @@ async function openProductModal(
     modalImage.src =
         product.imagem;
 
-
     modalName.textContent =
         product.nome;
 
-
-    modalPrice.textContent =
-        formatCurrency(
-            product.preco
-        );
-
-
     modalDescription.textContent =
         product.descricao;
-
 
     modalQty.textContent =
         currentQuantity;
 
 
-    /*
-     * Limpa complementos do produto
-     * anteriormente aberto.
-     */
+    const isPizza =
+        product.tipoProduto ===
+        "pizza";
+
+
+    if (isPizza) {
+
+        const startingPrice =
+            getPizzaStartingPrice(product);
+
+
+        modalPrice.textContent =
+            startingPrice !== null
+
+                ? `A partir de ${formatCurrency(startingPrice)}`
+
+                : "Consulte a disponibilidade";
+
+    }
+
+    else {
+
+        modalPrice.textContent =
+            formatCurrency(
+                product.preco
+            );
+
+    }
+
 
     productComplements.innerHTML = `
         <div class="complements-loading">
@@ -478,8 +571,8 @@ async function openProductModal(
 
 
     /*
-     * Carrega complementos apenas
-     * deste produto.
+     * Carrega os complementos associados
+     * apenas deste produto.
      */
 
     const complements =
@@ -503,16 +596,31 @@ async function openProductModal(
         return;
 
     }
-	
-	currentProductComplements =
-    complements;
 
 
-    renderProductComplements(
-        complements
-    );
-	
+    if (isPizza) {
+
+        renderPizzaConfigurator(
+            product,
+            complements
+        );
+
+    }
+
+    else {
+
+        currentProductComplements =
+            complements;
+
+
+        renderProductComplements(
+            complements
+        );
+
+    }
+
 }
+
 
 /* ==================================================
    COMPLEMENTOS DO PRODUTO
@@ -705,6 +813,9 @@ async function loadProductComplements(
                         association.ordem ?? 0
                     ),
 
+                funcaoPizzaria:
+                    complementData.funcaoPizzaria || "",
+
                 opcoes:
                     options
 
@@ -732,10 +843,11 @@ async function loadProductComplements(
 }
 
 function renderProductComplements(
-    complements
+    complements,
+    targetElement = productComplements
 ) {
 
-    productComplements.innerHTML =
+    targetElement.innerHTML =
         "";
 
 
@@ -743,7 +855,7 @@ function renderProductComplements(
         complements.length === 0
     ) {
 
-        productComplements.style.display =
+        targetElement.style.display =
             "none";
 
         return;
@@ -751,7 +863,7 @@ function renderProductComplements(
     }
 
 
-    productComplements.style.display =
+    targetElement.style.display =
         "block";
 
 
@@ -929,7 +1041,7 @@ function renderProductComplements(
             }
 
 
-            productComplements.appendChild(
+            targetElement.appendChild(
                 group
             );
 
@@ -1358,30 +1470,128 @@ function updateAddButtonPrice() {
     }
 
 
+    if (
+        currentProduct.tipoProduto ===
+        "pizza"
+    ) {
+
+        const validConfiguration =
+            isPizzaConfigurationComplete();
+
+
+        const pizzaPrice =
+            calculateCurrentPizzaFlavorPrice();
+
+
+        const borderPrice =
+            Number(
+                currentPizzaBorderOption?.preco || 0
+            );
+
+
+        const extrasSelection =
+            getSelectedComplements();
+
+
+        const unitPrice =
+            roundMoney(
+                pizzaPrice +
+                borderPrice +
+                extrasSelection.precoComplementos
+            );
+
+
+        const total =
+            roundMoney(
+                unitPrice *
+                currentQuantity
+            );
+
+
+        if (validConfiguration) {
+
+            addToCartButton.textContent =
+                `Adicionar • ${formatCurrency(total)}`;
+
+            addToCartButton.disabled =
+                false;
+
+            addToCartButton.classList.remove(
+                "button-disabled"
+            );
+
+
+            modalPrice.textContent =
+                formatCurrency(unitPrice);
+
+        }
+
+        else {
+
+            addToCartButton.textContent =
+                "Adicionar";
+
+            addToCartButton.disabled =
+                true;
+
+            addToCartButton.classList.add(
+                "button-disabled"
+            );
+
+
+            const startingPrice =
+                getPizzaStartingPrice(
+                    currentProduct
+                );
+
+
+            modalPrice.textContent =
+                startingPrice !== null
+
+                    ? `A partir de ${formatCurrency(startingPrice)}`
+
+                    : "Consulte a disponibilidade";
+
+        }
+
+
+        return;
+
+    }
+
+
     const selection =
         getSelectedComplements();
 
 
     const unitPrice =
-		roundMoney(
-			Number(
-				currentProduct.preco || 0
-			) +
-			selection.precoComplementos
-		);
+        roundMoney(
+            Number(
+                currentProduct.preco || 0
+            ) +
+            selection.precoComplementos
+        );
 
 
-	const total =
-		roundMoney(
-			unitPrice *
-			currentQuantity
-		);
+    const total =
+        roundMoney(
+            unitPrice *
+            currentQuantity
+        );
 
 
     addToCartButton.textContent =
         `Adicionar • ${formatCurrency(total)}`;
 
+    addToCartButton.disabled =
+        false;
+
+    addToCartButton.classList.remove(
+        "button-disabled"
+    );
+
 }
+
 
 /* ==================================================
    FECHAR MODAL
@@ -1484,89 +1694,276 @@ decreaseQtyButton.addEventListener("click", () => {
 addToCartButton.addEventListener(
     "click",
     () => {
-		
-		const stockLimit =
-			getCurrentProductStockLimit();
 
+        const stockLimit =
+            getCurrentProductStockLimit();
 
-		if (
-			stockLimit !== null &&
-			currentQuantity > stockLimit
-		) {
-
-			alert(
-				`Quantidade disponível atingida.`
-			);
-
-			return;
-
-		}
-
-        /*
-         * Valida complementos obrigatórios.
-         */
 
         if (
-            !validateProductComplements()
+            stockLimit !== null &&
+            currentQuantity > stockLimit
         ) {
+
+            alert(
+                `Quantidade disponível atingida.`
+            );
 
             return;
 
         }
 
 
+        const isPizza =
+            currentProduct?.tipoProduto ===
+            "pizza";
+
+
+        if (isPizza) {
+
+            if (
+                !validatePizzaConfiguration()
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !validateProductComplements()
+            ) {
+
+                return;
+
+            }
+
+        }
+
+        else {
+
+            /*
+             * Valida complementos obrigatórios
+             * do fluxo normal.
+             */
+
+            if (
+                !validateProductComplements()
+            ) {
+
+                return;
+
+            }
+
+        }
+
+
         const observation =
-			itemObservation.value.trim();
+            itemObservation.value.trim();
 
 
-		const selection =
-			getSelectedComplements();
+        const extrasSelection =
+            getSelectedComplements();
 
 
-		const basePrice =
-			roundMoney(
-				Number(
-					currentProduct.preco || 0
-				)
-			);
+        let itemData;
 
 
-		const unitPrice =
-			roundMoney(
-				basePrice +
-				selection.precoComplementos
-			);
+        if (isPizza) {
+
+            const pizzaFlavorPrice =
+                calculateCurrentPizzaFlavorPrice();
 
 
-		cart.push({
+            const borderPrice =
+                Number(
+                    currentPizzaBorderOption?.preco || 0
+                );
 
-			id:
-				currentProduct.id,
 
-			nome:
-				currentProduct.nome,
+            const unitPrice =
+                roundMoney(
+                    pizzaFlavorPrice +
+                    borderPrice +
+                    extrasSelection.precoComplementos
+                );
 
-			precoBase:
-				roundMoney(basePrice),
 
-			complementos:
-				selection.complementos,
+            const selectedFlavors =
+                currentPizzaSelectedFlavors.map(
+                    flavor => ({
 
-			precoComplementos:
-				roundMoney(
-					selection.precoComplementos
-				),
+                        id:
+                            flavor.id,
 
-			precoUnitario:
-				roundMoney(unitPrice),
+                        nome:
+                            flavor.nome,
 
-			quantidade:
-				currentQuantity,
+                        preco:
+                            roundMoney(
+                                getPizzaFlavorPrice(
+                                    flavor,
+                                    currentPizzaType.id
+                                )
+                            )
 
-			observacao:
-				observation
+                    })
+                );
 
-		});
+
+            const pizzaComplementsPrice =
+                roundMoney(
+                    borderPrice +
+                    extrasSelection.precoComplementos
+                );
+
+
+            itemData = {
+
+                id:
+                    currentProduct.id,
+
+                nome:
+                    currentProduct.nome,
+
+                tipoProduto:
+                    "pizza",
+
+                tipoPizza: {
+
+                    id:
+                        currentPizzaType.id,
+
+                    nome:
+                        currentPizzaType.nome
+
+                },
+
+                quantidadeSabores:
+                    currentPizzaFlavorCount,
+
+                sabores:
+                    selectedFlavors,
+
+                regraCobranca:
+                    pizzariaConfig.regraCobrancaSabores,
+
+                valorSabores:
+                    roundMoney(
+                        pizzaFlavorPrice
+                    ),
+
+                borda:
+                    currentPizzaBorderOption
+
+                        ? {
+
+                            id:
+                                currentPizzaBorderOption.id,
+
+                            nome:
+                                currentPizzaBorderOption.nome,
+
+                            preco:
+                                roundMoney(
+                                    borderPrice
+                                )
+
+                        }
+
+                        : null,
+
+                valorBorda:
+                    roundMoney(
+                        borderPrice
+                    ),
+
+                precoBase:
+                    roundMoney(
+                        pizzaFlavorPrice
+                    ),
+
+                complementos:
+                    extrasSelection.complementos,
+
+                precoComplementos:
+                    pizzaComplementsPrice,
+
+                precoUnitario:
+                    roundMoney(
+                        unitPrice
+                    ),
+
+                quantidade:
+                    currentQuantity,
+
+                observacao:
+                    observation
+
+            };
+
+        }
+
+        else {
+
+            const basePrice =
+                roundMoney(
+                    Number(
+                        currentProduct.preco ||
+                        0
+                    )
+                );
+
+
+            const unitPrice =
+                roundMoney(
+                    basePrice +
+                    extrasSelection.precoComplementos
+                );
+
+
+            itemData = {
+
+                id:
+                    currentProduct.id,
+
+                nome:
+                    currentProduct.nome,
+
+                tipoProduto:
+                    "normal",
+
+                precoBase:
+                    roundMoney(
+                        basePrice
+                    ),
+
+                complementos:
+                    extrasSelection.complementos,
+
+                precoComplementos:
+                    roundMoney(
+                        extrasSelection.precoComplementos
+                    ),
+
+                precoUnitario:
+                    roundMoney(
+                        unitPrice
+                    ),
+
+                quantidade:
+                    currentQuantity,
+
+                observacao:
+                    observation
+
+            };
+
+        }
+
+
+        cart.push(
+            itemData
+        );
 
 
         updateCart();
@@ -1577,6 +1974,7 @@ addToCartButton.addEventListener(
 
     }
 );
+
 
 /* ==================================================
    ATUALIZAR CARRINHO
@@ -1610,8 +2008,10 @@ function renderCartItems() {
         cartItems.innerHTML =
             "<p>Seu carrinho está vazio.</p>";
 
+
         cartTotal.textContent =
             "R$ 0,00";
+
 
         return;
 
@@ -1625,24 +2025,100 @@ function renderCartItems() {
         (item, index) => {
 
             const unitPrice =
-                Number(
-                    item.precoUnitario ??
-                    item.preco ??
-                    0
+                roundMoney(
+                    Number(
+                        item.precoUnitario ??
+                        item.preco ??
+                        0
+                    )
                 );
 
 
             const subtotal =
-                unitPrice *
-                item.quantidade;
+                roundMoney(
+                    unitPrice *
+                    Number(
+                        item.quantidade || 0
+                    )
+                );
 
 
-            total += subtotal;
+            total =
+                roundMoney(
+                    total +
+                    subtotal
+                );
 
 
-            /*
-             * MONTA HTML DOS COMPLEMENTOS
-             */
+            let detailsHtml =
+                "";
+
+
+            if (
+                item.tipoProduto ===
+                "pizza"
+            ) {
+
+                detailsHtml += `
+
+                    <div class="cart-pizza-details">
+
+                        <div>
+                            <strong>Tipo:</strong>
+                            ${escapeHtml(
+                                item.tipoPizza?.nome || ""
+                            )}
+                        </div>
+
+                        <div>
+                            <strong>Sabores:</strong>
+                            ${
+                                Array.isArray(item.sabores)
+                                ? item.sabores
+                                    .map(
+                                        flavor =>
+                                            escapeHtml(
+                                                flavor.nome
+                                            )
+                                    )
+                                    .join(
+                                        ", "
+                                    )
+                                : ""
+                            }
+                        </div>
+
+                        ${
+                            item.borda
+                                ? `
+                                    <div>
+                                        <strong>Borda:</strong>
+                                        ${escapeHtml(
+                                            item.borda.nome
+                                        )}
+
+                                        ${
+                                            Number(
+                                                item.borda.preco || 0
+                                            ) > 0
+                                                ? `(+ ${formatCurrency(
+                                                    Number(
+                                                        item.borda.preco
+                                                    )
+                                                )})`
+                                                : ""
+                                        }
+                                    </div>
+                                `
+                                : ""
+                        }
+
+                    </div>
+
+                `;
+
+            }
+
 
             let complementsHtml =
                 "";
@@ -1656,7 +2132,9 @@ function renderCartItems() {
             ) {
 
                 complementsHtml += `
+
                     <div class="cart-item-complements">
+
                 `;
 
 
@@ -1664,13 +2142,17 @@ function renderCartItems() {
                     complement => {
 
                         complementsHtml += `
+
                             <div class="cart-complement-group">
 
                                 <strong>
-                                    ${complement.nome}:
+                                    ${escapeHtml(
+                                        complement.nome
+                                    )}:
                                 </strong>
 
                                 <div>
+
                         `;
 
 
@@ -1686,27 +2168,38 @@ function renderCartItems() {
 
                                 const quantityText =
                                     quantity > 1
-                                    ? `${quantity}x `
-                                    : "";
+                                        ? `${quantity}x `
+                                        : "";
 
 
                                 const optionTotal =
-                                    Number(
-                                        option.preco || 0
-                                    ) *
-                                    quantity;
+                                    roundMoney(
+                                        Number(
+                                            option.preco ||
+                                            0
+                                        ) *
+                                        quantity
+                                    );
 
 
                                 complementsHtml += `
+
                                     <div>
-                                        ${quantityText}${option.nome}
+
+                                        ${quantityText}
+
+                                        ${escapeHtml(
+                                            option.nome
+                                        )}
 
                                         ${
                                             optionTotal > 0
                                             ? `(+ ${formatCurrency(optionTotal)})`
                                             : ""
                                         }
+
                                     </div>
+
                                 `;
 
                             }
@@ -1714,9 +2207,11 @@ function renderCartItems() {
 
 
                         complementsHtml += `
+
                                 </div>
 
                             </div>
+
                         `;
 
                     }
@@ -1724,15 +2219,13 @@ function renderCartItems() {
 
 
                 complementsHtml += `
+
                     </div>
+
                 `;
 
             }
 
-
-            /*
-             * MONTA ITEM DO CARRINHO
-             */
 
             const div =
                 document.createElement(
@@ -1744,39 +2237,61 @@ function renderCartItems() {
                 "cart-item";
 
 
+            const displayBasePrice =
+                roundMoney(
+                    Number(
+                        item.precoBase ??
+                        item.preco ??
+                        0
+                    )
+                );
+
+
             div.innerHTML = `
 
                 <strong>
-                    ${item.quantidade}x ${item.nome} — ${formatCurrency(
-						Number(
-							item.precoBase ??
-							item.preco ??
-							0
-						)
-					)}
+
+                    ${Number(
+                        item.quantidade || 0
+                    )}x
+
+                    ${escapeHtml(
+                        item.nome
+                    )}
+
+                    — ${formatCurrency(
+                        displayBasePrice
+                    )}
+
                 </strong>
 
 
+                ${detailsHtml}
+
+
                 ${complementsHtml}
-
-
-                <div class="cart-item-subtotal">
-                    ${formatCurrency(subtotal)}
-                </div>
 
 
                 ${
                     item.observacao
                     ? `
                         <small>
-                            Obs: ${item.observacao}
+                            Obs: ${escapeHtml(
+                                item.observacao
+                            )}
                         </small>
                     `
                     : ""
                 }
 
 
-                <br>
+                <div class="cart-item-subtotal">
+
+                    ${formatCurrency(
+                        subtotal
+                    )}
+
+                </div>
 
 
                 <button
@@ -1798,7 +2313,9 @@ function renderCartItems() {
 
 
     cartTotal.textContent =
-        formatCurrency(total);
+        formatCurrency(
+            total
+        );
 
 
     document
@@ -1833,6 +2350,7 @@ function renderCartItems() {
         );
 
 }
+
 
 /* ==================================================
    ABRIR / FECHAR CARRINHO
@@ -2400,6 +2918,53 @@ sendOrderButton.addEventListener(
                 nome:
                     item.nome,
 
+                tipoProduto:
+                    item.tipoProduto || "normal",
+
+                ...(item.tipoProduto === "pizza"
+                    ? {
+
+                        tipoPizza:
+                            item.tipoPizza || null,
+
+                        quantidadeSabores:
+                            Number(
+                                item.quantidadeSabores || 0
+                            ),
+
+                        sabores:
+                            Array.isArray(
+                                item.sabores
+                            )
+                                ? item.sabores
+                                : [],
+
+                        regraCobranca:
+                            item.regraCobranca || null,
+
+                        valorSabores:
+                            roundMoney(
+                                Number(
+                                    item.valorSabores ??
+                                    item.precoBase ??
+                                    0
+                                )
+                            ),
+
+                        borda:
+                            item.borda || null,
+
+                        valorBorda:
+                            roundMoney(
+                                Number(
+                                    item.valorBorda || 0
+                                )
+                            )
+
+                    }
+                    : {}
+                ),
+
                 precoBase:
 					roundMoney(
 						Number(
@@ -2611,36 +3176,111 @@ sendOrderButton.addEventListener(
         item => {
 
             const basePrice =
-                Number(
-                    item.precoBase ??
-                    item.preco ??
-                    0
+                roundMoney(
+                    Number(
+                        item.precoBase ??
+                        item.preco ??
+                        0
+                    )
                 );
 
 
             const unitPrice =
-                Number(
-                    item.precoUnitario ??
-                    item.preco ??
-                    0
+                roundMoney(
+                    Number(
+                        item.precoUnitario ??
+                        item.preco ??
+                        0
+                    )
                 );
 
 
             const subtotal =
-                unitPrice *
-                item.quantidade;
+                roundMoney(
+                    unitPrice *
+                    Number(
+                        item.quantidade || 0
+                    )
+                );
 
-
-            /*
-             * Produto + preço base
-             */
 
             whatsappMessage +=
-                `${item.quantidade}x ${item.nome} — ${formatCurrency(basePrice)}%0A`;
+                `${item.quantidade}x ${escapeWhatsAppText(item.nome)} — ${formatCurrency(basePrice)}%0A`;
+
+
+            if (
+                item.tipoProduto ===
+                "pizza"
+            ) {
+
+                whatsappMessage +=
+                    `*Tipo:* ${escapeWhatsAppText(
+                        item.tipoPizza?.nome || ""
+                    )}%0A`;
+
+
+                if (
+                    Array.isArray(
+                        item.sabores
+                    )
+                ) {
+
+                    whatsappMessage +=
+                        `*Sabores:* ${item.sabores
+                            .map(
+                                flavor =>
+                                    escapeWhatsAppText(
+                                        flavor.nome
+                                    )
+                            )
+                            .join(
+                                ", "
+                            )}%0A`;
+
+                }
+
+
+                if (
+                    item.borda
+                ) {
+
+                    const borderPrice =
+                        roundMoney(
+                            Number(
+                                item.borda.preco ||
+                                0
+                            )
+                        );
+
+
+                    whatsappMessage +=
+                        `*Borda:* ${escapeWhatsAppText(
+                            item.borda.nome
+                        )}`;
+
+
+                    if (
+                        borderPrice > 0
+                    ) {
+
+                        whatsappMessage +=
+                            ` (+ ${formatCurrency(
+                                borderPrice
+                            )})`;
+
+                    }
+
+
+                    whatsappMessage +=
+                        `%0A`;
+
+                }
+
+            }
 
 
             /*
-             * Complementos
+             * Complementos e adicionais.
              */
 
             if (
@@ -2653,7 +3293,9 @@ sendOrderButton.addEventListener(
                     complement => {
 
                         whatsappMessage +=
-                            `*${complement.nome}:*%0A`;
+                            `*${escapeWhatsAppText(
+                                complement.nome
+                            )}:*%0A`;
 
 
                         complement.opcoes.forEach(
@@ -2673,14 +3315,19 @@ sendOrderButton.addEventListener(
 
 
                                 const optionTotal =
-                                    Number(
-                                        option.preco || 0
-                                    ) *
-                                    quantity;
+                                    roundMoney(
+                                        Number(
+                                            option.preco ||
+                                            0
+                                        ) *
+                                        quantity
+                                    );
 
 
                                 whatsappMessage +=
-                                    `- ${quantityText}${option.nome}`;
+                                    `- ${quantityText}${escapeWhatsAppText(
+                                        option.nome
+                                    )}`;
 
 
                                 if (
@@ -2688,7 +3335,9 @@ sendOrderButton.addEventListener(
                                 ) {
 
                                     whatsappMessage +=
-                                        ` (+ ${formatCurrency(optionTotal)})`;
+                                        ` (+ ${formatCurrency(
+                                            optionTotal
+                                        )})`;
 
                                 }
 
@@ -2710,13 +3359,17 @@ sendOrderButton.addEventListener(
             ) {
 
                 whatsappMessage +=
-                    `Obs: ${item.observacao}%0A`;
+                    `Obs: ${escapeWhatsAppText(
+                        item.observacao
+                    )}%0A`;
 
             }
 
 
             whatsappMessage +=
-                `Subtotal: ${formatCurrency(subtotal)}%0A%0A`;
+                `Subtotal: ${formatCurrency(
+                    subtotal
+                )}%0A%0A`;
 
         }
     );
@@ -3190,7 +3843,24 @@ async function loadProductsFromFirestore() {
             if (data.ativo === false) {
                 return;
             }
-			
+
+
+            const isPizza =
+                data.tipoProduto === "pizza";
+
+
+            if (
+                isPizza &&
+                (
+                    storeCardapioType !== "pizzaria" ||
+                    pizzariaConfig.ativo !== true
+                )
+            ) {
+
+                return;
+
+            }
+
 			const controlaEstoque =
 				data.controlaEstoque === true;
 
@@ -3236,6 +3906,16 @@ async function loadProductsFromFirestore() {
 
                 imagem:
                     data.imagemUrl || "",
+
+                tipoProduto:
+                    isPizza
+                        ? "pizza"
+                        : "normal",
+
+                pizzaria:
+                    isPizza && data.pizzaria
+                        ? data.pizzaria
+                        : {},
 
                 ativo:
 					data.ativo !== false,
@@ -3323,6 +4003,12 @@ async function loadStoreConfigFromFirestore() {
 
         const data =
             snapshot.data();
+
+
+        storeCardapioType =
+            data.tipoCardapio === "pizzaria"
+                ? "pizzaria"
+                : "geral";
 
 
         /* ==================================================
@@ -4013,3 +4699,2490 @@ function renderPaymentMethods() {
     togglePaymentFields();
 
 }
+
+/* ==================================================
+   CONFIGURAÇÃO PÚBLICA DA PIZZARIA
+   ================================================== */
+
+async function loadPizzariaPublicConfig() {
+
+    pizzariaConfig = {
+        ativo: false,
+        regraCobrancaSabores: "maior"
+    };
+
+    pizzariaTypes = [];
+
+    pizzariaFlavors = [];
+
+
+    if (
+        storeCardapioType !==
+        "pizzaria"
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const configReference =
+            doc(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pizzaria",
+                "configuracao"
+            );
+
+
+        const configSnapshot =
+            await getDoc(
+                configReference
+            );
+
+
+        if (
+            !configSnapshot.exists()
+        ) {
+
+            console.warn(
+                "Configuração da pizzaria não encontrada."
+            );
+
+            return;
+
+        }
+
+
+        const configData =
+            configSnapshot.data();
+
+
+        if (
+            configData.ativo !== true
+        ) {
+
+            return;
+
+        }
+
+
+        pizzariaConfig = {
+
+            ativo:
+                true,
+
+            regraCobrancaSabores:
+                configData.regraCobrancaSabores ===
+                "media"
+
+                    ? "media"
+                    : "maior"
+
+        };
+
+
+        const typesReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pizzaria",
+                "configuracao",
+                "tiposPizza"
+            );
+
+
+        const flavorsReference =
+            collection(
+                db,
+                "lojas",
+                "da-minha-vo",
+                "pizzaria",
+                "configuracao",
+                "sabores"
+            );
+
+
+        const [
+            typesSnapshot,
+            flavorsSnapshot
+        ] =
+            await Promise.all([
+
+                getDocs(
+                    query(
+                        typesReference,
+                        orderBy(
+                            "ordem",
+                            "asc"
+                        )
+                    )
+                ),
+
+                getDocs(
+                    query(
+                        flavorsReference,
+                        orderBy(
+                            "ordem",
+                            "asc"
+                        )
+                    )
+                )
+
+            ]);
+
+
+        typesSnapshot.forEach(
+            documentSnapshot => {
+
+                const data =
+                    documentSnapshot.data();
+
+
+                if (
+                    data.ativo === false
+                ) {
+
+                    return;
+
+                }
+
+
+                const min =
+                    Math.max(
+                        1,
+                        Number(
+                            data.minSabores || 1
+                        )
+                    );
+
+
+                const max =
+                    Math.max(
+                        min,
+                        Number(
+                            data.maxSabores || min
+                        )
+                    );
+
+
+                pizzariaTypes.push({
+
+                    id:
+                        documentSnapshot.id,
+
+                    nome:
+                        data.nome || "",
+
+                    minSabores:
+                        min,
+
+                    maxSabores:
+                        max,
+
+                    ativo:
+                        true,
+
+                    ordem:
+                        Number(
+                            data.ordem || 0
+                        )
+
+                });
+
+            }
+        );
+
+
+        flavorsSnapshot.forEach(
+            documentSnapshot => {
+
+                const data =
+                    documentSnapshot.data();
+
+
+                if (
+                    data.ativo === false
+                ) {
+
+                    return;
+
+                }
+
+
+                pizzariaFlavors.push({
+
+                    id:
+                        documentSnapshot.id,
+
+                    nome:
+                        data.nome || "",
+
+                    descricao:
+                        data.descricao || "",
+
+                    precosPorTipo:
+                        data.precosPorTipo ||
+                        {},
+
+                    ativo:
+                        true,
+
+                    ordem:
+                        Number(
+                            data.ordem || 0
+                        )
+
+                });
+
+            }
+        );
+
+
+        console.log(
+            `${pizzariaTypes.length} tipos e ${pizzariaFlavors.length} sabores de pizza carregados`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Erro ao carregar configuração pública da pizzaria:",
+            error
+        );
+
+        pizzariaConfig = {
+            ativo: false,
+            regraCobrancaSabores: "maior"
+        };
+
+    }
+
+}
+
+
+/* ==================================================
+   ESTADO DO CONFIGURADOR
+   ================================================== */
+
+function resetPizzaState() {
+
+    currentPizzaType =
+        null;
+
+    currentPizzaFlavorCount =
+        null;
+
+    currentPizzaSelectedFlavors =
+        [];
+
+    currentPizzaBorderComplement =
+        null;
+
+    currentPizzaBorderOption =
+        null;
+
+}
+
+
+/* ==================================================
+   TIPOS DISPONÍVEIS
+   ================================================== */
+
+function getAvailablePizzaTypes(
+    product
+) {
+
+    const configuredIds =
+        Array.isArray(
+            product?.pizzaria?.tiposPizzaIds
+        )
+            ? product.pizzaria.tiposPizzaIds
+            : [];
+
+
+    return pizzariaTypes.filter(
+        type =>
+
+            configuredIds.length ===
+            0
+
+            ||
+
+            configuredIds.includes(
+                type.id
+            )
+    );
+
+}
+
+
+/* ==================================================
+   SABORES DISPONÍVEIS
+   ================================================== */
+
+function getAvailablePizzaFlavors(
+    product,
+    typeId
+) {
+
+    const configuredIds =
+        Array.isArray(
+            product?.pizzaria?.saboresIds
+        )
+            ? product.pizzaria.saboresIds
+            : [];
+
+
+    return pizzariaFlavors.filter(
+        flavor => {
+
+            if (
+                configuredIds.length > 0 &&
+                !configuredIds.includes(
+                    flavor.id
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            return (
+                getPizzaFlavorPrice(
+                    flavor,
+                    typeId
+                ) > 0
+            );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   PREÇO DO SABOR
+   ================================================== */
+
+function getPizzaFlavorPrice(
+    flavor,
+    typeId
+) {
+
+    const value =
+        Number(
+            flavor?.precosPorTipo?.[typeId] ??
+            0
+        );
+
+
+    if (
+        !Number.isFinite(value)
+    ) {
+
+        return 0;
+
+    }
+
+
+    return roundMoney(
+        value
+    );
+
+}
+
+
+/* ==================================================
+   PREÇO INICIAL DA PIZZA
+   ================================================== */
+
+function getPizzaStartingPrice(
+    product
+) {
+
+    if (
+        !product ||
+        product.tipoProduto !==
+            "pizza" ||
+        pizzariaConfig.ativo !== true
+    ) {
+
+        return null;
+
+    }
+
+
+    const types =
+        getAvailablePizzaTypes(
+            product
+        );
+
+
+    let startingPrice =
+        null;
+
+
+    types.forEach(
+        type => {
+
+            const min =
+                Math.max(
+                    1,
+                    Number(
+                        type.minSabores || 1
+                    )
+                );
+
+
+            const flavors =
+                getAvailablePizzaFlavors(
+                    product,
+                    type.id
+                );
+
+
+            if (
+                flavors.length <
+                min
+            ) {
+
+                return;
+
+            }
+
+
+            const prices =
+                flavors
+                    .map(
+                        flavor =>
+                            getPizzaFlavorPrice(
+                                flavor,
+                                type.id
+                            )
+                    )
+                    .filter(
+                        price =>
+                            price > 0
+                    )
+                    .sort(
+                        (
+                            a,
+                            b
+                        ) =>
+                            a - b
+                    );
+
+
+            if (
+                prices.length <
+                min
+            ) {
+
+                return;
+
+            }
+
+
+            const selectedPrices =
+                prices.slice(
+                    0,
+                    min
+                );
+
+
+            let value;
+
+
+            if (
+                pizzariaConfig.regraCobrancaSabores ===
+                "media"
+            ) {
+
+                value =
+                    selectedPrices.reduce(
+                        (
+                            sum,
+                            price
+                        ) =>
+                            sum +
+                            price,
+                        0
+                    ) /
+                    selectedPrices.length;
+
+            }
+
+            else {
+
+                value =
+                    selectedPrices[
+                        selectedPrices.length - 1
+                    ];
+
+            }
+
+
+            value =
+                roundMoney(
+                    value
+                );
+
+
+            if (
+                startingPrice === null ||
+                value < startingPrice
+            ) {
+
+                startingPrice =
+                    value;
+
+            }
+
+        }
+    );
+
+
+    return startingPrice;
+
+}
+
+
+/* ==================================================
+   CONFIGURADOR DE PIZZA
+   ================================================== */
+
+function renderPizzaConfigurator(
+    product,
+    complements
+) {
+
+    resetPizzaState();
+
+
+    const availableTypes =
+        getAvailablePizzaTypes(
+            product
+        );
+
+
+    const configurator =
+        document.createElement(
+            "div"
+        );
+
+
+    configurator.className =
+        "pizza-configurator";
+
+
+    configurator.innerHTML = `
+
+        <div
+            class="pizza-step"
+            data-step="type"
+        >
+
+            <div class="pizza-step-header">
+
+                <span class="pizza-step-number">
+                    1
+                </span>
+
+                <div>
+
+                    <h3>
+                        Escolha o tipo da pizza
+                    </h3>
+
+                    <p>
+                        Selecione o tamanho ou formato desejado.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="pizzaTypeOptions"
+                class="pizza-option-grid"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="pizzaFlavorCountStep"
+            class="pizza-step pizza-step-hidden"
+        >
+
+            <div class="pizza-step-header">
+
+                <span class="pizza-step-number">
+                    2
+                </span>
+
+                <div>
+
+                    <h3>
+                        Quantos sabores?
+                    </h3>
+
+                    <p id="pizzaFlavorCountHelper">
+                        Escolha a quantidade de sabores.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="pizzaFlavorCountOptions"
+                class="pizza-option-grid"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="pizzaBorderStep"
+            class="pizza-step pizza-step-hidden"
+        >
+
+            <div class="pizza-step-header">
+
+                <span class="pizza-step-number">
+                    3
+                </span>
+
+                <div>
+
+                    <h3>
+                        Escolha a borda
+                    </h3>
+
+                    <p>
+                        Escolha uma borda recheada ou sem borda.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="pizzaBorderOptions"
+                class="pizza-option-list"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="pizzaFlavorsStep"
+            class="pizza-step pizza-step-hidden"
+        >
+
+            <div class="pizza-step-header">
+
+                <span class="pizza-step-number">
+                    4
+                </span>
+
+                <div>
+
+                    <h3>
+                        Escolha os sabores
+                    </h3>
+
+                    <p id="pizzaFlavorsHelper">
+                        Selecione os sabores da sua pizza.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="pizzaFlavorOptions"
+                class="pizza-option-list"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="pizzaExtrasStep"
+            class="pizza-step pizza-step-hidden"
+        >
+
+            <div class="pizza-step-header">
+
+                <span class="pizza-step-number">
+                    5
+                </span>
+
+                <div>
+
+                    <h3>
+                        Adicionais
+                    </h3>
+
+                    <p>
+                        Escolha outros adicionais, se disponíveis.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="pizzaExtrasOptions"
+                class="pizza-extras-container"
+            ></div>
+
+        </div>
+
+    `;
+
+
+    productComplements.innerHTML =
+        "";
+
+
+    productComplements.style.display =
+        "block";
+
+
+    productComplements.appendChild(
+        configurator
+    );
+
+
+    const typeOptions =
+        configurator.querySelector(
+            "#pizzaTypeOptions"
+        );
+
+
+    const flavorCountStep =
+        configurator.querySelector(
+            "#pizzaFlavorCountStep"
+        );
+
+
+    const flavorCountOptions =
+        configurator.querySelector(
+            "#pizzaFlavorCountOptions"
+        );
+
+
+    const flavorCountHelper =
+        configurator.querySelector(
+            "#pizzaFlavorCountHelper"
+        );
+
+
+    const borderStep =
+        configurator.querySelector(
+            "#pizzaBorderStep"
+        );
+
+
+    const borderOptions =
+        configurator.querySelector(
+            "#pizzaBorderOptions"
+        );
+
+
+    const flavorsStep =
+        configurator.querySelector(
+            "#pizzaFlavorsStep"
+        );
+
+
+    const flavorOptions =
+        configurator.querySelector(
+            "#pizzaFlavorOptions"
+        );
+
+
+    const extrasStep =
+        configurator.querySelector(
+            "#pizzaExtrasStep"
+        );
+
+
+    const extrasOptions =
+        configurator.querySelector(
+            "#pizzaExtrasOptions"
+        );
+
+
+    if (
+        availableTypes.length === 0
+    ) {
+
+        typeOptions.innerHTML = `
+
+            <div class="pizza-config-error">
+
+                Nenhum tipo de pizza disponível para este produto.
+
+            </div>
+
+        `;
+
+        updateAddButtonPrice();
+
+        return;
+
+    }
+
+
+    availableTypes.forEach(
+        type => {
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+
+            label.className =
+                "pizza-option-card";
+
+
+            label.innerHTML = `
+
+                <input
+                    type="radio"
+                    name="pizzaType"
+                    value="${type.id}"
+                >
+
+                <span>
+
+                    <strong>
+                        ${escapeHtml(
+                            type.nome
+                        )}
+                    </strong>
+
+                    <small>
+                        ${
+                            type.minSabores ===
+                            type.maxSabores
+
+                                ? `${type.maxSabores} ${
+                                    type.maxSabores === 1
+                                        ? "sabor"
+                                        : "sabores"
+                                }`
+
+                                : `${type.minSabores} a ${type.maxSabores} sabores`
+                        }
+                    </small>
+
+                </span>
+
+            `;
+
+
+            const radio =
+                label.querySelector(
+                    "input"
+                );
+
+
+            radio.addEventListener(
+                "change",
+                () => {
+
+                    currentPizzaType =
+                        availableTypes.find(
+                            item =>
+                                item.id ===
+                                radio.value
+                        )
+                        ||
+                        null;
+
+
+                    currentPizzaFlavorCount =
+                        null;
+
+                    currentPizzaSelectedFlavors =
+                        [];
+
+                    currentPizzaBorderOption =
+                        null;
+
+
+                    flavorCountStep.classList.add(
+                        "pizza-step-hidden"
+                    );
+
+                    borderStep.classList.add(
+                        "pizza-step-hidden"
+                    );
+
+                    flavorsStep.classList.add(
+                        "pizza-step-hidden"
+                    );
+
+                    extrasStep.classList.add(
+                        "pizza-step-hidden"
+                    );
+
+
+                    flavorCountOptions.innerHTML =
+                        "";
+
+                    borderOptions.innerHTML =
+                        "";
+
+                    flavorOptions.innerHTML =
+                        "";
+
+
+
+                    renderPizzaFlavorCount(
+                        flavorCountStep,
+                        flavorCountOptions,
+                        flavorCountHelper
+                    );
+
+
+                    updateAddButtonPrice();
+
+                }
+            );
+
+
+            typeOptions.appendChild(
+                label
+            );
+
+        }
+    );
+
+
+    /*
+     * Um único tipo pode ser selecionado
+     * automaticamente.
+     */
+
+    if (
+        availableTypes.length === 1
+    ) {
+
+        const radio =
+            typeOptions.querySelector(
+                "input"
+            );
+
+
+        if (radio) {
+
+            radio.checked =
+                true;
+
+
+            currentPizzaType =
+                availableTypes[0];
+
+
+            renderPizzaFlavorCount(
+                flavorCountStep,
+                flavorCountOptions,
+                flavorCountHelper
+            );
+
+        }
+
+    }
+
+
+    /*
+     * Detecta o complemento de borda.
+     *
+     * A identificação principal é o campo
+     * funcaoPizzaria. O fallback por nome
+     * permite compatibilidade com configurações
+     * antigas que tenham um complemento chamado
+     * "Borda" ou "Bordas".
+     */
+
+    currentPizzaBorderComplement =
+        complements.find(
+            complement =>
+                normalizePizzaText(
+                    complement.funcaoPizzaria
+                ) ===
+                "borda"
+        )
+        ||
+        complements.find(
+            complement =>
+                normalizePizzaText(
+                    complement.nome
+                ).includes(
+                    "borda"
+                )
+        )
+        ||
+        null;
+
+
+    /*
+     * Os demais complementos continuam sendo
+     * tratados pelo mecanismo genérico existente.
+     */
+
+    currentProductComplements =
+        complements.filter(
+            complement =>
+                !currentPizzaBorderComplement
+                ||
+                complement.id !==
+                    currentPizzaBorderComplement.id
+        );
+
+
+    if (
+        currentPizzaBorderComplement
+    ) {
+
+        renderPizzaBorderStep(
+            borderStep,
+            borderOptions
+        );
+
+    }
+
+
+    renderProductComplements(
+        currentProductComplements,
+        extrasOptions
+    );
+
+
+    if (
+        currentPizzaFlavorCount
+    ) {
+
+        showPizzaBorderAndFlavors();
+
+    }
+
+
+    updateAddButtonPrice();
+
+}
+
+
+/* ==================================================
+   QUANTIDADE DE SABORES
+   ================================================== */
+
+function renderPizzaFlavorCount(
+    step,
+    container,
+    helper
+) {
+
+    if (
+        !currentPizzaType
+    ) {
+
+        step.classList.add(
+            "pizza-step-hidden"
+        );
+
+        return;
+
+    }
+
+
+    const min =
+        Math.max(
+            1,
+            Number(
+                currentPizzaType.minSabores || 1
+            )
+        );
+
+
+    const max =
+        Math.max(
+            min,
+            Number(
+                currentPizzaType.maxSabores || min
+            )
+        );
+
+
+    helper.textContent =
+        min === max
+
+            ? `Esta pizza permite ${min} ${
+                min === 1
+                    ? "sabor"
+                    : "sabores"
+            }.`
+
+            : `Escolha de ${min} a ${max} sabores.`;
+
+
+    container.innerHTML =
+        "";
+
+
+    step.classList.remove(
+        "pizza-step-hidden"
+    );
+
+
+    for (
+        let count = min;
+        count <= max;
+        count++
+    ) {
+
+        const label =
+            document.createElement(
+                "label"
+            );
+
+
+        label.className =
+            "pizza-option-card pizza-flavor-count-card";
+
+
+        label.innerHTML = `
+
+            <input
+                type="radio"
+                name="pizzaFlavorCount"
+                value="${count}"
+            >
+
+            <span>
+
+                <strong>
+                    ${count}
+                    ${
+                        count === 1
+                            ? "sabor"
+                            : "sabores"
+                    }
+                </strong>
+
+            </span>
+
+        `;
+
+
+        const radio =
+            label.querySelector(
+                "input"
+            );
+
+
+        radio.addEventListener(
+            "change",
+            () => {
+
+                currentPizzaFlavorCount =
+                    count;
+
+                currentPizzaSelectedFlavors =
+                    [];
+
+                showPizzaBorderAndFlavors();
+
+                updateAddButtonPrice();
+
+            }
+        );
+
+
+        container.appendChild(
+            label
+        );
+
+    }
+
+
+    if (
+        min === max
+    ) {
+
+        const radio =
+            container.querySelector(
+                "input"
+            );
+
+
+        if (radio) {
+
+            radio.checked =
+                true;
+
+
+            currentPizzaFlavorCount =
+                min;
+
+
+            showPizzaBorderAndFlavors();
+
+        }
+
+    }
+
+}
+
+
+/* ==================================================
+   MOSTRA BORDA E SABORES
+   ================================================== */
+
+function showPizzaBorderAndFlavors() {
+
+    const borderStep =
+        productComplements.querySelector(
+            "#pizzaBorderStep"
+        );
+
+
+    const flavorsStep =
+        productComplements.querySelector(
+            "#pizzaFlavorsStep"
+        );
+
+
+    if (
+        currentPizzaBorderComplement &&
+        borderStep
+    ) {
+
+        borderStep.classList.remove(
+            "pizza-step-hidden"
+        );
+
+    }
+
+
+    if (
+        flavorsStep
+    ) {
+
+        flavorsStep.classList.remove(
+            "pizza-step-hidden"
+        );
+
+    }
+
+
+    const extrasStep =
+        productComplements.querySelector(
+            "#pizzaExtrasStep"
+        );
+
+
+    if (
+        extrasStep &&
+        currentProductComplements.length > 0
+    ) {
+
+        extrasStep.classList.remove(
+            "pizza-step-hidden"
+        );
+
+    }
+
+
+    renderPizzaFlavors();
+
+    updateAddButtonPrice();
+
+}
+
+
+/* ==================================================
+   BORDA
+   ================================================== */
+
+function renderPizzaBorderStep(
+    step,
+    container
+) {
+
+    if (
+        !currentPizzaBorderComplement
+    ) {
+
+        step.classList.add(
+            "pizza-step-hidden"
+        );
+
+        return;
+
+    }
+
+
+    const options =
+        Array.isArray(
+            currentPizzaBorderComplement.opcoes
+        )
+
+            ? currentPizzaBorderComplement.opcoes.filter(
+                option =>
+                    option.ativo !== false
+            )
+
+            : [];
+
+
+    if (
+        options.length === 0
+    ) {
+
+        step.classList.add(
+            "pizza-step-hidden"
+        );
+
+        currentPizzaBorderOption =
+            null;
+
+        return;
+
+    }
+
+
+    step.classList.remove(
+        "pizza-step-hidden"
+    );
+
+
+    container.innerHTML =
+        "";
+
+
+    /*
+     * "Sem borda" é a opção padrão quando
+     * a pizzaria a disponibiliza.
+     */
+
+    const defaultOption =
+        options.find(
+            option =>
+                normalizePizzaText(
+                    option.nome
+                ).includes(
+                    "sem borda"
+                )
+        )
+        ||
+        null;
+
+
+    if (
+        defaultOption
+    ) {
+
+        currentPizzaBorderOption =
+            defaultOption;
+
+    }
+
+
+    options.forEach(
+        option => {
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+
+            label.className =
+                "pizza-radio-option";
+
+
+            const price =
+                roundMoney(
+                    Number(
+                        option.preco || 0
+                    )
+                );
+
+
+            label.innerHTML = `
+
+                <input
+                    type="radio"
+                    name="pizzaBorder"
+                    value="${option.id}"
+                >
+
+                <span>
+
+                    <strong>
+                        ${escapeHtml(
+                            option.nome
+                        )}
+                    </strong>
+
+                    ${
+                        price > 0
+                            ? `
+                                <small>
+                                    + ${formatCurrency(
+                                        price
+                                    )}
+                                </small>
+                              `
+                            : ""
+                    }
+
+                </span>
+
+            `;
+
+
+            const radio =
+                label.querySelector(
+                    "input"
+                );
+
+
+            if (
+                defaultOption &&
+                defaultOption.id ===
+                    option.id
+            ) {
+
+                radio.checked =
+                    true;
+
+            }
+
+
+            radio.addEventListener(
+                "change",
+                () => {
+
+                    currentPizzaBorderOption =
+                        options.find(
+                            item =>
+                                item.id ===
+                                radio.value
+                        )
+                        ||
+                        null;
+
+
+                    updateAddButtonPrice();
+
+                }
+            );
+
+
+            container.appendChild(
+                label
+            );
+
+        }
+    );
+
+
+    updateAddButtonPrice();
+
+}
+
+
+/* ==================================================
+   SABORES
+   ================================================== */
+
+function renderPizzaFlavors() {
+
+    const flavorsStep =
+        productComplements.querySelector(
+            "#pizzaFlavorsStep"
+        );
+
+
+    const flavorOptions =
+        productComplements.querySelector(
+            "#pizzaFlavorOptions"
+        );
+
+
+    const helper =
+        productComplements.querySelector(
+            "#pizzaFlavorsHelper"
+        );
+
+
+    if (
+        !currentPizzaType ||
+        !currentPizzaFlavorCount
+    ) {
+
+        flavorsStep.classList.add(
+            "pizza-step-hidden"
+        );
+
+        return;
+
+    }
+
+
+    const flavors =
+        getAvailablePizzaFlavors(
+            currentProduct,
+            currentPizzaType.id
+        );
+
+
+    const requiredText =
+        currentPizzaFlavorCount === 1
+            ? "sabor"
+            : "sabores";
+
+
+    helper.textContent =
+        `Selecione exatamente ${currentPizzaFlavorCount} ${requiredText}.`;
+
+
+    flavorOptions.innerHTML =
+        "";
+
+
+    if (
+        flavors.length <
+        currentPizzaFlavorCount
+    ) {
+
+        flavorOptions.innerHTML = `
+
+            <div class="pizza-config-error">
+
+                Não há sabores suficientes disponíveis
+                para esta configuração.
+
+            </div>
+
+        `;
+
+
+        updateAddButtonPrice();
+
+        return;
+
+    }
+
+
+    flavors.forEach(
+        flavor => {
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+
+            label.className =
+                "pizza-checkbox-option";
+
+
+            const price =
+                getPizzaFlavorPrice(
+                    flavor,
+                    currentPizzaType.id
+                );
+
+
+            label.innerHTML = `
+
+                <input
+                    type="checkbox"
+                    value="${flavor.id}"
+                >
+
+                <div class="pizza-flavor-option-info">
+
+                    <strong>
+                        ${escapeHtml(
+                            flavor.nome
+                        )}
+                    </strong>
+
+                    ${
+                        flavor.descricao
+                            ? `
+                                <em>
+                                    ${escapeHtml(
+                                        flavor.descricao
+                                    )}
+                                </em>
+                              `
+                            : ""
+                    }
+
+                </div>
+
+                <small>
+                    ${formatCurrency(price)}
+                </small>
+
+            `;
+
+
+            const checkbox =
+                label.querySelector(
+                    "input"
+                );
+
+
+            checkbox.addEventListener(
+                "change",
+                () => {
+
+                    if (
+                        checkbox.checked
+                    ) {
+
+                        if (
+                            currentPizzaSelectedFlavors.length >=
+                            currentPizzaFlavorCount
+                        ) {
+
+                            checkbox.checked =
+                                false;
+
+
+                            alert(
+                                `Você pode escolher no máximo ${currentPizzaFlavorCount} ${
+                                    currentPizzaFlavorCount === 1
+                                        ? "sabor"
+                                        : "sabores"
+                                }.`
+                            );
+
+
+                            return;
+
+                        }
+
+
+                        const selectedFlavor =
+                            flavors.find(
+                                item =>
+                                    item.id ===
+                                    checkbox.value
+                            );
+
+
+                        if (
+                            selectedFlavor
+                        ) {
+
+                            currentPizzaSelectedFlavors.push(
+                                selectedFlavor
+                            );
+
+                        }
+
+                    }
+
+                    else {
+
+                        currentPizzaSelectedFlavors =
+                            currentPizzaSelectedFlavors.filter(
+                                selected =>
+                                    selected.id !==
+                                    checkbox.value
+                            );
+
+                    }
+
+
+                    updatePizzaFlavorSummary();
+
+                    updateAddButtonPrice();
+
+                }
+            );
+
+
+            flavorOptions.appendChild(
+                label
+            );
+
+        }
+    );
+
+
+    flavorsStep.classList.remove(
+        "pizza-step-hidden"
+    );
+
+
+    updatePizzaFlavorSummary();
+
+}
+
+
+/* ==================================================
+   RESUMO DOS SABORES
+   ================================================== */
+
+function updatePizzaFlavorSummary() {
+
+    const helper =
+        productComplements.querySelector(
+            "#pizzaFlavorsHelper"
+        );
+
+
+    if (
+        !helper ||
+        !currentPizzaFlavorCount
+    ) {
+
+        return;
+
+    }
+
+
+    const selectedCount =
+        currentPizzaSelectedFlavors.length;
+
+
+    const total =
+        currentPizzaFlavorCount;
+
+
+    if (
+        selectedCount ===
+        total
+    ) {
+
+        helper.textContent =
+            `Selecionados: ${selectedCount} de ${total}.`;
+
+    }
+
+    else {
+
+        helper.textContent =
+            `Selecione ${total - selectedCount} ${
+                total - selectedCount === 1
+                    ? "sabor"
+                    : "sabores"
+            } para completar a pizza.`;
+
+    }
+
+}
+
+
+/* ==================================================
+   PREÇO DOS SABORES SELECIONADOS
+   ================================================== */
+
+function calculateCurrentPizzaFlavorPrice() {
+
+    if (
+        !currentPizzaType ||
+        currentPizzaSelectedFlavors.length === 0
+    ) {
+
+        return 0;
+
+    }
+
+
+    const prices =
+        currentPizzaSelectedFlavors.map(
+            flavor =>
+                getPizzaFlavorPrice(
+                    flavor,
+                    currentPizzaType.id
+                )
+        );
+
+
+    if (
+        prices.some(
+            price =>
+                price <= 0
+        )
+    ) {
+
+        return 0;
+
+    }
+
+
+    if (
+        pizzariaConfig.regraCobrancaSabores ===
+        "media"
+    ) {
+
+        return roundMoney(
+            prices.reduce(
+                (
+                    sum,
+                    price
+                ) =>
+                    sum +
+                    price,
+                0
+            ) /
+            prices.length
+        );
+
+    }
+
+
+    return roundMoney(
+        Math.max(
+            ...prices
+        )
+    );
+
+}
+
+
+/* ==================================================
+   VERIFICA COMPLEMENTOS GENÉRICOS
+   ================================================== */
+
+function areProductComplementsComplete() {
+
+    for (
+        const complement
+        of currentProductComplements
+    ) {
+
+        if (
+            complement.minimo <= 0
+        ) {
+
+            continue;
+
+        }
+
+
+        let selectedQuantity =
+            0;
+
+
+        if (
+            complement.tipo ===
+            "unica"
+        ) {
+
+            selectedQuantity =
+                document.querySelector(
+                    `input[name="complement-${complement.id}"]:checked`
+                )
+                    ? 1
+                    : 0;
+
+        }
+
+        else if (
+            complement.tipo ===
+            "multipla"
+        ) {
+
+            selectedQuantity =
+                document.querySelectorAll(
+                    `input.multiple-complement-option[data-complement-id="${complement.id}"]:checked`
+                ).length;
+
+        }
+
+        else if (
+            complement.tipo ===
+            "quantidade"
+        ) {
+
+            selectedQuantity =
+                [
+                    ...document.querySelectorAll(
+                        `.complement-quantity-selector[data-complement-id="${complement.id}"] .complement-quantity-value`
+                    )
+                ]
+                    .reduce(
+                        (
+                            sum,
+                            element
+                        ) =>
+                            sum +
+                            Number(
+                                element.textContent ||
+                                0
+                            ),
+                        0
+                    );
+
+        }
+
+
+        if (
+            selectedQuantity <
+            complement.minimo
+        ) {
+
+            return false;
+
+        }
+
+    }
+
+
+    return true;
+
+}
+
+
+/* ==================================================
+   CONFIGURAÇÃO COMPLETA DA PIZZA
+   ================================================== */
+
+function isPizzaConfigurationComplete() {
+
+    if (
+        !currentProduct ||
+        currentProduct.tipoProduto !==
+            "pizza"
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        !currentPizzaType
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        !currentPizzaFlavorCount
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        currentPizzaSelectedFlavors.length !==
+        currentPizzaFlavorCount
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        currentPizzaBorderComplement
+    ) {
+
+        const required =
+            currentPizzaBorderComplement.minimo >
+            0;
+
+
+        if (
+            required &&
+            !currentPizzaBorderOption
+        ) {
+
+            return false;
+
+        }
+
+    }
+
+
+    return (
+        calculateCurrentPizzaFlavorPrice() >
+        0 &&
+        areProductComplementsComplete()
+    );
+
+}
+
+
+/* ==================================================
+   VALIDA CONFIGURAÇÃO DA PIZZA
+   ================================================== */
+
+function validatePizzaConfiguration() {
+
+    if (
+        !currentPizzaType
+    ) {
+
+        alert(
+            "Escolha o tipo da pizza."
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        !currentPizzaFlavorCount
+    ) {
+
+        alert(
+            "Escolha a quantidade de sabores."
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        currentPizzaSelectedFlavors.length !==
+        currentPizzaFlavorCount
+    ) {
+
+        alert(
+            `Selecione exatamente ${currentPizzaFlavorCount} ${
+                currentPizzaFlavorCount === 1
+                    ? "sabor"
+                    : "sabores"
+            }.`
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        currentPizzaBorderComplement &&
+        currentPizzaBorderComplement.minimo >
+            0 &&
+        !currentPizzaBorderOption
+    ) {
+
+        alert(
+            `Escolha uma opção em "${currentPizzaBorderComplement.nome}".`
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        calculateCurrentPizzaFlavorPrice() <=
+        0
+    ) {
+
+        alert(
+            "Não foi possível calcular o preço desta pizza."
+        );
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+/* ==================================================
+   NORMALIZA TEXTO
+   ================================================== */
+
+function normalizePizzaText(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .trim()
+        .toLocaleLowerCase(
+            "pt-BR"
+        )
+        .normalize(
+            "NFD"
+        )
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        );
+
+}
+
+
+/* ==================================================
+   ESCAPA HTML
+   ================================================== */
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* ==================================================
+   TEXTO PARA WHATSAPP
+   ================================================== */
+
+function escapeWhatsAppText(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /%/g,
+            "%25"
+        )
+        .replace(
+            /\r?\n/g,
+            "%0A"
+        )
+        .replace(
+            /&/g,
+            "%26"
+        );
+
+}
+
+
+/* ==================================================
+   ESTILOS DO CONFIGURADOR
+   ================================================== */
+
+function injectPizzaConfiguratorStyles() {
+
+    if (
+        document.getElementById(
+            "pizzaConfiguratorStyles"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const style =
+        document.createElement(
+            "style"
+        );
+
+
+    style.id =
+        "pizzaConfiguratorStyles";
+
+
+    style.textContent = `
+
+        .pizza-configurator {
+            margin-top: 6px;
+        }
+
+        .pizza-step {
+            margin-bottom: 18px;
+            padding: 16px;
+            border: 1px solid #e7e7e7;
+            border-radius: 14px;
+            background: #fff;
+        }
+
+        .pizza-step-hidden {
+            display: none;
+        }
+
+        .pizza-step-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .pizza-step-number {
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .pizza-step-header h3 {
+            margin: 2px 0 3px;
+            font-size: 17px;
+            line-height: 1.2;
+        }
+
+        .pizza-step-header p {
+            margin: 0;
+            color: #777;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .pizza-option-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(
+                        130px,
+                        1fr
+                    )
+                );
+            gap: 9px;
+        }
+
+        .pizza-option-card {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            cursor: pointer;
+        }
+
+        .pizza-option-card input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .pizza-option-card span {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 11px;
+            background: #fff;
+            transition: .15s ease;
+        }
+
+        .pizza-option-card strong {
+            display: block;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .pizza-option-card small {
+            display: block;
+            margin-top: 4px;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .pizza-option-card input:checked + span {
+            border-color: var(--primary);
+            background: #fafafa;
+            box-shadow:
+                0 0 0 1px
+                var(--primary);
+        }
+
+        .pizza-option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .pizza-radio-option,
+        .pizza-checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .pizza-radio-option:hover,
+        .pizza-checkbox-option:hover {
+            background: #fafafa;
+        }
+
+        .pizza-radio-option input,
+        .pizza-checkbox-option input {
+            flex: 0 0 auto;
+        }
+
+        .pizza-radio-option span,
+        .pizza-checkbox-option span {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .pizza-flavor-option-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .pizza-flavor-option-info em {
+            color: #777;
+            font-size: 11px;
+            line-height: 1.35;
+            font-style: normal;
+        }
+
+
+        .pizza-radio-option strong,
+        .pizza-checkbox-option strong {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .pizza-radio-option small,
+        .pizza-checkbox-option small {
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .pizza-config-error {
+            padding: 12px;
+            border-radius: 10px;
+            background: #fff5f3;
+            color: var(--primary);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .pizza-extras-container {
+            display: block;
+        }
+
+        .pizza-step .product-complement-group {
+            margin-bottom: 10px;
+            padding: 10px;
+            border:
+                1px solid #ededed;
+            border-radius: 10px;
+        }
+
+        .pizza-step .product-complement-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .pizza-flavor-count-card span {
+            text-align: center;
+        }
+
+        .cart-pizza-details {
+            margin-top: 7px;
+            padding: 8px 10px;
+            border-left:
+                3px solid
+                var(--primary);
+            background: #fafafa;
+            border-radius: 7px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 480px) {
+
+            .pizza-option-grid {
+                grid-template-columns:
+                    repeat(
+                        2,
+                        minmax(
+                            0,
+                            1fr
+                        )
+                    );
+            }
+
+            .pizza-step {
+                padding: 13px;
+            }
+
+            .pizza-radio-option,
+            .pizza-checkbox-option {
+                padding: 10px;
+            }
+
+        }
+
+    `;
+
+
+    document.head.appendChild(
+        style
+    );
+
+}
+
