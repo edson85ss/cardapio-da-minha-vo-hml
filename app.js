@@ -5354,41 +5354,6 @@ function renderPizzaConfigurator(
 
 
 
-
-        <div
-            id="pizzaFlavorCountStep"
-            class="pizza-step pizza-step-hidden"
-        >
-
-            <div class="pizza-step-header">
-
-                <span class="pizza-step-number">
-                    3
-                </span>
-
-                <div>
-
-                    <h3>
-                        Quantos sabores?
-                    </h3>
-
-                    <p id="pizzaFlavorCountHelper">
-                        Escolha a quantidade de sabores.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="pizzaFlavorCountOptions"
-                class="pizza-option-grid"
-            ></div>
-
-        </div>
-
-
         <div
             id="pizzaFlavorsStep"
             class="pizza-step pizza-step-hidden"
@@ -5397,7 +5362,7 @@ function renderPizzaConfigurator(
             <div class="pizza-step-header">
 
                 <span class="pizza-step-number">
-                    4
+                    3
                 </span>
 
                 <div>
@@ -5431,7 +5396,7 @@ function renderPizzaConfigurator(
             <div class="pizza-step-header">
 
                 <span class="pizza-step-number">
-                    5
+                    4
                 </span>
 
                 <div>
@@ -5477,23 +5442,6 @@ function renderPizzaConfigurator(
             "#pizzaTypeOptions"
         );
 
-
-    const flavorCountStep =
-        configurator.querySelector(
-            "#pizzaFlavorCountStep"
-        );
-
-
-    const flavorCountOptions =
-        configurator.querySelector(
-            "#pizzaFlavorCountOptions"
-        );
-
-
-    const flavorCountHelper =
-        configurator.querySelector(
-            "#pizzaFlavorCountHelper"
-        );
 
 
     const borderStep =
@@ -5632,10 +5580,6 @@ function renderPizzaConfigurator(
                         null;
 
 
-                    flavorCountStep.classList.add(
-                        "pizza-step-hidden"
-                    );
-
                     borderStep.classList.add(
                         "pizza-step-hidden"
                     );
@@ -5648,9 +5592,6 @@ function renderPizzaConfigurator(
                         "pizza-step-hidden"
                     );
 
-
-                    flavorCountOptions.innerHTML =
-                        "";
 
                     borderOptions.innerHTML =
                         "";
@@ -5673,11 +5614,7 @@ function renderPizzaConfigurator(
 
                     else {
 
-                        renderPizzaFlavorCount(
-                            flavorCountStep,
-                            flavorCountOptions,
-                            flavorCountHelper
-                        );
+                        showPizzaFlavorsAndExtras();
 
                     }
 
@@ -5795,11 +5732,7 @@ function renderPizzaConfigurator(
 
         else {
 
-            renderPizzaFlavorCount(
-                flavorCountStep,
-                flavorCountOptions,
-                flavorCountHelper
-            );
+            showPizzaFlavorsAndExtras();
 
         }
 
@@ -5820,164 +5753,6 @@ function renderPizzaConfigurator(
 /* ==================================================
    QUANTIDADE DE SABORES
    ================================================== */
-
-function renderPizzaFlavorCount(
-    step,
-    container,
-    helper
-) {
-
-    if (
-        !currentPizzaType
-    ) {
-
-        step.classList.add(
-            "pizza-step-hidden"
-        );
-
-        return;
-
-    }
-
-
-    const min =
-        Math.max(
-            1,
-            Number(
-                currentPizzaType.minSabores || 1
-            )
-        );
-
-
-    const max =
-        Math.max(
-            min,
-            Number(
-                currentPizzaType.maxSabores || min
-            )
-        );
-
-
-    helper.textContent =
-        min === max
-
-            ? `Esta pizza permite ${min} ${
-                min === 1
-                    ? "sabor"
-                    : "sabores"
-            }.`
-
-            : `Escolha de ${min} a ${max} sabores.`;
-
-
-    container.innerHTML =
-        "";
-
-
-    step.classList.remove(
-        "pizza-step-hidden"
-    );
-
-
-    for (
-        let count = min;
-        count <= max;
-        count++
-    ) {
-
-        const label =
-            document.createElement(
-                "label"
-            );
-
-
-        label.className =
-            "pizza-option-card pizza-flavor-count-card";
-
-
-        label.innerHTML = `
-
-            <input
-                type="radio"
-                name="pizzaFlavorCount"
-                value="${count}"
-            >
-
-            <span>
-
-                <strong>
-                    ${count}
-                    ${
-                        count === 1
-                            ? "sabor"
-                            : "sabores"
-                    }
-                </strong>
-
-            </span>
-
-        `;
-
-
-        const radio =
-            label.querySelector(
-                "input"
-            );
-
-
-        radio.addEventListener(
-            "change",
-            () => {
-
-                currentPizzaFlavorCount =
-                    count;
-
-                currentPizzaSelectedFlavors =
-                    [];
-
-                showPizzaFlavorsAndExtras();
-
-                updateAddButtonPrice();
-
-            }
-        );
-
-
-        container.appendChild(
-            label
-        );
-
-    }
-
-
-    if (
-        min === max
-    ) {
-
-        const radio =
-            container.querySelector(
-                "input"
-            );
-
-
-        if (radio) {
-
-            radio.checked =
-                true;
-
-
-            currentPizzaFlavorCount =
-                min;
-
-
-            showPizzaFlavorsAndExtras();
-
-        }
-
-    }
-
-}
-
 
 /* ==================================================
    MOSTRA SABORES E ADICIONAIS
@@ -6201,29 +5976,7 @@ function renderPizzaBorderStep(
                         null;
 
 
-                    const flavorCountStep =
-                        productComplements.querySelector(
-                            "#pizzaFlavorCountStep"
-                        );
-
-
-                    const flavorCountOptions =
-                        productComplements.querySelector(
-                            "#pizzaFlavorCountOptions"
-                        );
-
-
-                    const flavorCountHelper =
-                        productComplements.querySelector(
-                            "#pizzaFlavorCountHelper"
-                        );
-
-
-                    renderPizzaFlavorCount(
-                        flavorCountStep,
-                        flavorCountOptions,
-                        flavorCountHelper
-                    );
+                    showPizzaFlavorsAndExtras();
 
 
                     updateAddButtonPrice();
@@ -6270,8 +6023,7 @@ function renderPizzaFlavors() {
 
 
     if (
-        !currentPizzaType ||
-        !currentPizzaFlavorCount
+        !currentPizzaType
     ) {
 
         flavorsStep.classList.add(
@@ -6290,14 +6042,36 @@ function renderPizzaFlavors() {
         );
 
 
-    const requiredText =
-        currentPizzaFlavorCount === 1
-            ? "sabor"
-            : "sabores";
+    const min =
+        Math.max(
+            1,
+            Number(
+                currentPizzaType.minSabores || 1
+            )
+        );
+
+
+    const max =
+        Math.max(
+            min,
+            Number(
+                currentPizzaType.maxSabores || min
+            )
+        );
+
+
+    const rangeText =
+        min === max
+            ? `Selecione ${min} ${
+                min === 1
+                    ? "sabor"
+                    : "sabores"
+            }.`
+            : `Selecione de ${min} a ${max} sabores.`;
 
 
     helper.textContent =
-        `Selecione exatamente ${currentPizzaFlavorCount} ${requiredText}.`;
+        rangeText;
 
 
     flavorOptions.innerHTML =
@@ -6306,7 +6080,7 @@ function renderPizzaFlavors() {
 
     if (
         flavors.length <
-        currentPizzaFlavorCount
+        min
     ) {
 
         flavorOptions.innerHTML = `
@@ -6400,7 +6174,7 @@ function renderPizzaFlavors() {
 
                         if (
                             currentPizzaSelectedFlavors.length >=
-                            currentPizzaFlavorCount
+                            max
                         ) {
 
                             checkbox.checked =
@@ -6408,8 +6182,8 @@ function renderPizzaFlavors() {
 
 
                             alert(
-                                `Você pode escolher no máximo ${currentPizzaFlavorCount} ${
-                                    currentPizzaFlavorCount === 1
+                                `Você pode escolher no máximo ${max} ${
+                                    max === 1
                                         ? "sabor"
                                         : "sabores"
                                 }.`
@@ -6453,6 +6227,10 @@ function renderPizzaFlavors() {
                     }
 
 
+                    currentPizzaFlavorCount =
+                        currentPizzaSelectedFlavors.length;
+
+
                     updatePizzaFlavorSummary();
 
                     updateAddButtonPrice();
@@ -6493,7 +6271,7 @@ function updatePizzaFlavorSummary() {
 
     if (
         !helper ||
-        !currentPizzaFlavorCount
+        !currentPizzaType
     ) {
 
         return;
@@ -6501,38 +6279,86 @@ function updatePizzaFlavorSummary() {
     }
 
 
+    const min =
+        Math.max(
+            1,
+            Number(
+                currentPizzaType.minSabores || 1
+            )
+        );
+
+
+    const max =
+        Math.max(
+            min,
+            Number(
+                currentPizzaType.maxSabores || min
+            )
+        );
+
+
     const selectedCount =
         currentPizzaSelectedFlavors.length;
 
 
-    const total =
-        currentPizzaFlavorCount;
+    currentPizzaFlavorCount =
+        selectedCount;
 
 
     if (
-        selectedCount ===
-        total
+        selectedCount === 0
     ) {
 
         helper.textContent =
-            `Selecionados: ${selectedCount} de ${total}.`;
+            min === max
+                ? `Selecione ${min} ${
+                    min === 1
+                        ? "sabor"
+                        : "sabores"
+                }.`
+                : `Selecione de ${min} a ${max} sabores.`;
+
+        return;
 
     }
 
-    else {
+
+    if (
+        selectedCount < min
+    ) {
 
         helper.textContent =
-            `Selecione ${total - selectedCount} ${
-                total - selectedCount === 1
-                    ? "sabor"
-                    : "sabores"
-            } para completar a pizza.`;
+            `${selectedCount} ${
+                selectedCount === 1
+                    ? "sabor selecionado"
+                    : "sabores selecionados"
+            }. Selecione pelo menos ${min}.`;
+
+        return;
 
     }
 
+
+    if (
+        selectedCount === max
+    ) {
+
+        helper.textContent =
+            `${selectedCount} ${
+                selectedCount === 1
+                    ? "sabor selecionado"
+                    : "sabores selecionados"
+            }.`;
+
+        return;
+
+    }
+
+
+    helper.textContent =
+        `${selectedCount} sabores selecionados. Você pode escolher até ${max}.`;
+
 }
-
-
 /* ==================================================
    PREÇO DOS SABORES SELECIONADOS
    ================================================== */
@@ -6721,8 +6547,27 @@ function isPizzaConfigurationComplete() {
     }
 
 
+    const minFlavors =
+        Math.max(
+            1,
+            Number(
+                currentPizzaType.minSabores || 1
+            )
+        );
+
+
+    const maxFlavors =
+        Math.max(
+            minFlavors,
+            Number(
+                currentPizzaType.maxSabores || minFlavors
+            )
+        );
+
+
     if (
-        !currentPizzaFlavorCount
+        currentPizzaSelectedFlavors.length <
+        minFlavors
     ) {
 
         return false;
@@ -6731,8 +6576,8 @@ function isPizzaConfigurationComplete() {
 
 
     if (
-        currentPizzaSelectedFlavors.length !==
-        currentPizzaFlavorCount
+        currentPizzaSelectedFlavors.length >
+        maxFlavors
     ) {
 
         return false;
@@ -6789,12 +6634,36 @@ function validatePizzaConfiguration() {
     }
 
 
+    const minFlavors =
+        Math.max(
+            1,
+            Number(
+                currentPizzaType.minSabores || 1
+            )
+        );
+
+
+    const maxFlavors =
+        Math.max(
+            minFlavors,
+            Number(
+                currentPizzaType.maxSabores || minFlavors
+            )
+        );
+
+
+    const selectedFlavorCount =
+        currentPizzaSelectedFlavors.length;
+
+
     if (
-        !currentPizzaFlavorCount
+        selectedFlavorCount < minFlavors
     ) {
 
         alert(
-            "Escolha a quantidade de sabores."
+            minFlavors === 1
+                ? "Selecione pelo menos 1 sabor."
+                : `Selecione pelo menos ${minFlavors} sabores.`
         );
 
         return false;
@@ -6803,13 +6672,12 @@ function validatePizzaConfiguration() {
 
 
     if (
-        currentPizzaSelectedFlavors.length !==
-        currentPizzaFlavorCount
+        selectedFlavorCount > maxFlavors
     ) {
 
         alert(
-            `Selecione exatamente ${currentPizzaFlavorCount} ${
-                currentPizzaFlavorCount === 1
+            `Você pode escolher no máximo ${maxFlavors} ${
+                maxFlavors === 1
                     ? "sabor"
                     : "sabores"
             }.`
@@ -6818,6 +6686,10 @@ function validatePizzaConfiguration() {
         return false;
 
     }
+
+
+    currentPizzaFlavorCount =
+        selectedFlavorCount;
 
 
     if (
@@ -7169,9 +7041,6 @@ function injectPizzaConfiguratorStyles() {
             margin-bottom: 0;
         }
 
-        .pizza-flavor-count-card span {
-            text-align: center;
-        }
 
         .cart-pizza-details {
             margin-top: 7px;
