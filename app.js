@@ -5319,40 +5319,6 @@ function renderPizzaConfigurator(
 
 
         <div
-            id="pizzaFlavorCountStep"
-            class="pizza-step pizza-step-hidden"
-        >
-
-            <div class="pizza-step-header">
-
-                <span class="pizza-step-number">
-                    2
-                </span>
-
-                <div>
-
-                    <h3>
-                        Quantos sabores?
-                    </h3>
-
-                    <p id="pizzaFlavorCountHelper">
-                        Escolha a quantidade de sabores.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="pizzaFlavorCountOptions"
-                class="pizza-option-grid"
-            ></div>
-
-        </div>
-
-
-        <div
             id="pizzaBorderStep"
             class="pizza-step pizza-step-hidden"
         >
@@ -5360,7 +5326,7 @@ function renderPizzaConfigurator(
             <div class="pizza-step-header">
 
                 <span class="pizza-step-number">
-                    3
+                    2
                 </span>
 
                 <div>
@@ -5381,6 +5347,43 @@ function renderPizzaConfigurator(
             <div
                 id="pizzaBorderOptions"
                 class="pizza-option-list"
+            ></div>
+
+        </div>
+
+
+
+
+
+        <div
+            id="pizzaFlavorCountStep"
+            class="pizza-step pizza-step-hidden"
+        >
+
+            <div class="pizza-step-header">
+
+                <span class="pizza-step-number">
+                    3
+                </span>
+
+                <div>
+
+                    <h3>
+                        Quantos sabores?
+                    </h3>
+
+                    <p id="pizzaFlavorCountHelper">
+                        Escolha a quantidade de sabores.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="pizzaFlavorCountOptions"
+                class="pizza-option-grid"
             ></div>
 
         </div>
@@ -5657,11 +5660,26 @@ function renderPizzaConfigurator(
 
 
 
-                    renderPizzaFlavorCount(
-                        flavorCountStep,
-                        flavorCountOptions,
-                        flavorCountHelper
-                    );
+                    if (
+                        currentPizzaBorderComplement
+                    ) {
+
+                        renderPizzaBorderStep(
+                            borderStep,
+                            borderOptions
+                        );
+
+                    }
+
+                    else {
+
+                        renderPizzaFlavorCount(
+                            flavorCountStep,
+                            flavorCountOptions,
+                            flavorCountHelper
+                        );
+
+                    }
 
 
                     updateAddButtonPrice();
@@ -5703,11 +5721,7 @@ function renderPizzaConfigurator(
                 availableTypes[0];
 
 
-            renderPizzaFlavorCount(
-                flavorCountStep,
-                flavorCountOptions,
-                flavorCountHelper
-            );
+            /* A próxima etapa será exibida após a detecção da borda. */
 
         }
 
@@ -5760,14 +5774,34 @@ function renderPizzaConfigurator(
         );
 
 
+    /*
+     * A borda é renderizada somente depois da escolha do tipo.
+     */
+
     if (
-        currentPizzaBorderComplement
+        availableTypes.length === 1
     ) {
 
-        renderPizzaBorderStep(
-            borderStep,
-            borderOptions
-        );
+        if (
+            currentPizzaBorderComplement
+        ) {
+
+            renderPizzaBorderStep(
+                borderStep,
+                borderOptions
+            );
+
+        }
+
+        else {
+
+            renderPizzaFlavorCount(
+                flavorCountStep,
+                flavorCountOptions,
+                flavorCountHelper
+            );
+
+        }
 
     }
 
@@ -5776,15 +5810,6 @@ function renderPizzaConfigurator(
         currentProductComplements,
         extrasOptions
     );
-
-
-    if (
-        currentPizzaFlavorCount
-    ) {
-
-        showPizzaBorderAndFlavors();
-
-    }
 
 
     updateAddButtonPrice();
@@ -5910,7 +5935,7 @@ function renderPizzaFlavorCount(
                 currentPizzaSelectedFlavors =
                     [];
 
-                showPizzaBorderAndFlavors();
+                showPizzaFlavorsAndExtras();
 
                 updateAddButtonPrice();
 
@@ -5945,7 +5970,7 @@ function renderPizzaFlavorCount(
                 min;
 
 
-            showPizzaBorderAndFlavors();
+            showPizzaFlavorsAndExtras();
 
         }
 
@@ -5955,33 +5980,15 @@ function renderPizzaFlavorCount(
 
 
 /* ==================================================
-   MOSTRA BORDA E SABORES
+   MOSTRA SABORES E ADICIONAIS
    ================================================== */
 
-function showPizzaBorderAndFlavors() {
-
-    const borderStep =
-        productComplements.querySelector(
-            "#pizzaBorderStep"
-        );
-
+function showPizzaFlavorsAndExtras() {
 
     const flavorsStep =
         productComplements.querySelector(
             "#pizzaFlavorsStep"
         );
-
-
-    if (
-        currentPizzaBorderComplement &&
-        borderStep
-    ) {
-
-        borderStep.classList.remove(
-            "pizza-step-hidden"
-        );
-
-    }
 
 
     if (
@@ -6192,6 +6199,31 @@ function renderPizzaBorderStep(
                         )
                         ||
                         null;
+
+
+                    const flavorCountStep =
+                        productComplements.querySelector(
+                            "#pizzaFlavorCountStep"
+                        );
+
+
+                    const flavorCountOptions =
+                        productComplements.querySelector(
+                            "#pizzaFlavorCountOptions"
+                        );
+
+
+                    const flavorCountHelper =
+                        productComplements.querySelector(
+                            "#pizzaFlavorCountHelper"
+                        );
+
+
+                    renderPizzaFlavorCount(
+                        flavorCountStep,
+                        flavorCountOptions,
+                        flavorCountHelper
+                    );
 
 
                     updateAddButtonPrice();
