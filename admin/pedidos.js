@@ -2256,15 +2256,14 @@ function buildOrderDetailsHTML(order) {
 
                     itemsHTML += `
 
-                        <div class="order-detail-pizza">
+                        <div class="order-detail-complements order-detail-pizza">
 
-                            <div class="order-detail-pizza-line">
+                            <div class="order-detail-complement-line">
 
-                                <span>Tipo</span>
-
-                                <strong>
-                                    ${escapeHTML(pizzaTypeName)}
-                                </strong>
+                                <span>
+                                    Tipo:
+                                    <strong>${escapeHTML(pizzaTypeName)}</strong>
+                                </span>
 
                             </div>
 
@@ -2275,7 +2274,7 @@ function buildOrderDetailsHTML(order) {
 
                     itemsHTML += `
 
-                        <div class="order-detail-pizza">
+                        <div class="order-detail-complements order-detail-pizza">
 
                     `;
 
@@ -2299,15 +2298,14 @@ function buildOrderDetailsHTML(order) {
 
                         itemsHTML += `
 
-                            <div class="order-detail-pizza-line">
+                            <div class="order-detail-complement-line">
 
-                                <span>Sabores</span>
-
-                                <strong>
-                                    ${escapeHTML(
+                                <span>
+                                    Sabores:
+                                    <strong>${escapeHTML(
                                         flavorNames.join(", ")
-                                    )}
-                                </strong>
+                                    )}</strong>
+                                </span>
 
                             </div>
 
@@ -2339,27 +2337,21 @@ function buildOrderDetailsHTML(order) {
 
                         itemsHTML += `
 
-                            <div class="order-detail-pizza-line">
+                            <div class="order-detail-complement-line">
 
-                                <span>Borda</span>
-
-                                <strong>
-
-                                    ${escapeHTML(
-                                        borderName
-                                    )}
-
-                                    ${
-                                        borderPrice > 0
-                                            ? ` (+ ${escapeHTML(
-                                                formatCurrency(
-                                                    borderPrice
-                                                )
-                                            )})`
-                                            : ""
-                                    }
-
-                                </strong>
+                                <span>
+                                    Borda:
+                                    <strong>
+                                        ${escapeHTML(borderName)}
+                                        ${
+                                            borderPrice > 0
+                                                ? ` (+ ${escapeHTML(
+                                                    formatCurrency(borderPrice)
+                                                )})`
+                                                : ""
+                                        }
+                                    </strong>
+                                </span>
 
                             </div>
 
@@ -2374,13 +2366,12 @@ function buildOrderDetailsHTML(order) {
 
                     itemsHTML += `
 
-                            <div class="order-detail-pizza-line">
+                            <div class="order-detail-complement-line">
 
-                                <span>Regra de cobrança</span>
-
-                                <strong>
-                                    ${escapeHTML(pizzaRule)}
-                                </strong>
+                                <span>
+                                    Regra de cobrança:
+                                    <strong>${escapeHTML(pizzaRule)}</strong>
+                                </span>
 
                             </div>
 
