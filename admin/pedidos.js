@@ -2221,6 +2221,184 @@ function buildOrderDetailsHTML(order) {
 
 
             /* ======================================
+               DETALHES ESPECÍFICOS DE PIZZA
+               ====================================== */
+
+            if (
+                item.tipoProduto === "pizza"
+            ) {
+
+                const pizzaTypeName =
+                    item.tipoPizza?.nome ||
+                    item.tipoPizza?.name ||
+                    "";
+
+
+                const flavors =
+                    Array.isArray(item.sabores)
+                        ? item.sabores
+                        : [];
+
+
+                const border =
+                    item.borda;
+
+
+                const pizzaRule =
+                    item.regraCobranca === "media"
+                        ? "Média dos sabores"
+                        : item.regraCobranca === "maior"
+                            ? "Maior valor dos sabores"
+                            : "";
+
+
+                if (pizzaTypeName) {
+
+                    itemsHTML += `
+
+                        <div class="order-detail-pizza">
+
+                            <div class="order-detail-pizza-line">
+
+                                <span>Tipo</span>
+
+                                <strong>
+                                    ${escapeHTML(pizzaTypeName)}
+                                </strong>
+
+                            </div>
+
+                    `;
+
+                }
+                else {
+
+                    itemsHTML += `
+
+                        <div class="order-detail-pizza">
+
+                    `;
+
+                }
+
+
+                if (flavors.length > 0) {
+
+                    const flavorNames =
+                        flavors
+                            .map(
+                                flavor =>
+                                    flavor?.nome ||
+                                    flavor?.name ||
+                                    ""
+                            )
+                            .filter(Boolean);
+
+
+                    if (flavorNames.length > 0) {
+
+                        itemsHTML += `
+
+                            <div class="order-detail-pizza-line">
+
+                                <span>Sabores</span>
+
+                                <strong>
+                                    ${escapeHTML(
+                                        flavorNames.join(", ")
+                                    )}
+                                </strong>
+
+                            </div>
+
+                        `;
+
+                    }
+
+                }
+
+
+                if (border) {
+
+                    const borderName =
+                        border.nome ||
+                        border.name ||
+                        "";
+
+
+                    const borderPrice =
+                        Number(
+                            border.preco ??
+                            border.price ??
+                            item.valorBorda ??
+                            0
+                        );
+
+
+                    if (borderName) {
+
+                        itemsHTML += `
+
+                            <div class="order-detail-pizza-line">
+
+                                <span>Borda</span>
+
+                                <strong>
+
+                                    ${escapeHTML(
+                                        borderName
+                                    )}
+
+                                    ${
+                                        borderPrice > 0
+                                            ? ` (+ ${escapeHTML(
+                                                formatCurrency(
+                                                    borderPrice
+                                                )
+                                            )})`
+                                            : ""
+                                    }
+
+                                </strong>
+
+                            </div>
+
+                        `;
+
+                    }
+
+                }
+
+
+                if (pizzaRule) {
+
+                    itemsHTML += `
+
+                            <div class="order-detail-pizza-line">
+
+                                <span>Regra de cobrança</span>
+
+                                <strong>
+                                    ${escapeHTML(pizzaRule)}
+                                </strong>
+
+                            </div>
+
+                    `;
+
+                }
+
+
+                itemsHTML += `
+
+                        </div>
+
+                `;
+
+            }
+
+
+            /* ======================================
                COMPLEMENTOS
                ====================================== */
 
