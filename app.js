@@ -1720,6 +1720,15 @@ addToCartButton.addEventListener(
 
         if (isPizza) {
 
+            /*
+             * Garante que o estado interno dos sabores
+             * corresponda às caixas atualmente marcadas
+             * no configurador.
+             */
+
+            syncPizzaFlavorSelectionFromDOM();
+
+
             if (
                 !validatePizzaConfiguration()
             ) {
@@ -6074,6 +6083,22 @@ function renderPizzaFlavors() {
         rangeText;
 
 
+    /*
+     * Preserva as seleções atuais ao reconstruir
+     * a lista de sabores. Isso é importante porque
+     * a lista pode ser renderizada novamente ao
+     * trocar a borda.
+     */
+
+    const selectedFlavorIds =
+        new Set(
+            currentPizzaSelectedFlavors.map(
+                flavor =>
+                    flavor.id
+            )
+        );
+
+
     flavorOptions.innerHTML =
         "";
 
@@ -6127,6 +6152,13 @@ function renderPizzaFlavors() {
                 <input
                     type="checkbox"
                     value="${flavor.id}"
+                    ${
+                        selectedFlavorIds.has(
+                            flavor.id
+                        )
+                            ? "checked"
+                            : ""
+                    }
                 >
 
                 <div class="pizza-flavor-option-info">
@@ -6253,6 +6285,67 @@ function renderPizzaFlavors() {
 
 
     updatePizzaFlavorSummary();
+
+}
+
+
+/* ==================================================
+   SINCRONIZA SABORES SELECIONADOS COM A INTERFACE
+   ================================================== */
+
+function syncPizzaFlavorSelectionFromDOM() {
+
+    if (
+        !currentProduct ||
+        !currentPizzaType
+    ) {
+
+        currentPizzaSelectedFlavors =
+            [];
+
+        currentPizzaFlavorCount =
+            0;
+
+        return;
+
+    }
+
+
+    const checkedInputs =
+        productComplements.querySelectorAll(
+            "#pizzaFlavorOptions input[type=\"checkbox\"]:checked"
+        );
+
+
+    const availableFlavors =
+        getAvailablePizzaFlavors(
+            currentProduct,
+            currentPizzaType.id
+        );
+
+
+    const selectedIds =
+        new Set(
+            [
+                ...checkedInputs
+            ].map(
+                input =>
+                    input.value
+            )
+        );
+
+
+    currentPizzaSelectedFlavors =
+        availableFlavors.filter(
+            flavor =>
+                selectedIds.has(
+                    flavor.id
+                )
+        );
+
+
+    currentPizzaFlavorCount =
+        currentPizzaSelectedFlavors.length;
 
 }
 
