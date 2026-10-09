@@ -5621,11 +5621,14 @@ function renderPizzaConfigurator(
 
                     }
 
-                    else {
 
-                        showPizzaFlavorsAndExtras();
-
-                    }
+                    /*
+                     * Após escolher o tipo, mostra as etapas seguintes
+                     * imediatamente. A borda pode manter "Sem borda"
+                     * selecionada por padrão, mas não bloqueia sabores
+                     * nem os demais complementos.
+                     */
+                    showPizzaFlavorsAndExtras();
 
 
                     updateAddButtonPrice();
@@ -5739,11 +5742,13 @@ function renderPizzaConfigurator(
 
         }
 
-        else {
 
-            showPizzaFlavorsAndExtras();
-
-        }
+        /*
+         * Quando só existe um tipo permitido, ele já fica selecionado.
+         * Portanto, as etapas de borda, sabores e adicionais também
+         * devem ser exibidas imediatamente.
+         */
+        showPizzaFlavorsAndExtras();
 
     }
 
