@@ -890,6 +890,9 @@ storeConfigForm.addEventListener(
                 updateData
             );
 
+            window.dispatchEvent(
+                new Event("store-config-saved")
+            );
 
             configFormMessage.textContent =
                 "Configurações salvas com sucesso.";

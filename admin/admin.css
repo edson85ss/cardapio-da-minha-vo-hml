@@ -4520,3 +4520,9 @@ body {
 
 }
 
+
+
+/* Exibição condicional do item Pizzaria conforme o tipo de cardápio */
+.menu-item-pizzaria-hidden {
+    display: none !important;
+}
