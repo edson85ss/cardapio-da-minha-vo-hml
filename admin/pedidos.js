@@ -18,6 +18,7 @@ import {
     limitToLast,
 	getCountFromServer,
     doc,
+    getDoc,
     deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -98,6 +99,12 @@ const orderDetailsContent =
 	
 const deleteOrderButton =
     document.getElementById("deleteOrderButton");
+
+const printOrderButton =
+    document.getElementById("printOrderButton");
+
+const orderPrintReceipt =
+    document.getElementById("orderPrintReceipt");
 
 
 /* ==================================================
@@ -2625,6 +2632,218 @@ function buildOrderDetailsHTML(order) {
     `;
 
 }
+
+/* ==================================================
+   IMPRESSÃO DA COMANDA
+   ================================================== */
+
+function buildOrderPrintText(order, currentStoreConfig = {}) {
+
+    const cliente = order.cliente || {};
+    const entrega = order.entrega || {};
+    const pagamento = order.pagamento || {};
+
+    const deliveryType =
+        entrega.tipo ||
+        entrega.modalidade ||
+        entrega.forma ||
+        "—";
+
+    const deliveryAddress =
+        entrega.endereco ||
+        entrega.enderecoCompleto ||
+        entrega.observacao ||
+        "";
+
+    const paymentMethod =
+        pagamento.forma ||
+        pagamento.metodo ||
+        pagamento.tipo ||
+        "—";
+
+    const lines = [
+        `>>> NOVO PEDIDO Nº ${order.numero ?? "—"} <<<`,
+        "",
+        `Cliente: ${cliente.nome || "—"}`,
+        `Telefone: ${cliente.telefone || "—"}`,
+        "",
+        `Entrega ou retirada: ${deliveryType}`
+    ];
+
+    if (deliveryType === "Entrega") {
+        lines.push(`Endereço: ${deliveryAddress || "—"}`);
+    } else {
+        lines.push(`Retirar em: ${deliveryAddress || currentStoreConfig.enderecoRetirada || "—"}`);
+    }
+
+    lines.push("", `Forma de pagamento: ${paymentMethod}`);
+
+    if (paymentMethod === "PIX") {
+        const pixKey = pagamento.pixChave || currentStoreConfig.pixChave || "—";
+        const pixOwner = pagamento.pixTitular || currentStoreConfig.pixTitular || "—";
+        lines.push(`PIX: Chave: ${pixKey} | Titular: ${pixOwner}`);
+    }
+
+    if (paymentMethod === "Dinheiro") {
+        const changePreference =
+            pagamento.precisaTroco ??
+            (pagamento.trocoPara ? "Sim" : "Não");
+
+        const needsChange =
+            changePreference === true ||
+            String(changePreference).trim().toLowerCase() === "sim"
+                ? "Sim"
+                : "Não";
+
+        lines.push(`Precisa de troco: ${needsChange}`);
+
+        if (needsChange === "Sim") {
+            lines.push(`Troco para: ${pagamento.trocoPara || "—"}`);
+        }
+    }
+
+    lines.push("", "--------------------", "Itens do pedido:", "");
+
+    const items = Array.isArray(order.itens) ? order.itens : [];
+
+    items.forEach((item) => {
+        const productName = item.nome || item.name || "Produto";
+        const quantity = Number(item.quantidade ?? item.quantity ?? 1);
+        const basePrice = Number(item.precoBase ?? item.preco ?? item.price ?? 0);
+        const unitPrice = Number(item.precoUnitario ?? item.preco ?? item.price ?? basePrice);
+        const itemSubtotal = Number(item.subtotal ?? (unitPrice * quantity));
+
+        lines.push(`${quantity}x ${productName} — ${formatCurrency(basePrice)}`);
+
+        if (item.tipoProduto === "pizza") {
+            const pizzaTypeName = item.tipoPizza?.nome || item.tipoPizza?.name || "";
+            lines.push(`Tipo: ${pizzaTypeName}`);
+
+            if (Array.isArray(item.sabores)) {
+                const flavorNames = item.sabores
+                    .map((flavor) => flavor?.nome || flavor?.name || "")
+                    .filter(Boolean);
+
+                lines.push(`Sabores: ${flavorNames.join(", ")}`);
+            }
+
+            if (item.borda) {
+                const borderName = item.borda.nome || item.borda.name || "";
+                const borderPrice = Number(item.borda.preco || 0);
+                lines.push(`Borda: ${borderName}${borderPrice > 0 ? ` (+ ${formatCurrency(borderPrice)})` : ""}`);
+            }
+        }
+
+        const complements = Array.isArray(item.complementos) ? item.complementos : [];
+        complements.forEach((complement) => {
+            const complementName = complement.nome || complement.name || "Complemento";
+            const options = Array.isArray(complement.opcoes) ? complement.opcoes : [];
+
+            // A mensagem do WhatsApp sempre apresenta o título do complemento,
+            // mesmo se a lista de opções estiver vazia.
+            lines.push(`${complementName}:`);
+            options.forEach((option) => {
+                const optionName = option.nome || option.name || "Opção";
+                const optionQuantity = Number(option.quantidade || 1);
+                const optionPrice = Number(option.preco || 0);
+                const optionTotal = optionPrice * optionQuantity;
+                const quantityText = optionQuantity > 1 ? `${optionQuantity}x ` : "";
+                lines.push(`- ${quantityText}${optionName}${optionTotal > 0 ? ` (+ ${formatCurrency(optionTotal)})` : ""}`);
+            });
+        });
+
+        const observation = item.observacao || "";
+        if (observation) {
+            lines.push(`Obs: ${observation}`);
+        }
+
+        lines.push(`Subtotal: ${formatCurrency(itemSubtotal)}`, "");
+    });
+
+    lines.push("--------------------", `Subtotal dos itens: ${formatCurrency(order.subtotal || 0)}`);
+
+    if (deliveryType === "Entrega") {
+        lines.push(`Taxa de entrega: ${formatCurrency(order.taxaEntrega || 0)}`);
+    }
+
+    lines.push(`TOTAL: ${formatCurrency(order.total || 0)}`);
+    return lines.join("\n");
+}
+
+
+async function printCurrentOrder() {
+
+    if (!currentOrderId) {
+        return;
+    }
+
+    const order = adminOrders.find((item) => item.id === currentOrderId);
+    if (!order) {
+        return;
+    }
+
+    const previousButtonText = printOrderButton.textContent;
+    printOrderButton.disabled = true;
+    printOrderButton.textContent = "Preparando impressão...";
+
+    let currentStoreConfig = {};
+
+    try {
+        const paymentMethod =
+            order.pagamento?.forma ||
+            order.pagamento?.metodo ||
+            order.pagamento?.tipo ||
+            "";
+
+        // Pedidos antigos podem não conter o snapshot da chave PIX.
+        // Nesse caso, utiliza-se a configuração atual como alternativa.
+        const needsPixFallback =
+            paymentMethod === "PIX" &&
+            (!order.pagamento?.pixChave || !order.pagamento?.pixTitular);
+
+        if (needsPixFallback) {
+            try {
+                const storeSnapshot = await getDoc(doc(db, "lojas", "da-minha-vo"));
+                if (storeSnapshot.exists()) {
+                    const data = storeSnapshot.data();
+                    currentStoreConfig = {
+                        pixChave: data.pixChave || "",
+                        pixTitular: data.pixTitular || "",
+                        enderecoRetirada: data.enderecoRetirada || ""
+                    };
+                }
+            } catch (error) {
+                console.warn("Não foi possível carregar a configuração atual para a impressão:", error);
+            }
+        }
+
+        orderPrintReceipt.innerHTML =
+            `<pre>${escapeHTML(buildOrderPrintText(order, currentStoreConfig))}</pre>`;
+
+        document.body.classList.add("printing-order");
+        window.print();
+
+    } catch (error) {
+        console.error("Erro ao preparar impressão do pedido:", error);
+        alert("Não foi possível preparar a impressão deste pedido.");
+        document.body.classList.remove("printing-order");
+        orderPrintReceipt.innerHTML = "";
+    } finally {
+        printOrderButton.disabled = false;
+        printOrderButton.textContent = previousButtonText;
+    }
+}
+
+
+function clearOrderPrintLayout() {
+    document.body.classList.remove("printing-order");
+    orderPrintReceipt.innerHTML = "";
+}
+
+window.addEventListener("afterprint", clearOrderPrintLayout);
+
+printOrderButton.addEventListener("click", printCurrentOrder);
+
 
 /* ==================================================
    EXCLUI PEDIDO

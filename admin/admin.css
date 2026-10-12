@@ -4526,3 +4526,68 @@ body {
 .menu-item-pizzaria-hidden {
     display: none !important;
 }
+
+
+/* ==================================================
+   IMPRESSÃO DE COMANDAS EM IMPRESSORAS TÉRMICAS
+   ================================================== */
+
+.order-print-receipt {
+    display: none;
+}
+
+.print-order-button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+@media print {
+
+    @page {
+        size: auto;
+        margin: 2mm;
+    }
+
+    html,
+    body {
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+    }
+
+    body.printing-order > *:not(#orderPrintReceipt) {
+        display: none !important;
+    }
+
+    body.printing-order #orderPrintReceipt {
+        display: block !important;
+        width: 100%;
+        max-width: 74mm;
+        margin: 0 auto;
+        padding: 0;
+        color: #000 !important;
+        background: #fff !important;
+        box-sizing: border-box;
+    }
+
+    body.printing-order #orderPrintReceipt pre {
+        margin: 0;
+        padding: 0;
+        color: #000 !important;
+        background: #fff !important;
+        font-family: "Courier New", Consolas, monospace;
+        font-size: 10px;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    body.printing-order * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
