@@ -434,6 +434,99 @@
 					</div>
 
 
+					<div class="pizza-flavor-bulk-actions">
+
+						<button
+							type="button"
+							id="downloadPizzaFlavorTemplateButton"
+							class="secondary-button"
+						>
+							↓ Baixar modelo CSV
+						</button>
+
+						<button
+							type="button"
+							id="importPizzaFlavorCsvButton"
+							class="secondary-button"
+						>
+							↑ Importar sabores CSV
+						</button>
+
+						<input
+							type="file"
+							id="pizzaFlavorCsvInput"
+							accept=".csv,text/csv"
+							hidden
+						>
+
+					</div>
+
+					<p class="pizza-flavor-import-help">
+						Configure e ative os tipos de pizza antes de baixar o modelo.
+						O arquivo terá uma coluna de preço para cada tipo ativo. Use
+						CSV separado por ponto e vírgula; preços podem ser informados
+						como 29,90. Células de preço vazias indicam indisponibilidade.
+						Os novos sabores serão cadastrados como ativos.
+					</p>
+
+					<div
+						id="pizzaFlavorImportPanel"
+						class="pizza-flavor-import-panel"
+						hidden
+					>
+
+						<div class="pizza-flavor-import-panel-header">
+							<div>
+								<h3>Prévia da importação</h3>
+								<p>Somente linhas válidas serão importadas. Sabores duplicados ou com dados inválidos serão ignorados.</p>
+							</div>
+							<button
+								type="button"
+								id="closePizzaFlavorImportPanelButton"
+								class="modal-close-button"
+								aria-label="Fechar importação"
+							>×</button>
+						</div>
+
+						<div
+							id="pizzaFlavorImportMessage"
+							class="form-message"
+							role="status"
+							aria-live="polite"
+						></div>
+
+						<p
+							id="pizzaFlavorImportSummary"
+							class="pizza-flavor-import-summary"
+						></p>
+
+						<div
+							id="pizzaFlavorImportPreviewWrapper"
+							class="pizza-flavor-import-preview-wrapper"
+							hidden
+						>
+							<table class="pizza-flavor-import-table">
+								<thead id="pizzaFlavorImportPreviewHead"></thead>
+								<tbody id="pizzaFlavorImportPreviewBody"></tbody>
+							</table>
+						</div>
+
+						<div class="pizza-flavor-import-actions">
+							<button
+								type="button"
+								id="cancelPizzaFlavorImportButton"
+								class="secondary-button"
+							>Cancelar</button>
+							<button
+								type="button"
+								id="confirmPizzaFlavorImportButton"
+								class="primary-action-button"
+								disabled
+							>Importar sabores válidos</button>
+						</div>
+
+					</div>
+
 					<div class="pizza-flavor-search">
 
 						<input

@@ -3702,6 +3702,145 @@ body {
    SABORES - PIZZARIA
    ================================================== */
 
+.pizza-flavor-bulk-actions {
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+
+}
+
+.pizza-flavor-import-help {
+
+    margin-top: 10px;
+    max-width: 900px;
+    color: var(--text-light);
+    font-size: 12px;
+    line-height: 1.6;
+
+}
+
+.pizza-flavor-import-panel[hidden],
+.pizza-flavor-import-preview-wrapper[hidden] {
+    display: none !important;
+}
+
+.pizza-flavor-import-panel {
+
+    margin-top: 18px;
+    padding: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .03);
+
+}
+
+.pizza-flavor-import-panel-header,
+.pizza-flavor-import-actions {
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+
+}
+
+.pizza-flavor-import-panel-header h3 {
+    font-size: 17px;
+    margin-bottom: 6px;
+}
+
+.pizza-flavor-import-panel-header p {
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.pizza-flavor-import-summary {
+    margin: 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.pizza-flavor-import-preview-wrapper {
+
+    max-width: 100%;
+    max-height: 380px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 12px;
+
+}
+
+.pizza-flavor-import-table {
+
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: var(--surface);
+
+}
+
+.pizza-flavor-import-table th,
+.pizza-flavor-import-table td {
+
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.45;
+
+}
+
+.pizza-flavor-import-table th {
+
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f5f6f8;
+    font-weight: 700;
+    white-space: nowrap;
+
+}
+
+.pizza-flavor-import-table td:nth-child(1),
+.pizza-flavor-import-table td:nth-child(n+4) {
+    white-space: nowrap;
+}
+
+.pizza-import-row-invalid {
+    background: #fff8f7;
+}
+
+.pizza-import-status-valid {
+    color: #247a41;
+    font-weight: 700;
+}
+
+.pizza-import-status-invalid,
+.pizza-import-invalid-value {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.pizza-flavor-import-actions {
+
+    justify-content: flex-end;
+    margin-top: 16px;
+
+}
+
+.pizza-flavor-import-actions button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .pizza-flavor-search {
 
     margin-top: 16px;
@@ -4123,6 +4262,22 @@ body {
 
 
 @media (max-width: 600px) {
+
+    .pizza-flavor-import-panel {
+        padding: 12px;
+    }
+
+    .pizza-flavor-import-panel-header {
+        align-items: flex-start;
+    }
+
+    .pizza-flavor-import-actions {
+        flex-direction: column-reverse;
+    }
+
+    .pizza-flavor-import-actions button {
+        width: 100%;
+    }
 
     .pizza-flavor-item {
 

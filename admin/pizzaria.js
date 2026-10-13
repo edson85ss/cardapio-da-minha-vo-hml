@@ -209,6 +209,66 @@ const pizzaFlavorSearchInput =
         "pizzaFlavorSearch"
     );
 
+const downloadPizzaFlavorTemplateButton =
+    document.getElementById(
+        "downloadPizzaFlavorTemplateButton"
+    );
+
+const importPizzaFlavorCsvButton =
+    document.getElementById(
+        "importPizzaFlavorCsvButton"
+    );
+
+const pizzaFlavorCsvInput =
+    document.getElementById(
+        "pizzaFlavorCsvInput"
+    );
+
+const pizzaFlavorImportPanel =
+    document.getElementById(
+        "pizzaFlavorImportPanel"
+    );
+
+const closePizzaFlavorImportPanelButton =
+    document.getElementById(
+        "closePizzaFlavorImportPanelButton"
+    );
+
+const cancelPizzaFlavorImportButton =
+    document.getElementById(
+        "cancelPizzaFlavorImportButton"
+    );
+
+const confirmPizzaFlavorImportButton =
+    document.getElementById(
+        "confirmPizzaFlavorImportButton"
+    );
+
+const pizzaFlavorImportMessage =
+    document.getElementById(
+        "pizzaFlavorImportMessage"
+    );
+
+const pizzaFlavorImportSummary =
+    document.getElementById(
+        "pizzaFlavorImportSummary"
+    );
+
+const pizzaFlavorImportPreviewWrapper =
+    document.getElementById(
+        "pizzaFlavorImportPreviewWrapper"
+    );
+
+const pizzaFlavorImportPreviewHead =
+    document.getElementById(
+        "pizzaFlavorImportPreviewHead"
+    );
+
+const pizzaFlavorImportPreviewBody =
+    document.getElementById(
+        "pizzaFlavorImportPreviewBody"
+    );
+
 const pizzaFlavorModal =
     document.getElementById(
         "pizzaFlavorModal"
@@ -282,6 +342,17 @@ const savePizzaFlavorButton =
 let pizzaTypes = [];
 
 let pizzaFlavors = [];
+
+let pizzaFlavorImportPlan = null;
+
+const MAX_PIZZA_FLAVOR_CSV_SIZE =
+    2 * 1024 * 1024;
+
+const MAX_PIZZA_FLAVOR_CSV_ROWS =
+    1000;
+
+const PIZZA_FLAVOR_IMPORT_BATCH_SIZE =
+    400;
 
 
 /* ==================================================
@@ -1910,6 +1981,689 @@ pizzaFlavorSearchInput.addEventListener(
 
     }
 );
+
+/* ==================================================
+   IMPORTAÇÃO DE SABORES VIA CSV
+   ================================================== */
+
+downloadPizzaFlavorTemplateButton.addEventListener(
+    "click",
+    downloadPizzaFlavorCsvTemplate
+);
+
+importPizzaFlavorCsvButton.addEventListener(
+    "click",
+    () => {
+
+        openPizzaFlavorImportPanel();
+
+        if (getActivePizzaTypes().length === 0) {
+
+            showPizzaFlavorImportMessage(
+                "Cadastre e ative pelo menos um tipo de pizza antes de importar sabores.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        pizzaFlavorCsvInput.click();
+
+    }
+);
+
+pizzaFlavorCsvInput.addEventListener(
+    "change",
+    handlePizzaFlavorCsvSelection
+);
+
+closePizzaFlavorImportPanelButton.addEventListener(
+    "click",
+    closePizzaFlavorImportPanel
+);
+
+cancelPizzaFlavorImportButton.addEventListener(
+    "click",
+    closePizzaFlavorImportPanel
+);
+
+confirmPizzaFlavorImportButton.addEventListener(
+    "click",
+    importPizzaFlavorsFromCsv
+);
+
+function getActivePizzaTypes() {
+
+    return pizzaTypes.filter(
+        type => type.ativo !== false
+    );
+
+}
+
+function openPizzaFlavorImportPanel() {
+
+    pizzaFlavorImportPanel.hidden = false;
+
+    pizzaFlavorImportPanel.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+    });
+
+}
+
+function closePizzaFlavorImportPanel() {
+
+    if (confirmPizzaFlavorImportButton.disabled === false) {
+        confirmPizzaFlavorImportButton.disabled = true;
+    }
+
+    pizzaFlavorImportPlan = null;
+    pizzaFlavorCsvInput.value = "";
+    pizzaFlavorImportPanel.hidden = true;
+    pizzaFlavorImportMessage.textContent = "";
+    pizzaFlavorImportMessage.className = "form-message";
+    pizzaFlavorImportSummary.textContent = "";
+    pizzaFlavorImportPreviewHead.innerHTML = "";
+    pizzaFlavorImportPreviewBody.innerHTML = "";
+    pizzaFlavorImportPreviewWrapper.hidden = true;
+    confirmPizzaFlavorImportButton.textContent = "Importar sabores válidos";
+}
+
+function showPizzaFlavorImportMessage(message, type = "") {
+
+    pizzaFlavorImportMessage.textContent = message;
+    pizzaFlavorImportMessage.className = type
+        ? `form-message ${type}`
+        : "form-message";
+
+}
+
+function downloadPizzaFlavorCsvTemplate() {
+
+    const activeTypes = getActivePizzaTypes();
+
+    if (activeTypes.length === 0) {
+
+        openPizzaFlavorImportPanel();
+        showPizzaFlavorImportMessage(
+            "Cadastre e ative pelo menos um tipo de pizza antes de baixar o modelo.",
+            "error"
+        );
+        return;
+
+    }
+
+    const headers = [
+        "nome",
+        "descricao",
+        ...activeTypes.map(
+            type => `preco - ${type.nome}`
+        )
+    ];
+
+    const csv = "\uFEFF" + headers
+        .map(csvEscapeField)
+        .join(";") + "\r\n";
+
+    const blob = new Blob(
+        [csv],
+        { type: "text/csv;charset=utf-8;" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "modelo-sabores-pizzaria.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(
+        () => URL.revokeObjectURL(url),
+        1000
+    );
+
+}
+
+function csvEscapeField(value) {
+
+    const text = String(value ?? "");
+    return `"${text.replace(/"/g, '""')}"`;
+
+}
+
+async function handlePizzaFlavorCsvSelection() {
+
+    const file = pizzaFlavorCsvInput.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    // Permite selecionar novamente o mesmo arquivo após uma validação com erro.
+    pizzaFlavorCsvInput.value = "";
+
+    openPizzaFlavorImportPanel();
+    pizzaFlavorImportPlan = null;
+    confirmPizzaFlavorImportButton.disabled = true;
+    pizzaFlavorImportPreviewWrapper.hidden = true;
+    pizzaFlavorImportSummary.textContent = "";
+    pizzaFlavorImportPreviewHead.innerHTML = "";
+    pizzaFlavorImportPreviewBody.innerHTML = "";
+    showPizzaFlavorImportMessage("Validando arquivo...", "");
+
+    try {
+
+        if (!file.name.toLocaleLowerCase("pt-BR").endsWith(".csv")) {
+            throw new Error("Selecione um arquivo com extensão .csv.");
+        }
+
+        if (file.size > MAX_PIZZA_FLAVOR_CSV_SIZE) {
+            throw new Error("O arquivo excede o limite de 2 MB.");
+        }
+
+        const csvText = (await file.text()).replace(/^\uFEFF/, "");
+        const records = parseSemicolonCsv(csvText)
+            .filter(row => row.some(cell => String(cell).trim() !== ""));
+
+        if (records.length < 2) {
+            throw new Error("O CSV precisa conter o cabeçalho e pelo menos uma linha de sabor.");
+        }
+
+        const activeTypes = getActivePizzaTypes();
+        if (activeTypes.length === 0) {
+            throw new Error("Cadastre e ative pelo menos um tipo de pizza antes de importar sabores.");
+        }
+
+        const header = records[0].map(cell => String(cell).trim());
+        const mappedColumns = validatePizzaFlavorCsvHeader(header, activeTypes);
+        const dataRecords = records.slice(1);
+
+        if (dataRecords.length > MAX_PIZZA_FLAVOR_CSV_ROWS) {
+            throw new Error(`O arquivo contém ${dataRecords.length} linhas de dados. O limite por importação é ${MAX_PIZZA_FLAVOR_CSV_ROWS} sabores; divida o arquivo em partes menores.`);
+        }
+
+        const existingNames = new Set(
+            pizzaFlavors.map(flavor => normalizeName(flavor.nome))
+        );
+        const seenFileNames = new Set();
+
+        const rows = dataRecords.map((cells, index) => {
+
+            const rowNumber = index + 2;
+            const errors = [];
+
+            if (cells.length !== header.length) {
+                errors.push(`A linha tem ${cells.length} colunas; eram esperadas ${header.length}.`);
+            }
+
+            const name = String(cells[0] ?? "").trim();
+            const description = String(cells[1] ?? "").trim();
+            const prices = {};
+            const rawPricesByType = {};
+
+            if (!name) {
+                errors.push("Informe o nome do sabor.");
+            } else if (name.length > 80) {
+                errors.push("O nome excede o limite de 80 caracteres.");
+            }
+
+            if (description.length > 500) {
+                errors.push("A descrição excede o limite de 500 caracteres.");
+            }
+
+            const normalizedName = normalizeName(name);
+            if (normalizedName && existingNames.has(normalizedName)) {
+                errors.push("Já existe um sabor com este nome no cadastro.");
+            }
+            if (normalizedName && seenFileNames.has(normalizedName)) {
+                errors.push("Este nome aparece mais de uma vez no arquivo.");
+            }
+            if (normalizedName) {
+                seenFileNames.add(normalizedName);
+            }
+
+            let configuredPriceCount = 0;
+
+            mappedColumns.forEach(({ type, columnIndex }) => {
+
+                const rawPrice = String(cells[columnIndex] ?? "").trim();
+                rawPricesByType[type.id] = rawPrice;
+
+                if (!rawPrice) {
+                    return;
+                }
+
+                const parsedPrice = parseCsvBrazilianPrice(rawPrice);
+
+                if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+                    errors.push(`Preço inválido para o tipo "${type.nome}".`);
+                    return;
+                }
+
+                prices[type.id] = roundPizzaMoney(parsedPrice);
+                configuredPriceCount++;
+
+            });
+
+            if (configuredPriceCount === 0) {
+                errors.push("Informe um preço válido em pelo menos um tipo de pizza.");
+            }
+
+            return {
+                rowNumber,
+                nome: name,
+                descricao: description,
+                precosPorTipo: prices,
+                rawPricesByType,
+                status: errors.length === 0 ? "valid" : "error",
+                message: errors.join(" ")
+            };
+
+        });
+
+        if (rows.length === 0) {
+            throw new Error("Não foram encontradas linhas de sabores para importar.");
+        }
+
+        pizzaFlavorImportPlan = {
+            rows,
+            activeTypeIds: activeTypes.map(type => type.id).sort(),
+            fileName: file.name
+        };
+
+        renderPizzaFlavorCsvPreview(rows, activeTypes);
+
+        const validCount = rows.filter(row => row.status === "valid").length;
+        const invalidCount = rows.length - validCount;
+
+        pizzaFlavorImportSummary.textContent =
+            `${validCount} sabor(es) pronto(s) para importar. ${invalidCount} linha(s) com erro serão ignoradas. Os sabores já existentes não serão sobrescritos.`;
+
+        showPizzaFlavorImportMessage(
+            validCount > 0
+                ? "Arquivo validado. Confira a prévia antes de confirmar."
+                : "Nenhuma linha válida para importar. Corrija o arquivo e tente novamente.",
+            validCount > 0 ? "success" : "error"
+        );
+
+        confirmPizzaFlavorImportButton.disabled = validCount === 0;
+        confirmPizzaFlavorImportButton.textContent = validCount > 0
+            ? `Importar ${validCount} sabor(es) válido(s)`
+            : "Importar sabores válidos";
+
+    } catch (error) {
+
+        console.error("Erro ao validar CSV de sabores:", error);
+        pizzaFlavorImportPlan = null;
+        showPizzaFlavorImportMessage(
+            error.message || "Não foi possível ler o arquivo CSV.",
+            "error"
+        );
+
+    }
+
+}
+
+function validatePizzaFlavorCsvHeader(header, activeTypes) {
+
+    if (header.length < 3) {
+        throw new Error("O cabeçalho deve conter nome, descricao e pelo menos uma coluna de preço por tipo de pizza.");
+    }
+
+    if (normalizeName(header[0]) !== "nome") {
+        throw new Error('A primeira coluna deve se chamar "nome". Baixe um novo modelo CSV se necessário.');
+    }
+
+    if (normalizeName(header[1]) !== "descricao") {
+        throw new Error('A segunda coluna deve se chamar "descricao". Baixe um novo modelo CSV se necessário.');
+    }
+
+    const typesByName = new Map(
+        activeTypes.map(type => [normalizeName(type.nome), type])
+    );
+    const mappedColumns = [];
+    const seenTypeIds = new Set();
+    const unknownTypes = [];
+
+    header.slice(2).forEach((columnName, index) => {
+
+        const match = String(columnName).trim().match(/^preco\s*-\s*(.+)$/i);
+
+        if (!match) {
+            unknownTypes.push(columnName || `(coluna ${index + 3})`);
+            return;
+        }
+
+        const normalizedTypeName = normalizeName(match[1]);
+        const type = typesByName.get(normalizedTypeName);
+
+        if (!type) {
+            unknownTypes.push(match[1]);
+            return;
+        }
+
+        if (seenTypeIds.has(type.id)) {
+            throw new Error(`A coluna de preço do tipo "${type.nome}" aparece mais de uma vez.`);
+        }
+
+        seenTypeIds.add(type.id);
+        mappedColumns.push({
+            type,
+            columnIndex: index + 2
+        });
+
+    });
+
+    if (unknownTypes.length > 0) {
+        throw new Error(`O arquivo contém colunas de tipo desconhecido ou formato incorreto: ${unknownTypes.join(", ")}. Baixe um novo modelo para usar os tipos atualmente ativos.`);
+    }
+
+    const missingTypes = activeTypes.filter(type => !seenTypeIds.has(type.id));
+    if (missingTypes.length > 0) {
+        throw new Error(`O modelo está desatualizado. Faltam colunas para: ${missingTypes.map(type => type.nome).join(", ")}. Baixe novamente o modelo CSV.`);
+    }
+
+    return mappedColumns;
+
+}
+
+function parseSemicolonCsv(text) {
+
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+
+        const char = text[i];
+
+        if (char === '"') {
+
+            if (inQuotes && text[i + 1] === '"') {
+                field += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+
+            continue;
+
+        }
+
+        if (char === ";" && !inQuotes) {
+            row.push(field);
+            field = "";
+            continue;
+        }
+
+        if ((char === "\n" || char === "\r") && !inQuotes) {
+
+            if (char === "\r" && text[i + 1] === "\n") {
+                i++;
+            }
+
+            row.push(field);
+            rows.push(row);
+            row = [];
+            field = "";
+            continue;
+
+        }
+
+        field += char;
+
+    }
+
+    if (inQuotes) {
+        throw new Error("Há aspas sem fechamento no arquivo CSV. Confira o texto e as descrições com aspas.");
+    }
+
+    if (field.length > 0 || row.length > 0) {
+        row.push(field);
+        rows.push(row);
+    }
+
+    return rows;
+
+}
+
+function parseCsvBrazilianPrice(value) {
+
+    let normalized = String(value ?? "")
+        .trim()
+        .replace(/^R\$\s*/i, "")
+        .replace(/\s/g, "");
+
+    if (!normalized) {
+        return NaN;
+    }
+
+    if (normalized.includes(",")) {
+
+        if (!/^\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?$|^\d+(?:,\d{1,2})?$/.test(normalized)) {
+            return NaN;
+        }
+
+        normalized = normalized
+            .replace(/\./g, "")
+            .replace(",", ".");
+
+    } else if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+        return NaN;
+    }
+
+    return Number(normalized);
+
+}
+
+function renderPizzaFlavorCsvPreview(rows, activeTypes) {
+
+    const headerCells = [
+        "Linha",
+        "Nome",
+        "Descrição",
+        ...activeTypes.map(type => type.nome),
+        "Validação"
+    ];
+
+    pizzaFlavorImportPreviewHead.innerHTML = `
+        <tr>${headerCells.map(label => `<th>${escapeHtml(label)}</th>`).join("")}</tr>
+    `;
+
+    pizzaFlavorImportPreviewBody.innerHTML = rows.map(row => {
+
+        const priceCells = activeTypes.map(type => {
+
+            const raw = row.rawPricesByType[type.id] || "";
+            const parsed = raw ? parseCsvBrazilianPrice(raw) : null;
+
+            return `<td>${raw
+                ? (Number.isFinite(parsed) && parsed > 0
+                    ? escapeHtml(formatImportPrice(parsed))
+                    : `<span class="pizza-import-invalid-value">${escapeHtml(raw)}</span>`)
+                : "—"}</td>`;
+
+        }).join("");
+
+        const statusText = row.status === "valid"
+            ? "Pronto para importar"
+            : row.message;
+
+        return `
+            <tr class="${row.status === "valid" ? "pizza-import-row-valid" : "pizza-import-row-invalid"}">
+                <td>${row.rowNumber}</td>
+                <td>${escapeHtml(row.nome || "(sem nome)")}</td>
+                <td>${escapeHtml(row.descricao || "—")}</td>
+                ${priceCells}
+                <td>${row.status === "valid" ? '<span class="pizza-import-status-valid">Válido</span>' : `<span class="pizza-import-status-invalid">${escapeHtml(statusText)}</span>`}</td>
+            </tr>
+        `;
+
+    }).join("");
+
+    pizzaFlavorImportPreviewWrapper.hidden = false;
+
+}
+
+function formatImportPrice(value) {
+
+    return new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    }).format(value);
+
+}
+
+async function importPizzaFlavorsFromCsv() {
+
+    const plan = pizzaFlavorImportPlan;
+    if (!plan) {
+        return;
+    }
+
+    const rowsToImport = plan.rows.filter(row => row.status === "valid");
+    if (rowsToImport.length === 0) {
+        showPizzaFlavorImportMessage("Não há sabores válidos para importar.", "error");
+        return;
+    }
+
+    confirmPizzaFlavorImportButton.disabled = true;
+    cancelPizzaFlavorImportButton.disabled = true;
+    closePizzaFlavorImportPanelButton.disabled = true;
+    confirmPizzaFlavorImportButton.textContent = "Importando...";
+    showPizzaFlavorImportMessage("Gravando sabores no banco de dados. Aguarde...", "");
+
+    let importedCount = 0;
+
+    try {
+
+        const freshTypesSnapshot = await getDocs(
+            query(
+                collection(db, "lojas", STORE_ID, "pizzaria", "configuracao", "tiposPizza"),
+                orderBy("ordem", "asc")
+            )
+        );
+
+        const freshActiveTypeIds = [];
+        freshTypesSnapshot.forEach(snapshot => {
+            const data = snapshot.data();
+            if (data.ativo !== false) {
+                freshActiveTypeIds.push(snapshot.id);
+            }
+        });
+        freshActiveTypeIds.sort();
+
+        if (freshActiveTypeIds.join("|") !== plan.activeTypeIds.join("|")) {
+            throw new Error("Os tipos de pizza ativos foram alterados desde a leitura do arquivo. Baixe um novo modelo CSV e tente novamente.");
+        }
+
+        const freshFlavorsSnapshot = await getDocs(
+            query(
+                collection(db, "lojas", STORE_ID, "pizzaria", "configuracao", "sabores"),
+                orderBy("ordem", "asc")
+            )
+        );
+
+        const freshNames = new Set();
+        let maxOrder = 0;
+
+        freshFlavorsSnapshot.forEach(snapshot => {
+            const data = snapshot.data();
+            freshNames.add(normalizeName(data.nome));
+            maxOrder = Math.max(maxOrder, Number(data.ordem || 0));
+        });
+
+        const conflicts = rowsToImport.filter(row => freshNames.has(normalizeName(row.nome)));
+        if (conflicts.length > 0) {
+            throw new Error(`Alguns sabores foram cadastrados por outro acesso desde a prévia (${conflicts.slice(0, 5).map(row => row.nome).join(", ")}). Feche a prévia, atualize a página e valide novamente o CSV.`);
+        }
+
+        const flavorsCollection = collection(
+            db,
+            "lojas",
+            STORE_ID,
+            "pizzaria",
+            "configuracao",
+            "sabores"
+        );
+
+        for (let offset = 0; offset < rowsToImport.length; offset += PIZZA_FLAVOR_IMPORT_BATCH_SIZE) {
+
+            const chunk = rowsToImport.slice(
+                offset,
+                offset + PIZZA_FLAVOR_IMPORT_BATCH_SIZE
+            );
+            const batch = writeBatch(db);
+
+            chunk.forEach((row, chunkIndex) => {
+
+                const flavorReference = doc(flavorsCollection);
+                batch.set(flavorReference, {
+                    nome: row.nome,
+                    descricao: row.descricao,
+                    precosPorTipo: row.precosPorTipo,
+                    ativo: true,
+                    ordem: maxOrder + offset + chunkIndex + 1
+                });
+
+            });
+
+            await batch.commit();
+            importedCount += chunk.length;
+
+        }
+
+        await loadPizzaFlavors();
+
+        const invalidCount = plan.rows.length - rowsToImport.length;
+        pizzaFlavorImportPlan = null;
+        pizzaFlavorCsvInput.value = "";
+        pizzaFlavorImportSummary.textContent =
+            `${importedCount} sabor(es) importado(s). ${invalidCount} linha(s) foram ignoradas por conterem erros.`;
+        showPizzaFlavorImportMessage(
+            invalidCount === 0
+                ? "Importação concluída com sucesso."
+                : "Importação concluída parcialmente: sabores válidos foram importados e as linhas com erro foram ignoradas.",
+            invalidCount === 0 ? "success" : "error"
+        );
+        pizzaFlavorImportPreviewWrapper.hidden = true;
+        pizzaFlavorImportPreviewHead.innerHTML = "";
+        pizzaFlavorImportPreviewBody.innerHTML = "";
+        confirmPizzaFlavorImportButton.textContent = "Importação concluída";
+
+    } catch (error) {
+
+        console.error("Erro ao importar sabores via CSV:", error);
+        await loadPizzaFlavors();
+
+        if (importedCount > 0) {
+            showPizzaFlavorImportMessage(
+                `A importação foi interrompida após gravar ${importedCount} sabor(es). Atualize a lista e confira os registros antes de continuar. Detalhe: ${error.message}`,
+                "error"
+            );
+        } else {
+            showPizzaFlavorImportMessage(
+                error.message || "Não foi possível importar os sabores.",
+                "error"
+            );
+        }
+
+        confirmPizzaFlavorImportButton.disabled = true;
+
+    } finally {
+
+        cancelPizzaFlavorImportButton.disabled = false;
+        closePizzaFlavorImportPanelButton.disabled = false;
+
+        if (confirmPizzaFlavorImportButton.textContent === "Importando...") {
+            confirmPizzaFlavorImportButton.textContent = "Importar sabores válidos";
+        }
+
+    }
+
+}
 
 /* ==================================================
    AÇÕES DOS SABORES
