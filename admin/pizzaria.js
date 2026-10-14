@@ -1063,6 +1063,15 @@ function renderPizzaFlavors() {
                         }
                     </button>
 
+                    <button
+                        type="button"
+                        class="delete-pizza-item-button pizza-delete-flavor"
+                        data-id="${flavor.id}"
+                        aria-label="Excluir sabor de pizza"
+                    >
+                        Excluir
+                    </button>
+
                 </div>
 
             `;
@@ -1255,6 +1264,15 @@ function renderPizzaTypes() {
                         }
                     </button>
 
+                    <button
+                        type="button"
+                        class="delete-pizza-item-button pizza-delete-type"
+                        data-id="${type.id}"
+                        aria-label="Excluir tipo de pizza"
+                    >
+                        Excluir
+                    </button>
+
                 </div>
 
             `;
@@ -1313,6 +1331,28 @@ function bindPizzaTypeActions() {
                     async () => {
 
                         await togglePizzaType(
+                            button.dataset.id
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".pizza-delete-type"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        await deletePizzaType(
                             button.dataset.id
                         );
 
@@ -1776,6 +1816,148 @@ async function togglePizzaType(
 
     }
 
+}
+
+
+/* ==================================================
+   EXCLUI TIPO DE PIZZA
+   ================================================== */
+
+async function deletePizzaType(typeId) {
+
+    const type = pizzaTypes.find(item => item.id === typeId);
+
+    if (!type) return;
+
+    let deactivatedForSafeCleanup = false;
+
+    try {
+
+        const [flavorsSnapshot, productsSnapshot] = await Promise.all([
+            getDocs(collection(
+                db,
+                "lojas", STORE_ID,
+                "pizzaria", "configuracao", "sabores"
+            )),
+            getDocs(collection(
+                db,
+                "lojas", STORE_ID,
+                "produtos"
+            ))
+        ]);
+
+        const products = productsSnapshot.docs.map(snapshot => ({
+            id: snapshot.id,
+            ...snapshot.data()
+        }));
+
+        const explicitlyLinkedProducts = products.filter(product => {
+            if (product.tipoProduto !== "pizza") return false;
+            const typeIds = product.pizzaria?.tiposPizzaIds;
+            return Array.isArray(typeIds) && typeIds.length > 0 && typeIds.includes(typeId);
+        });
+
+        const blockingProducts = explicitlyLinkedProducts.filter(product =>
+            product.pizzaria.tiposPizzaIds.filter(id => id !== typeId).length === 0
+        );
+
+        if (blockingProducts.length > 0) {
+            const names = blockingProducts
+                .slice(0, 5)
+                .map(product => product.nome || product.id)
+                .join(", ");
+            const more = blockingProducts.length > 5
+                ? ` e mais ${blockingProducts.length - 5}`
+                : "";
+
+            alert(
+                `Não é possível excluir o tipo “${type.nome}” porque ele é o único tipo selecionado nestes produtos: ${names}${more}. ` +
+                "Edite esses produtos e selecione outro tipo ou escolha ‘Todos os tipos ativos’; depois tente excluir novamente."
+            );
+            return;
+        }
+
+        const affectedFlavors = flavorsSnapshot.docs.filter(snapshot => {
+            const prices = snapshot.data().precosPorTipo || {};
+            return Object.prototype.hasOwnProperty.call(prices, typeId);
+        });
+
+        const affectedProducts = explicitlyLinkedProducts.length;
+
+        const confirmation =
+            `Excluir permanentemente o tipo de pizza “${type.nome}”?
+
+` +
+            `Esta ação removerá o tipo, o preço associado a ele em ${affectedFlavors.length} sabor(es) e atualizará ${affectedProducts} produto(s) que o selecionam explicitamente.
+
+` +
+            "Os pedidos históricos serão preservados. Esta ação não pode ser desfeita.";
+
+        if (!window.confirm(confirmation)) return;
+
+        const operations = [];
+
+        for (const snapshot of affectedFlavors) {
+            const data = snapshot.data();
+            const prices = { ...(data.precosPorTipo || {}) };
+            delete prices[typeId];
+
+            operations.push({
+                action: "update",
+                ref: doc(
+                    db,
+                    "lojas", STORE_ID,
+                    "pizzaria", "configuracao", "sabores", snapshot.id
+                ),
+                data: { precosPorTipo: prices }
+            });
+        }
+
+        for (const product of explicitlyLinkedProducts) {
+            const nextTypeIds = product.pizzaria.tiposPizzaIds.filter(id => id !== typeId);
+
+            operations.push({
+                action: "update",
+                ref: doc(db, "lojas", STORE_ID, "produtos", product.id),
+                data: {
+                    pizzaria: {
+                        ...product.pizzaria,
+                        tiposPizzaIds: nextTypeIds
+                    }
+                }
+            });
+        }
+
+        const typeReference = doc(
+            db,
+            "lojas", STORE_ID,
+            "pizzaria", "configuracao", "tiposPizza", typeId
+        );
+
+        // For multi-batch deletion, hide the type before incremental cleanup.
+        if (operations.length + 1 > 400) {
+            await updateDoc(typeReference, { ativo: false });
+            deactivatedForSafeCleanup = true;
+        }
+
+        operations.push({
+            action: "delete",
+            ref: typeReference
+        });
+
+        await commitPizzaWriteOperations(operations);
+        await Promise.all([loadPizzaTypes(), loadPizzaFlavors()]);
+
+        alert(`O tipo de pizza “${type.nome}” foi excluído. Os pedidos históricos foram preservados.`);
+
+    } catch (error) {
+        console.error("Erro ao excluir tipo de pizza:", error);
+        alert(
+            deactivatedForSafeCleanup
+                ? "A exclusão não foi concluída. Por segurança, o tipo foi desativado para não aparecer com configurações parciais. Confira as associações e tente excluir novamente antes de reativá-lo. Os pedidos históricos não foram apagados."
+                : "Não foi possível concluir a exclusão do tipo de pizza. Se a operação tiver sido interrompida, confira as configurações relacionadas e tente novamente. Os pedidos históricos não são apagados."
+        );
+    }
 }
 
 
@@ -2717,6 +2899,28 @@ function bindPizzaFlavorActions() {
 
     document
         .querySelectorAll(
+            ".pizza-delete-flavor"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        await deletePizzaFlavor(
+                            button.dataset.id
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
             ".pizza-flavor-order-button"
         )
         .forEach(
@@ -3502,6 +3706,143 @@ async function togglePizzaFlavor(
     }
 
 }
+
+/* ==================================================
+   EXCLUI SABOR DE PIZZA
+   ================================================== */
+
+async function deletePizzaFlavor(flavorId) {
+
+    const flavor = pizzaFlavors.find(item => item.id === flavorId);
+
+    if (!flavor) return;
+
+    let deactivatedForSafeCleanup = false;
+
+    try {
+
+        const productsSnapshot = await getDocs(collection(
+            db,
+            "lojas", STORE_ID,
+            "produtos"
+        ));
+
+        const products = productsSnapshot.docs.map(snapshot => ({
+            id: snapshot.id,
+            ...snapshot.data()
+        }));
+
+        const explicitlyLinkedProducts = products.filter(product => {
+            if (product.tipoProduto !== "pizza") return false;
+            const flavorIds = product.pizzaria?.saboresIds;
+            return Array.isArray(flavorIds) && flavorIds.length > 0 && flavorIds.includes(flavorId);
+        });
+
+        const blockingProducts = explicitlyLinkedProducts.filter(product =>
+            product.pizzaria.saboresIds.filter(id => id !== flavorId).length === 0
+        );
+
+        if (blockingProducts.length > 0) {
+            const names = blockingProducts
+                .slice(0, 5)
+                .map(product => product.nome || product.id)
+                .join(", ");
+            const more = blockingProducts.length > 5
+                ? ` e mais ${blockingProducts.length - 5}`
+                : "";
+
+            alert(
+                `Não é possível excluir o sabor “${flavor.nome}” porque ele é o único sabor selecionado nestes produtos: ${names}${more}. ` +
+                "Edite esses produtos e selecione outros sabores ou escolha ‘Todos os sabores ativos’; depois tente excluir novamente."
+            );
+            return;
+        }
+
+        const confirmation =
+            `Excluir permanentemente o sabor “${flavor.nome}”?
+
+` +
+            `A ação removerá o sabor do catálogo e de ${explicitlyLinkedProducts.length} produto(s) que o selecionam explicitamente.
+
+` +
+            "Os pedidos históricos serão preservados. Esta ação não pode ser desfeita.";
+
+        if (!window.confirm(confirmation)) return;
+
+        const operations = [];
+
+        for (const product of explicitlyLinkedProducts) {
+            const nextFlavorIds = product.pizzaria.saboresIds.filter(id => id !== flavorId);
+
+            operations.push({
+                action: "update",
+                ref: doc(db, "lojas", STORE_ID, "produtos", product.id),
+                data: {
+                    pizzaria: {
+                        ...product.pizzaria,
+                        saboresIds: nextFlavorIds
+                    }
+                }
+            });
+        }
+
+        const flavorReference = doc(
+            db,
+            "lojas", STORE_ID,
+            "pizzaria", "configuracao", "sabores", flavorId
+        );
+
+        // For multi-batch deletion, hide the flavor before incremental cleanup.
+        if (operations.length + 1 > 400) {
+            await updateDoc(flavorReference, { ativo: false });
+            deactivatedForSafeCleanup = true;
+        }
+
+        operations.push({
+            action: "delete",
+            ref: flavorReference
+        });
+
+        await commitPizzaWriteOperations(operations);
+        await loadPizzaFlavors();
+
+        alert(`O sabor “${flavor.nome}” foi excluído. Os pedidos históricos foram preservados.`);
+
+    } catch (error) {
+        console.error("Erro ao excluir sabor de pizza:", error);
+        alert(
+            deactivatedForSafeCleanup
+                ? "A exclusão não foi concluída. Por segurança, o sabor foi desativado para não aparecer com associações parciais. Confira as associações e tente excluir novamente antes de reativá-lo. Os pedidos históricos não foram apagados."
+                : "Não foi possível concluir a exclusão do sabor. Se a operação tiver sido interrompida, confira as associações com os produtos e tente novamente. Os pedidos históricos não são apagados."
+        );
+    }
+}
+
+
+/* ==================================================
+   GRAVA OPERAÇÕES EM LOTES
+   ================================================== */
+
+async function commitPizzaWriteOperations(operations) {
+
+    const batchSize = 400;
+
+    for (let start = 0; start < operations.length; start += batchSize) {
+        const batch = writeBatch(db);
+        const chunk = operations.slice(start, start + batchSize);
+
+        for (const operation of chunk) {
+            if (operation.action === "delete") {
+                batch.delete(operation.ref);
+            } else {
+                batch.update(operation.ref, operation.data);
+            }
+        }
+
+        await batch.commit();
+    }
+}
+
 
 /* ==================================================
    ORDENAÇÃO DOS SABORES
