@@ -51,6 +51,21 @@
 
 	<main class="store-main">
 
+        <!-- PESQUISA DE PRODUTOS -->
+        <section class="product-search-container" aria-label="Pesquisar no cardápio">
+            <label class="visually-hidden" for="productSearchInput">Pesquisar produtos por nome ou descrição</label>
+            <input
+                type="search"
+                id="productSearchInput"
+                class="product-search-input"
+                placeholder="O que você procura?"
+                autocomplete="off"
+                aria-label="Pesquisar produtos por nome ou descrição"
+            >
+        </section>
+
+        <p id="productSearchStatus" class="product-search-status" aria-live="polite" hidden></p>
+
 		<!-- CATEGORIAS -->
 
 		<section

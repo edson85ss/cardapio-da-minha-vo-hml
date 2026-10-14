@@ -92,6 +92,26 @@ const storeHours =
 
 const categoriesContainer =
     document.getElementById("categoriesContainer");
+
+const productSearchInput =
+    document.getElementById("productSearchInput");
+
+const productSearchStatus =
+    document.getElementById("productSearchStatus");
+
+let productSearchTerm = "";
+
+if (productSearchInput) {
+    productSearchInput.addEventListener("input", () => {
+        productSearchTerm = normalizePizzaText(productSearchInput.value);
+
+        if (categoriesContainer) {
+            categoriesContainer.style.display = productSearchTerm ? "none" : "";
+        }
+
+        renderProducts();
+    });
+}
 	
 const storeStatus =
     document.getElementById("storeStatus");
@@ -374,10 +394,33 @@ function renderProducts() {
 
     productsContainer.innerHTML = "";
 
-    const filteredProducts =
-        products.filter(product =>
+    const searchTerm = normalizePizzaText(productSearchTerm);
+
+    const filteredProducts = searchTerm
+        ? products.filter(product =>
+            normalizePizzaText(`${product.nome} ${product.descricao || ""}`)
+                .includes(searchTerm)
+        )
+        : products.filter(product =>
             product.categoria === selectedCategory
         );
+
+    if (productSearchStatus) {
+        productSearchStatus.hidden = !searchTerm;
+
+        if (searchTerm) {
+            productSearchStatus.textContent = filteredProducts.length === 1
+                ? "1 produto encontrado"
+                : `${filteredProducts.length} produtos encontrados`;
+        }
+    }
+
+    if (searchTerm && filteredProducts.length === 0) {
+        if (productSearchStatus) {
+            productSearchStatus.textContent = "Nenhum produto encontrado. Tente outro termo.";
+        }
+        return;
+    }
 
     filteredProducts.forEach(product => {
 
@@ -2913,6 +2956,23 @@ sendOrderButton.addEventListener(
                 paymentMethod.value === "Dinheiro" &&
                 needsChange === "Sim"
                     ? changeFor.value.trim()
+                    : "",
+
+            // Snapshot dos dados exibidos na mensagem do WhatsApp,
+            // para que a comanda impressa represente o pedido original.
+            precisaTroco:
+                paymentMethod.value === "Dinheiro"
+                    ? needsChange
+                    : "",
+
+            pixChave:
+                paymentMethod.value === "PIX"
+                    ? CONFIG.pixKey
+                    : "",
+
+            pixTitular:
+                paymentMethod.value === "PIX"
+                    ? CONFIG.pixOwner
                     : ""
 
         },
@@ -5388,6 +5448,15 @@ function renderPizzaConfigurator(
 
             </div>
 
+            <div class="pizza-flavor-search">
+                <input
+                    type="search"
+                    id="pizzaFlavorSearchInput"
+                    placeholder="Pesquisar sabor pelo nome ou descrição..."
+                    aria-label="Pesquisar sabores de pizza"
+                    autocomplete="off"
+                >
+            </div>
 
             <div
                 id="pizzaFlavorOptions"
@@ -5476,6 +5545,17 @@ function renderPizzaConfigurator(
             "#pizzaFlavorOptions"
         );
 
+    const flavorSearchInput =
+        configurator.querySelector(
+            "#pizzaFlavorSearchInput"
+        );
+
+    if (flavorSearchInput) {
+        flavorSearchInput.addEventListener(
+            "input",
+            renderPizzaFlavors
+        );
+    }
 
     const extrasStep =
         configurator.querySelector(
@@ -6087,12 +6167,29 @@ function renderPizzaFlavors() {
     helper.textContent =
         rangeText;
 
+    const searchInput =
+        productComplements.querySelector(
+            "#pizzaFlavorSearchInput"
+        );
+
+    const searchTerm = normalizePizzaText(
+        searchInput ? searchInput.value : ""
+    );
+
+    const filteredFlavors = searchTerm
+        ? flavors.filter(flavor =>
+            normalizePizzaText(
+                `${flavor.nome} ${flavor.descricao || ""}`
+            ).includes(searchTerm)
+        )
+        : flavors;
+
 
     /*
      * Preserva as seleções atuais ao reconstruir
-     * a lista de sabores. Isso é importante porque
-     * a lista pode ser renderizada novamente ao
-     * trocar a borda.
+     * a lista de sabores. A pesquisa apenas oculta
+     * temporariamente sabores que não correspondem;
+     * ela não remove a seleção desses sabores.
      */
 
     const selectedFlavorIds =
@@ -6132,7 +6229,24 @@ function renderPizzaFlavors() {
     }
 
 
-    flavors.forEach(
+    if (filteredFlavors.length === 0) {
+        flavorOptions.innerHTML = `
+            <div class="pizza-config-empty">
+                Nenhum sabor encontrado. Tente outro termo.
+            </div>
+        `;
+
+        flavorsStep.classList.remove(
+            "pizza-step-hidden"
+        );
+
+        updatePizzaFlavorSummary();
+        updateAddButtonPrice();
+        return;
+    }
+
+
+    filteredFlavors.forEach(
         flavor => {
 
             const label =
@@ -6316,9 +6430,9 @@ function syncPizzaFlavorSelectionFromDOM() {
     }
 
 
-    const checkedInputs =
+    const visibleInputs =
         productComplements.querySelectorAll(
-            "#pizzaFlavorOptions input[type=\"checkbox\"]:checked"
+            "#pizzaFlavorOptions input[type=\"checkbox\"]"
         );
 
 
@@ -6329,23 +6443,30 @@ function syncPizzaFlavorSelectionFromDOM() {
         );
 
 
-    const selectedIds =
-        new Set(
-            [
-                ...checkedInputs
-            ].map(
-                input =>
-                    input.value
-            )
-        );
+    /*
+     * Atualiza apenas as opções atualmente visíveis.
+     * Sabores ocultos pela pesquisa mantêm seu estado
+     * selecionado até que o usuário os desmarque quando
+     * voltar a exibi-los.
+     */
+    const selectedIds = new Set(
+        currentPizzaSelectedFlavors.map(
+            flavor => flavor.id
+        )
+    );
+
+    visibleInputs.forEach(input => {
+        if (input.checked) {
+            selectedIds.add(input.value);
+        } else {
+            selectedIds.delete(input.value);
+        }
+    });
 
 
     currentPizzaSelectedFlavors =
         availableFlavors.filter(
-            flavor =>
-                selectedIds.has(
-                    flavor.id
-                )
+            flavor => selectedIds.has(flavor.id)
         );
 
 
@@ -7045,6 +7166,38 @@ function injectPizzaConfiguratorStyles() {
             box-shadow:
                 0 0 0 1px
                 var(--primary);
+        }
+
+        .pizza-flavor-search {
+            margin: 0 0 10px;
+        }
+
+        .pizza-flavor-search input {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            padding: 11px 12px;
+            border: 1px solid #d8d8d8;
+            border-radius: 9px;
+            background: #fff;
+            color: var(--text);
+            font: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .pizza-flavor-search input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(212, 67, 43, .12);
+        }
+
+        .pizza-config-empty {
+            padding: 12px;
+            border-radius: 10px;
+            background: #f7f7f7;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.4;
         }
 
         .pizza-option-list {
