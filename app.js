@@ -180,6 +180,124 @@ const productComplements =
         "productComplements"
     );
 
+/* ==================================================
+   HISTÓRICO DO MODAL DE PRODUTO
+   Permite que o botão Voltar do navegador/Android
+   feche primeiro o detalhe do produto, sem sair
+   imediatamente do cardápio.
+   ================================================== */
+
+const PRODUCT_MODAL_HISTORY_FLAG =
+    "__cardapioProductModal";
+
+let productModalHistoryEntryActive = false;
+
+function registerProductModalHistoryEntry() {
+
+    if (productModalHistoryEntryActive) {
+        return;
+    }
+
+    try {
+
+        const currentState =
+            window.history.state;
+
+        const nextState =
+            currentState &&
+            typeof currentState === "object" &&
+            !Array.isArray(currentState)
+                ? { ...currentState }
+                : {};
+
+        nextState[PRODUCT_MODAL_HISTORY_FLAG] =
+            true;
+
+        window.history.pushState(
+            nextState,
+            "",
+            window.location.href
+        );
+
+        productModalHistoryEntryActive =
+            true;
+
+    } catch (error) {
+
+        console.warn(
+            "Não foi possível registrar a navegação do detalhe do produto.",
+            error
+        );
+
+    }
+
+}
+
+function closeProductModal(fromPopState = false) {
+
+    productModal.style.display =
+        "none";
+
+    if (fromPopState) {
+
+        productModalHistoryEntryActive =
+            false;
+
+    }
+
+    /*
+     * Ao fechar pelo X, mantemos a entrada temporária
+     * no histórico. Assim, se o usuário abrir outro
+     * produto logo em seguida, Voltar ainda fecha o
+     * detalhe. Se pressionar Voltar com o modal fechado,
+     * o listener abaixo ignora essa entrada e continua
+     * a navegação para a página anterior.
+     */
+
+}
+
+window.addEventListener("popstate", () => {
+
+    if (!productModalHistoryEntryActive) {
+        return;
+    }
+
+    const wasProductModalOpen =
+        productModal.style.display === "block";
+
+    const wasCartModalOpen =
+        cartModal.style.display === "block";
+
+    productModalHistoryEntryActive =
+        false;
+
+    if (wasProductModalOpen) {
+
+        closeProductModal(true);
+
+    } else if (wasCartModalOpen) {
+
+        /*
+         * Se o produto foi adicionado e o carrinho está
+         * aberto, Voltar fecha primeiro o carrinho em vez
+         * de tirar o cliente do cardápio.
+         */
+        cartModal.style.display =
+            "none";
+
+    } else {
+
+        /*
+         * O detalhe já foi fechado pelo X ou após
+         * adicionar ao carrinho. Esta entrada temporária
+         * não deve exigir um segundo toque em Voltar.
+         */
+        window.history.back();
+
+    }
+
+});
+
 	
 /* ==================================================
    MODAL CARRINHO
@@ -526,6 +644,12 @@ function renderProducts() {
 async function openProductModal(
     product
 ) {
+
+    if (productModal.style.display !== "block") {
+
+        registerProductModalHistoryEntry();
+
+    }
 
     itemObservation.value =
         "";
@@ -1642,8 +1766,7 @@ function updateAddButtonPrice() {
 
 closeModal.addEventListener("click", () => {
 
-    productModal.style.display =
-        "none";
+    closeProductModal();
 
 });
 
@@ -1651,8 +1774,7 @@ window.addEventListener("click", (event) => {
 
     if (event.target === productModal) {
 
-        productModal.style.display =
-            "none";
+        closeProductModal();
 
     }
 
@@ -2021,8 +2143,7 @@ addToCartButton.addEventListener(
         updateCart();
 
 
-        productModal.style.display =
-            "none";
+        closeProductModal();
 
     }
 );
