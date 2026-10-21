@@ -2747,6 +2747,92 @@ async function decreaseStockForCart(pedido) {
 }
 	
 /* ==================================================
+   MENSAGENS DE ERRO DO CHECKOUT
+   ================================================== */
+
+function clearCartOrderError() {
+    const existingError = document.getElementById("cartOrderError");
+    if (existingError) existingError.remove();
+}
+
+function showCartOrderError(message, options = {}) {
+    const { requiresRefresh = false } = options;
+    const cartContent = cartModal.querySelector(".cart-content") || cartModal;
+    let errorBox = document.getElementById("cartOrderError");
+
+    if (!errorBox) {
+        errorBox = document.createElement("div");
+        errorBox.id = "cartOrderError";
+        errorBox.setAttribute("role", "alert");
+        errorBox.setAttribute("aria-live", "assertive");
+        errorBox.tabIndex = -1;
+        Object.assign(errorBox.style, {
+            boxSizing: "border-box",
+            width: "100%",
+            margin: "12px 0",
+            padding: "12px",
+            border: "1px solid #d93025",
+            borderRadius: "8px",
+            background: "#fff1f0",
+            color: "#8a1c13",
+            fontSize: "14px",
+            lineHeight: "1.45",
+            overflowWrap: "anywhere"
+        });
+
+        const title = cartContent.querySelector("h2");
+        if (title) {
+            title.insertAdjacentElement("afterend", errorBox);
+        } else {
+            cartContent.prepend(errorBox);
+        }
+    }
+
+    errorBox.replaceChildren();
+
+    const messageText = document.createElement("p");
+    messageText.textContent = message;
+    Object.assign(messageText.style, { margin: "0", fontWeight: "600" });
+    errorBox.appendChild(messageText);
+
+    if (requiresRefresh) {
+        const helpText = document.createElement("p");
+        helpText.textContent = "Seu pedido não foi registrado. Atualize o cardápio e confira os itens antes de tentar novamente.";
+        Object.assign(helpText.style, { margin: "6px 0 10px" });
+        errorBox.appendChild(helpText);
+
+        const refreshButton = document.createElement("button");
+        refreshButton.type = "button";
+        refreshButton.textContent = "Atualizar cardápio e recomeçar";
+        Object.assign(refreshButton.style, {
+            display: "inline-block",
+            padding: "10px 12px",
+            border: "0",
+            borderRadius: "6px",
+            background: "#d4432b",
+            color: "#ffffff",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer"
+        });
+        refreshButton.addEventListener("click", () => {
+            clearCartFromLocalStorage();
+            window.location.reload();
+        });
+        errorBox.appendChild(refreshButton);
+    }
+
+    /* Mantém o modal aberto e leva o aviso para a área visível. */
+    cartModal.style.display = "block";
+    window.setTimeout(() => {
+        if (!document.body.contains(errorBox)) return;
+        errorBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        errorBox.focus({ preventScroll: true });
+    }, 50);
+}
+
+
+/* ==================================================
    ENVIAR PEDIDO PELO WHATSAPP
    ================================================== */
 
@@ -2755,6 +2841,7 @@ sendOrderButton.addEventListener(
     async () => {
 	
 	clearAllErrors();
+    clearCartOrderError();
 	
 	if (!isStoreOpen) {
 		alert("A loja está fechada no momento.");
@@ -3018,7 +3105,7 @@ sendOrderButton.addEventListener(
 
     if (!whatsappWindow) {
 
-        alert(
+        showCartOrderError(
             "Não foi possível abrir o WhatsApp. Verifique se o navegador está bloqueando novas abas."
         );
 
@@ -3247,18 +3334,25 @@ sendOrderButton.addEventListener(
 
     if (!stockResult.success) {
 
-        whatsappWindow.close();
-
+        try {
+            if (whatsappWindow && !whatsappWindow.closed) {
+                whatsappWindow.close();
+            }
+        } catch (closeError) {
+            console.warn("Não foi possível fechar a janela temporária do WhatsApp.", closeError);
+        }
 
         const errorMessage =
-            stockResult.error?.message || "";
+            stockResult.error?.message ||
+            "Não foi possível confirmar o pedido. Verifique os dados e tente novamente.";
 
+        const requiresRefresh =
+            /preço ou a configuração de um item mudou|atualize o cardápio e refaça o pedido|preços do cardápio não puderam ser confirmados/i.test(errorMessage);
 
-        alert(
-            errorMessage ||
-            "Não foi possível registrar o pedido. Verifique o estoque e tente novamente."
+        showCartOrderError(
+            errorMessage,
+            { requiresRefresh }
         );
-
 
         return;
 
@@ -3283,9 +3377,15 @@ sendOrderButton.addEventListener(
         !Array.isArray(pedidoConfirmado.itens)
     ) {
 
-        whatsappWindow.close();
+        try {
+            if (whatsappWindow && !whatsappWindow.closed) {
+                whatsappWindow.close();
+            }
+        } catch (closeError) {
+            console.warn("Não foi possível fechar a janela temporária do WhatsApp.", closeError);
+        }
 
-        alert(
+        showCartOrderError(
             "O pedido foi processado, mas não foi possível obter os dados confirmados. Entre em contato com a loja."
         );
 
