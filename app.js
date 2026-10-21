@@ -34,6 +34,10 @@ const decreaseStock =
         "decreaseStock"
     );
 
+// Identificador explícito do estabelecimento usado neste HML.
+// O próximo passo de multitenancy poderá defini-lo pela rota pública da loja.
+const CURRENT_STORE_ID = "da-minha-vo";
+
 /* ==================================================
    VARIÁVEIS GLOBAIS
    ================================================== */
@@ -2034,6 +2038,9 @@ addToCartButton.addEventListener(
                             id:
                                 currentPizzaBorderOption.id,
 
+                            complementoId:
+                                currentPizzaBorderComplement?.id || null,
+
                             nome:
                                 currentPizzaBorderOption.nome,
 
@@ -2641,7 +2648,7 @@ async function decreaseStockForCart(pedido) {
      * aparecer mais de uma vez no carrinho.
      */
 
-    const requestedQuantities = {};
+    const requestedQuantities = new Map();
 
     cart.forEach(item => {
 
@@ -2651,23 +2658,16 @@ async function decreaseStockForCart(pedido) {
         const quantity =
             Number(item.quantidade || 0);
 
-        if (!requestedQuantities[productId]) {
-
-            requestedQuantities[productId] =
-                0;
-
-        }
-
-        requestedQuantities[productId] +=
-            quantity;
+        requestedQuantities.set(
+            productId,
+            (requestedQuantities.get(productId) || 0) + quantity
+        );
 
     });
 
 
     const items =
-        Object.entries(
-            requestedQuantities
-        ).map(
+        [...requestedQuantities.entries()].map(
             ([productId, quantity]) => ({
                 productId,
                 quantity
@@ -2705,6 +2705,8 @@ async function decreaseStockForCart(pedido) {
 
         const result =
             await decreaseStock({
+
+                storeId: CURRENT_STORE_ID,
 
                 items,
 
@@ -3142,7 +3144,15 @@ sendOrderButton.addEventListener(
                             ),
 
                         borda:
-                            item.borda || null,
+                            item.borda
+                                ? {
+                                    ...item.borda,
+                                    complementoId:
+                                        currentPizzaBorderComplement?.id ||
+                                        item.borda.complementoId ||
+                                        null
+                                }
+                                : null,
 
                         valorBorda:
                             roundMoney(
@@ -3256,284 +3266,163 @@ sendOrderButton.addEventListener(
 
 
     /*
-     * Número gerado pelo servidor.
+     * Número e snapshot normalizado pelo servidor.
+     * A mensagem do WhatsApp usa os dados recalculados no backend,
+     * não os nomes/preços enviados originalmente pelo navegador.
      */
+
+    const pedidoConfirmado =
+        stockResult.data?.pedido?.dados;
 
     const pedidoNumero =
         stockResult.data?.pedido?.numero;
 
-
-    if (!pedidoNumero) {
+    if (
+        !pedidoNumero ||
+        !pedidoConfirmado ||
+        !Array.isArray(pedidoConfirmado.itens)
+    ) {
 
         whatsappWindow.close();
 
-
         alert(
-            "O pedido foi processado, mas não foi possível obter o número do pedido. Entre em contato com a loja."
+            "O pedido foi processado, mas não foi possível obter os dados confirmados. Entre em contato com a loja."
         );
-
 
         return;
 
     }
-
-
-    /*
-     * Agora montamos a mensagem do WhatsApp.
-     *
-     * O número do pedido é incluído somente
-     * depois que o servidor confirmou o registro.
-     */
 
     let whatsappMessage = "";
 
     whatsappMessage +=
         `>>> *NOVO PEDIDO Nº ${pedidoNumero}* <<<%0A%0A`;
 
+    whatsappMessage +=
+        `*Cliente:* ${escapeWhatsAppText(pedidoConfirmado.cliente.nome)}%0A`;
 
     whatsappMessage +=
-        `*Cliente:* ${customerName.value.trim()}%0A`;
-
-
-    whatsappMessage +=
-        `*Telefone:* ${customerPhone.value.trim()}%0A%0A`;
-
+        `*Telefone:* ${escapeWhatsAppText(pedidoConfirmado.cliente.telefone)}%0A%0A`;
 
     whatsappMessage +=
-        `*Entrega ou retirada:* ${deliveryType.value}%0A`;
+        `*Entrega ou retirada:* ${pedidoConfirmado.entrega.tipo}%0A`;
 
-
-    if (
-        deliveryType.value === "Entrega"
-    ) {
+    if (pedidoConfirmado.entrega.tipo === "Entrega") {
 
         whatsappMessage +=
-            `*Endereço:* ${customerAddress.value.trim()}%0A`;
+            `*Endereço:* ${escapeWhatsAppText(pedidoConfirmado.entrega.endereco)}%0A`;
+
+    } else {
+
+        whatsappMessage +=
+            `*Retirar em:* ${escapeWhatsAppText(pedidoConfirmado.entrega.endereco || "")}%0A`;
 
     }
 
-    else {
-
-        whatsappMessage +=
-            `*Retirar em:* ${CONFIG.pickupAddress}%0A`;
-
-    }
-
-
     whatsappMessage +=
-        `%0A*Forma de pagamento:* ${paymentMethod.value}%0A`;
+        `%0A*Forma de pagamento:* ${escapeWhatsAppText(pedidoConfirmado.pagamento.forma)}%0A`;
 
-
-    if (
-        paymentMethod.value === "PIX"
-    ) {
+    if (pedidoConfirmado.pagamento.forma === "PIX") {
 
         whatsappMessage +=
-            `*PIX:* Chave: ${CONFIG.pixKey} | Titular: ${CONFIG.pixOwner}%0A`;
+            `*PIX:* Chave: ${escapeWhatsAppText(pedidoConfirmado.pagamento.pixChave || "")} | Titular: ${escapeWhatsAppText(pedidoConfirmado.pagamento.pixTitular || "")}%0A`;
 
     }
 
-
-    if (
-        paymentMethod.value === "Dinheiro"
-    ) {
+    if (pedidoConfirmado.pagamento.forma === "Dinheiro") {
 
         whatsappMessage +=
-            `*Precisa de troco:* ${needsChange}%0A`;
+            `*Precisa de troco:* ${pedidoConfirmado.pagamento.precisaTroco || "Não"}%0A`;
 
-
-        if (
-            needsChange === "Sim"
-        ) {
+        if (pedidoConfirmado.pagamento.precisaTroco === "Sim") {
 
             whatsappMessage +=
-                `*Troco para:* ${changeFor.value.trim()}%0A`;
+                `*Troco para:* ${escapeWhatsAppText(pedidoConfirmado.pagamento.trocoPara || "")}%0A`;
 
         }
 
     }
 
-
     whatsappMessage +=
         "%0A--------------------%0A";
-
 
     whatsappMessage +=
         "*Itens do pedido:*%0A%0A";
 
-
-    cart.forEach(
+    pedidoConfirmado.itens.forEach(
         item => {
 
             const basePrice =
-                roundMoney(
-                    Number(
-                        item.precoBase ??
-                        item.preco ??
-                        0
-                    )
-                );
-
+                roundMoney(Number(item.precoBase || 0));
 
             const unitPrice =
-                roundMoney(
-                    Number(
-                        item.precoUnitario ??
-                        item.preco ??
-                        0
-                    )
-                );
-
+                roundMoney(Number(item.precoUnitario || 0));
 
             const subtotal =
-                roundMoney(
-                    unitPrice *
-                    Number(
-                        item.quantidade || 0
-                    )
-                );
-
+                roundMoney(Number(item.subtotal || 0));
 
             whatsappMessage +=
                 `${item.quantidade}x ${escapeWhatsAppText(item.nome)} — ${formatCurrency(basePrice)}%0A`;
 
-
-            if (
-                item.tipoProduto ===
-                "pizza"
-            ) {
+            if (item.tipoProduto === "pizza") {
 
                 whatsappMessage +=
-                    `*Tipo:* ${escapeWhatsAppText(
-                        item.tipoPizza?.nome || ""
-                    )}%0A`;
+                    `*Tipo:* ${escapeWhatsAppText(item.tipoPizza?.nome || "")}%0A`;
 
-
-                if (
-                    Array.isArray(
-                        item.sabores
-                    )
-                ) {
+                if (Array.isArray(item.sabores)) {
 
                     whatsappMessage +=
-                        `*Sabores:* ${item.sabores
-                            .map(
-                                flavor =>
-                                    escapeWhatsAppText(
-                                        flavor.nome
-                                    )
-                            )
-                            .join(
-                                ", "
-                            )}%0A`;
+                        `*Sabores:* ${item.sabores.map(flavor => escapeWhatsAppText(flavor.nome)).join(", ")}%0A`;
 
                 }
 
-
-                if (
-                    item.borda
-                ) {
+                if (item.borda) {
 
                     const borderPrice =
-                        roundMoney(
-                            Number(
-                                item.borda.preco ||
-                                0
-                            )
-                        );
-
+                        roundMoney(Number(item.borda.preco || 0));
 
                     whatsappMessage +=
-                        `*Borda:* ${escapeWhatsAppText(
-                            item.borda.nome
-                        )}`;
+                        `*Borda:* ${escapeWhatsAppText(item.borda.nome)}`;
 
-
-                    if (
-                        borderPrice > 0
-                    ) {
+                    if (borderPrice > 0) {
 
                         whatsappMessage +=
-                            ` (+ ${formatCurrency(
-                                borderPrice
-                            )})`;
+                            ` (+ ${formatCurrency(borderPrice)})`;
 
                     }
 
-
-                    whatsappMessage +=
-                        `%0A`;
+                    whatsappMessage += "%0A";
 
                 }
 
             }
 
-
-            /*
-             * Complementos e adicionais.
-             */
-
-            if (
-                Array.isArray(
-                    item.complementos
-                )
-            ) {
+            if (Array.isArray(item.complementos)) {
 
                 item.complementos.forEach(
                     complement => {
 
                         whatsappMessage +=
-                            `*${escapeWhatsAppText(
-                                complement.nome
-                            )}:*%0A`;
-
+                            `*${escapeWhatsAppText(complement.nome)}:*%0A`;
 
                         complement.opcoes.forEach(
                             option => {
 
-                                const quantity =
-                                    Number(
-                                        option.quantidade ||
-                                        1
-                                    );
-
-
-                                const quantityText =
-                                    quantity > 1
-                                        ? `${quantity}x `
-                                        : "";
-
-
-                                const optionTotal =
-                                    roundMoney(
-                                        Number(
-                                            option.preco ||
-                                            0
-                                        ) *
-                                        quantity
-                                    );
-
+                                const quantity = Number(option.quantidade || 1);
+                                const quantityText = quantity > 1 ? `${quantity}x ` : "";
+                                const optionTotal = roundMoney(Number(option.preco || 0) * quantity);
 
                                 whatsappMessage +=
-                                    `- ${quantityText}${escapeWhatsAppText(
-                                        option.nome
-                                    )}`;
+                                    `- ${quantityText}${escapeWhatsAppText(option.nome)}`;
 
-
-                                if (
-                                    optionTotal > 0
-                                ) {
+                                if (optionTotal > 0) {
 
                                     whatsappMessage +=
-                                        ` (+ ${formatCurrency(
-                                            optionTotal
-                                        )})`;
+                                        ` (+ ${formatCurrency(optionTotal)})`;
 
                                 }
 
-
-                                whatsappMessage +=
-                                    `%0A`;
+                                whatsappMessage += "%0A";
 
                             }
                         );
@@ -3543,57 +3432,45 @@ sendOrderButton.addEventListener(
 
             }
 
-
-            if (
-                item.observacao
-            ) {
+            if (item.observacao) {
 
                 whatsappMessage +=
-                    `Obs: ${escapeWhatsAppText(
-                        item.observacao
-                    )}%0A`;
+                    `Obs: ${escapeWhatsAppText(item.observacao)}%0A`;
 
             }
 
-
             whatsappMessage +=
-                `Subtotal: ${formatCurrency(
-                    subtotal
-                )}%0A%0A`;
+                `Subtotal: ${formatCurrency(subtotal)}%0A%0A`;
 
         }
     );
 
-
     whatsappMessage +=
         "--------------------%0A";
 
-
     whatsappMessage +=
-        `*Subtotal dos itens:* ${formatCurrency(total)}%0A`;
+        `*Subtotal dos itens:* ${formatCurrency(Number(pedidoConfirmado.subtotal || 0))}%0A`;
 
-
-    if (
-        deliveryType.value === "Entrega"
-    ) {
+    if (pedidoConfirmado.entrega.tipo === "Entrega") {
 
         whatsappMessage +=
-            `*Taxa de entrega:* ${formatCurrency(deliveryFee)}%0A`;
+            `*Taxa de entrega:* ${formatCurrency(Number(pedidoConfirmado.taxaEntrega || 0))}%0A`;
 
     }
 
-
     whatsappMessage +=
-        `*TOTAL:* ${formatCurrency(finalTotal)}%0A`;
-
+        `*TOTAL:* ${formatCurrency(Number(pedidoConfirmado.total || 0))}%0A`;
 
     /*
      * Pedido registrado e estoque baixado.
      * Agora envia para o WhatsApp.
      */
 
+    const confirmedWhatsappNumber =
+        stockResult.data?.whatsappNumber || CONFIG.whatsappNumber;
+
     const whatsappUrl =
-        `https://wa.me/${CONFIG.whatsappNumber}?text=${whatsappMessage}`;
+        `https://wa.me/${confirmedWhatsappNumber}?text=${whatsappMessage}`;
 
 
     whatsappWindow.location.href =
