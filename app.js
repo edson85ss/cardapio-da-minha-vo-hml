@@ -1,6 +1,8 @@
 import { firebaseApp, db }
 from "./firebase-config.js";
 
+import { TURNSTILE_SITE_KEY } from "./turnstile-config.js";
+
 import {
     collection,
     getDocs,
@@ -348,6 +350,177 @@ const customerPhone =
 
 const sendOrderButton =
     document.getElementById("sendOrder");
+
+/* ==================================================
+   CLOUDFLARE TURNSTILE — PROTEÇÃO DO CHECKOUT
+   ================================================== */
+
+let turnstileToken = "";
+let turnstileWidgetId = null;
+let turnstileApiPromise = null;
+let turnstileContainer = null;
+let turnstileWidgetElement = null;
+let turnstileStatusElement = null;
+
+function ensureTurnstileMarkup() {
+    if (turnstileContainer && document.body.contains(turnstileContainer)) {
+        return;
+    }
+
+    if (!sendOrderButton || !sendOrderButton.parentElement) {
+        return;
+    }
+
+    turnstileContainer = document.createElement("div");
+    turnstileContainer.id = "turnstileContainer";
+    Object.assign(turnstileContainer.style, {
+        boxSizing: "border-box",
+        width: "100%",
+        margin: "16px 0 12px",
+        padding: "12px",
+        border: "1px solid #e2e2e2",
+        borderRadius: "8px",
+        background: "#fafafa"
+    });
+
+    const heading = document.createElement("p");
+    heading.textContent = "Verificação de segurança";
+    Object.assign(heading.style, {
+        margin: "0 0 8px",
+        color: "#4b5454",
+        fontSize: "14px",
+        fontWeight: "600"
+    });
+
+    turnstileWidgetElement = document.createElement("div");
+    turnstileWidgetElement.id = "turnstileWidget";
+
+    turnstileStatusElement = document.createElement("p");
+    turnstileStatusElement.id = "turnstileStatus";
+    turnstileStatusElement.setAttribute("role", "status");
+    turnstileStatusElement.setAttribute("aria-live", "polite");
+    turnstileStatusElement.textContent = "A verificação será carregada ao abrir o carrinho.";
+    Object.assign(turnstileStatusElement.style, {
+        margin: "8px 0 0",
+        color: "#4b5454",
+        fontSize: "12px",
+        lineHeight: "1.4"
+    });
+
+    turnstileContainer.append(heading, turnstileWidgetElement, turnstileStatusElement);
+    sendOrderButton.insertAdjacentElement("beforebegin", turnstileContainer);
+}
+
+function setTurnstileStatus(message, isError = false) {
+    ensureTurnstileMarkup();
+    if (!turnstileStatusElement) return;
+    turnstileStatusElement.textContent = message;
+    turnstileStatusElement.style.color = isError ? "#b42318" : "#4b5454";
+}
+
+function loadTurnstileApi() {
+    if (window.turnstile && typeof window.turnstile.render === "function") {
+        return Promise.resolve(window.turnstile);
+    }
+
+    if (turnstileApiPromise) return turnstileApiPromise;
+
+    turnstileApiPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstileScript = "true";
+        script.onload = () => {
+            if (window.turnstile && typeof window.turnstile.render === "function") {
+                resolve(window.turnstile);
+            } else {
+                reject(new Error("A API do Turnstile não ficou disponível."));
+            }
+        };
+        script.onerror = () => {
+            script.remove();
+            reject(new Error("Não foi possível carregar o Turnstile."));
+        };
+        document.head.appendChild(script);
+    }).catch(error => {
+        turnstileApiPromise = null;
+        throw error;
+    });
+
+    return turnstileApiPromise;
+}
+
+async function ensureTurnstileWidget() {
+    ensureTurnstileMarkup();
+
+    if (!turnstileContainer || !turnstileWidgetElement) {
+        setTurnstileStatus("Não foi possível preparar a verificação de segurança.", true);
+        return false;
+    }
+
+    const siteKey = typeof TURNSTILE_SITE_KEY === "string"
+        ? TURNSTILE_SITE_KEY.trim()
+        : "";
+
+    if (!siteKey || siteKey.includes("COLE_AQUI")) {
+        setTurnstileStatus(
+            "A verificação de segurança ainda não foi configurada. O envio de pedidos permanecerá bloqueado até a configuração ser concluída.",
+            true
+        );
+        return false;
+    }
+
+    if (turnstileWidgetId !== null && window.turnstile) {
+        return true;
+    }
+
+    try {
+        const api = await loadTurnstileApi();
+        // Evita renderizar o mesmo widget duas vezes se duas chamadas aguardavam
+        // simultaneamente o carregamento do script do Turnstile.
+        if (turnstileWidgetId !== null) return true;
+        turnstileWidgetId = api.render("#turnstileWidget", {
+            sitekey: siteKey,
+            action: "pedido",
+            theme: "light",
+            callback: token => {
+                turnstileToken = token;
+                setTurnstileStatus("Verificação concluída. Você já pode enviar o pedido.");
+            },
+            "expired-callback": () => {
+                turnstileToken = "";
+                setTurnstileStatus("A verificação expirou. Conclua-a novamente antes de enviar o pedido.", true);
+            },
+            "error-callback": () => {
+                turnstileToken = "";
+                setTurnstileStatus("Não foi possível concluir a verificação. Confira sua conexão e tente novamente.", true);
+            }
+        });
+        setTurnstileStatus("Conclua a verificação para liberar o envio do pedido.");
+        return true;
+    } catch (error) {
+        console.error("Falha ao inicializar o Turnstile:", error);
+        setTurnstileStatus("Não foi possível carregar a verificação de segurança. Tente abrir o carrinho novamente.", true);
+        return false;
+    }
+}
+
+function resetTurnstileAfterAttempt() {
+    turnstileToken = "";
+    if (window.turnstile && turnstileWidgetId !== null) {
+        try {
+            window.turnstile.reset(turnstileWidgetId);
+            setTurnstileStatus("Conclua a verificação novamente para enviar outro pedido.");
+        } catch (error) {
+            console.warn("Não foi possível reiniciar o Turnstile:", error);
+            turnstileWidgetId = null;
+            setTurnstileStatus("Reabra o carrinho para renovar a verificação de segurança.", true);
+        }
+    }
+}
+
+ensureTurnstileMarkup();
 	
 const deliveryFeeInfo =
     document.getElementById("deliveryFeeInfo");
@@ -2545,6 +2718,8 @@ cartButton.addEventListener("click", () => {
     cartModal.style.display =
         "block";
 
+    void ensureTurnstileWidget();
+
 });
 
 closeCartModal.addEventListener("click", () => {
@@ -2639,7 +2814,7 @@ document
    REGISTRAR PEDIDO E BAIXAR ESTOQUE
    ================================================== */
 
-async function decreaseStockForCart(pedido) {
+async function decreaseStockForCart(pedido, verificationToken) {
 
     /*
      * Agrupa a quantidade solicitada por produto.
@@ -2710,7 +2885,9 @@ async function decreaseStockForCart(pedido) {
 
                 items,
 
-                pedido
+                pedido,
+
+                turnstileToken: verificationToken
 
             });
 
@@ -2870,6 +3047,13 @@ sendOrderButton.addEventListener(
     showFieldError(customerAddress, "Informe o endereço para entrega.");
     return;
 }
+
+    const turnstileTokenForAttempt = turnstileToken;
+    if (!turnstileTokenForAttempt) {
+        showCartOrderError("Conclua a verificação de segurança antes de enviar o pedido.");
+        void ensureTurnstileWidget();
+        return;
+    }
 
     const total =
 		roundMoney(
@@ -3328,9 +3512,11 @@ sendOrderButton.addEventListener(
 
     const stockResult =
         await decreaseStockForCart(
-            pedido
+            pedido,
+            turnstileTokenForAttempt
         );
 
+    resetTurnstileAfterAttempt();
 
     if (!stockResult.success) {
 
