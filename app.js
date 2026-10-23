@@ -592,9 +592,15 @@ function loadStoreInfo() {
     storeHours.textContent =
         CONFIG.storeHours;
 		
-	if (CONFIG.logo) {
-    storeLogo.src = CONFIG.logo;
-	}
+    const safeLogoUrl = getSafeImageUrl(CONFIG.logo);
+
+    if (safeLogoUrl) {
+        storeLogo.src = safeLogoUrl;
+        storeLogo.hidden = false;
+    } else {
+        storeLogo.removeAttribute("src");
+        storeLogo.hidden = true;
+    }
 	
 	
 
@@ -788,11 +794,24 @@ function renderProducts() {
 
             <img
                 class="product-image"
-                src="${product.imagem}"
                 alt="${escapeHtml(product.nome)}"
             >
 
         `;
+
+
+        const productImage = card.querySelector(".product-image");
+        const safeProductImageUrl = getSafeImageUrl(product.imagem);
+
+        if (safeProductImageUrl) {
+            productImage.src = safeProductImageUrl;
+            productImage.hidden = false;
+            productImage.style.display = "";
+        } else {
+            productImage.removeAttribute("src");
+            productImage.hidden = true;
+            productImage.style.display = "none";
+        }
 
 
         card.addEventListener(
@@ -843,8 +862,17 @@ async function openProductModal(
         1;
 
 
-    modalImage.src =
-        product.imagem;
+    const safeProductImageUrl = getSafeImageUrl(product.imagem);
+
+    if (safeProductImageUrl) {
+        modalImage.src = safeProductImageUrl;
+        modalImage.hidden = false;
+        modalImage.style.display = "";
+    } else {
+        modalImage.removeAttribute("src");
+        modalImage.hidden = true;
+        modalImage.style.display = "none";
+    }
 
     modalName.textContent =
         product.nome;
@@ -1298,11 +1326,11 @@ function renderProductComplements(
                     <div>
 
                         <h3>
-                            ${complement.nome}
+                            ${escapeHtml(complement.nome)}
                         </h3>
 
                         <span>
-                            ${helperText}
+                            ${escapeHtml(helperText)}
                         </span>
 
                     </div>
@@ -1424,17 +1452,17 @@ function renderSingleChoiceOptions(
 
                     <input
                         type="radio"
-						name="complement-${complement.id}"
-						value="${option.id}"
+						name="complement-${escapeHtml(complement.id)}"
+						value="${escapeHtml(option.id)}"
 
-						data-complement-id="${complement.id}"
-						data-option-id="${option.id}"
-						data-option-name="${option.nome}"
+						data-complement-id="${escapeHtml(complement.id)}"
+						data-option-id="${escapeHtml(option.id)}"
+						data-option-name="${escapeHtml(option.nome)}"
 						data-option-price="${price}"
                     >
 
                     <span>
-                        ${option.nome}
+                        ${escapeHtml(option.nome)}
                     </span>
 
                 </div>
@@ -1509,16 +1537,16 @@ function renderMultipleChoiceOptions(
                         type="checkbox"
 						class="multiple-complement-option"
 
-						data-complement-id="${complement.id}"
-						data-option-id="${option.id}"
-						data-option-name="${option.nome}"
+						data-complement-id="${escapeHtml(complement.id)}"
+						data-option-id="${escapeHtml(option.id)}"
+						data-option-name="${escapeHtml(option.nome)}"
 						data-option-price="${price}"
 
-						value="${option.id}"
+						value="${escapeHtml(option.id)}"
                     >
 
                     <span>
-                        ${option.nome}
+                        ${escapeHtml(option.nome)}
                     </span>
 
                 </div>
@@ -1623,7 +1651,7 @@ function renderQuantityOptions(
                 <div>
 
                     <span>
-                        ${option.nome}
+                        ${escapeHtml(option.nome)}
                     </span>
 
                     ${
@@ -1642,9 +1670,9 @@ function renderQuantityOptions(
                 <div
                     class="complement-quantity-selector"
 
-					data-complement-id="${complement.id}"
-					data-option-id="${option.id}"
-					data-option-name="${option.nome}"
+					data-complement-id="${escapeHtml(complement.id)}"
+					data-option-id="${escapeHtml(option.id)}"
+					data-option-name="${escapeHtml(option.nome)}"
 					data-option-price="${price}"
                 >
 
@@ -5892,7 +5920,7 @@ function renderPizzaConfigurator(
                 <input
                     type="radio"
                     name="pizzaType"
-                    value="${type.id}"
+                    value="${escapeHtml(type.id)}"
                 >
 
                 <span>
@@ -5908,13 +5936,13 @@ function renderPizzaConfigurator(
                             type.minSabores ===
                             type.maxSabores
 
-                                ? `${type.maxSabores} ${
+                                ? `${escapeHtml(type.maxSabores)} ${
                                     type.maxSabores === 1
                                         ? "sabor"
                                         : "sabores"
                                 }`
 
-                                : `${type.minSabores} a ${type.maxSabores} sabores`
+                                : `${escapeHtml(type.minSabores)} a ${escapeHtml(type.maxSabores)} sabores`
                         }
                     </small>
 
@@ -6294,7 +6322,7 @@ function renderPizzaBorderStep(
                 <input
                     type="radio"
                     name="pizzaBorder"
-                    value="${option.id}"
+                    value="${escapeHtml(option.id)}"
                 >
 
                 <span>
@@ -6554,7 +6582,7 @@ function renderPizzaFlavors() {
 
                 <input
                     type="checkbox"
-                    value="${flavor.id}"
+                    value="${escapeHtml(flavor.id)}"
                     ${
                         selectedFlavorIds.has(
                             flavor.id
@@ -7253,6 +7281,32 @@ function normalizePizzaText(
             ""
         );
 
+}
+
+
+/* ==================================================
+   VALIDA URL DE IMAGEM DO CARDÁPIO PÚBLICO
+   ================================================== */
+
+function getSafeImageUrl(value) {
+    const rawUrl = String(value ?? "").trim();
+
+    if (!rawUrl) {
+        return "";
+    }
+
+    try {
+        const parsedUrl = new URL(rawUrl, window.location.href);
+
+        // O cardápio utiliza HTTPS; outros esquemas são recusados.
+        if (parsedUrl.protocol !== "https:") {
+            return "";
+        }
+
+        return parsedUrl.href;
+    } catch (error) {
+        return "";
+    }
 }
 
 
