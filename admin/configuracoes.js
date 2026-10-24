@@ -16,7 +16,9 @@ from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import {
     doc,
     getDoc,
-    updateDoc
+    setDoc,
+    updateDoc,
+    deleteField
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
@@ -27,6 +29,28 @@ import {
     getDownloadURL
 }
 from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+
+
+// Campos que o cardápio público realmente precisa ler no documento da loja.
+// Todo campo fora desta lista é migrado ao caminho privado quando a página
+// de configurações é aberta por um administrador autorizado.
+const PUBLIC_STORE_CONFIG_KEYS = new Set([
+    "tipoCardapio",
+    "nomeLoja",
+    "horarioTexto",
+    "whatsapp",
+    "pixChave",
+    "pixTitular",
+    "taxaEntrega",
+    "enderecoRetirada",
+    "corPrimaria",
+    "corSecundaria",
+    "corTexto",
+    "ativo",
+    "horarios",
+    "formasPagamento",
+    "logoUrl"
+]);
 
 
 /* ==================================================
@@ -357,6 +381,64 @@ async function loadStoreConfig() {
 
         const data =
             snapshot.data();
+
+        // Migração de segurança: o documento da loja é lido publicamente pelo
+        // cardápio, e o Firestore não permite ocultar campos individuais numa
+        // leitura. Preservamos todos os campos que o código atual não usa como
+        // configuração pública em um documento privado, antes de removê-los.
+        const legacyPrivateFields = Object.fromEntries(
+            Object.entries(data).filter(
+                ([fieldName]) => !PUBLIC_STORE_CONFIG_KEYS.has(fieldName)
+            )
+        );
+
+        const legacyPrivateFieldNames = Object.keys(legacyPrivateFields);
+
+        if (legacyPrivateFieldNames.length > 0) {
+            try {
+                const privateMetadataReference = doc(
+                    db,
+                    "lojas",
+                    "da-minha-vo",
+                    "privado",
+                    "configuracaoLegada"
+                );
+
+                // Primeiro preserva os campos no caminho privado. Só depois
+                // solicita a remoção do documento público para evitar perda.
+                await setDoc(
+                    privateMetadataReference,
+                    legacyPrivateFields,
+                    { merge: true }
+                );
+
+                const fieldsToDelete = Object.fromEntries(
+                    legacyPrivateFieldNames.map(
+                        fieldName => [fieldName, deleteField()]
+                    )
+                );
+
+                await updateDoc(storeReference, fieldsToDelete);
+
+                legacyPrivateFieldNames.forEach(
+                    fieldName => delete data[fieldName]
+                );
+
+                console.info(
+                    "Campos legados fora da configuração pública foram movidos para o caminho privado da loja.",
+                    legacyPrivateFieldNames
+                );
+            } catch (migrationError) {
+                console.error(
+                    "Não foi possível migrar todos os campos legados para o caminho privado.",
+                    migrationError
+                );
+                configFormMessage.textContent =
+                    "Foram encontrados campos antigos fora da configuração pública, mas não foi possível movê-los para o caminho privado. Verifique as regras do Firestore antes de continuar.";
+                configFormMessage.className = "form-message error";
+                throw migrationError;
+            }
+        }
 			
 		storeCardapioTypeInput.value =
 			data.tipoCardapio === "pizzaria"
