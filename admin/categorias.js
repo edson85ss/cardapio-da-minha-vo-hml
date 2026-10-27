@@ -245,7 +245,7 @@ async function loadCategories() {
 							<button
 								type="button"
 								class="category-order-button"
-								data-id="${categoryId}"
+								data-id="${escapeHtml(categoryId)}"
 								data-direction="up"
 								${index === 0 ? "disabled" : ""}
 							>
@@ -255,7 +255,7 @@ async function loadCategories() {
 							<button
 								type="button"
 								class="category-order-button"
-								data-id="${categoryId}"
+								data-id="${escapeHtml(categoryId)}"
 								data-direction="down"
 								${
 									index === categories.length - 1
@@ -272,7 +272,7 @@ async function loadCategories() {
 						<div class="category-main-info">
 
 							<h3>
-								${category.nome || "Sem nome"}
+								${escapeHtml(category.nome || "Sem nome")}
 							</h3>
 
 							<span class="
@@ -293,15 +293,15 @@ async function loadCategories() {
 
 							<button
 								class="edit-product-button edit-category-button"
-								data-id="${categoryId}"
+								data-id="${escapeHtml(categoryId)}"
 							>
 								Editar
 							</button>
 
 							<button
 								class="delete-category-button"
-								data-id="${categoryId}"
-								data-name="${category.nome || ""}"
+								data-id="${escapeHtml(categoryId)}"
+								data-name="${escapeHtml(category.nome || "")}"
 							>
 								Excluir
 							</button>
@@ -1037,3 +1037,17 @@ async function moveCategory(
     }
 
 }
+
+/* ==================================================
+   ESCAPA DADOS DINAMICOS ANTES DE INSERIR EM HTML
+   ================================================== */
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+

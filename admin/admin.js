@@ -1657,6 +1657,9 @@ function renderAdminProducts() {
             item.className =
                 "admin-product-item";
 
+            const safeProductImageUrl =
+                getSafeAdminImageUrl(product.imagemUrl);
+
 
             item.innerHTML = `
 			
@@ -1669,7 +1672,7 @@ function renderAdminProducts() {
 						<button
 							type="button"
 							class="order-button"
-							data-id="${product.id}"
+							data-id="${escapeHtml(product.id)}"
 							data-direction="up"
 							title="Mover para cima"
 							${index === 0 ? "disabled" : ""}
@@ -1680,7 +1683,7 @@ function renderAdminProducts() {
 						<button
 							type="button"
 							class="order-button"
-							data-id="${product.id}"
+							data-id="${escapeHtml(product.id)}"
 							data-direction="down"
 							title="Mover para baixo"
 							${
@@ -1701,11 +1704,11 @@ function renderAdminProducts() {
                 <div class="admin-product-image">
 
                     ${
-                        product.imagemUrl
+                        safeProductImageUrl
                         ?
                         `<img
-                            src="${product.imagemUrl}"
-                            alt="${product.nome || "Produto"}"
+                            src="${escapeHtml(safeProductImageUrl)}"
+                            alt="${escapeHtml(product.nome || "Produto")}"
                         >`
                         :
                         `<div class="image-placeholder">
@@ -1723,11 +1726,11 @@ function renderAdminProducts() {
                         <div>
 
                             <h3>
-                                ${product.nome || "Sem nome"}
+                                ${escapeHtml(product.nome || "Sem nome")}
                             </h3>
 
                             <span class="product-category">
-                                ${product.categoria || "Sem categoria"}
+                                ${escapeHtml(product.categoria || "Sem categoria")}
                             </span>
 							
 							${
@@ -1813,15 +1816,15 @@ function renderAdminProducts() {
 
 							<button
 								class="edit-product-button"
-								data-id="${product.id}"
+								data-id="${escapeHtml(product.id)}"
 							>
 								Editar
 							</button>
 
 							<button
 								class="delete-product-button"
-								data-id="${product.id}"
-								data-name="${product.nome || ""}"
+								data-id="${escapeHtml(product.id)}"
+								data-name="${escapeHtml(product.nome || "")}"
 							>
 								Excluir
 							</button>
@@ -2008,10 +2011,13 @@ async function openEditProductForm(
          * Imagem atual
          */
 
-        if (product.imagemUrl) {
+        const safeProductImageUrl =
+            getSafeAdminImageUrl(product.imagemUrl);
+
+        if (safeProductImageUrl) {
 
             productImagePreview.src =
-                product.imagemUrl;
+                safeProductImageUrl;
 
             productImagePreviewWrapper
                 .classList.add(
@@ -2945,7 +2951,7 @@ function renderAssociatedComplements() {
                     <button
                         type="button"
                         class="complement-order-button associated-up-button"
-                        data-id="${item.complementoId}"
+                        data-id="${escapeHtml(item.complementoId)}"
                         ${index === 0 ? "disabled" : ""}
                     >
                         ↑
@@ -2955,7 +2961,7 @@ function renderAssociatedComplements() {
                     <button
                         type="button"
                         class="complement-order-button associated-down-button"
-                        data-id="${item.complementoId}"
+                        data-id="${escapeHtml(item.complementoId)}"
                         ${
                             index ===
                             currentAssociatedComplements.length - 1
@@ -2972,13 +2978,13 @@ function renderAssociatedComplements() {
                 <div class="associated-complement-info">
 
                     <strong>
-                        ${complement.nome || "Sem nome"}
+                        ${escapeHtml(complement.nome || "Sem nome")}
                     </strong>
 
                     <span>
                         ${typeLabel}
-                        · mínimo ${complement.minimo ?? 0}
-                        · máximo ${complement.maximo ?? 1}
+                        · mínimo ${escapeHtml(complement.minimo ?? 0)}
+                        · máximo ${escapeHtml(complement.maximo ?? 1)}
                     </span>
 
                 </div>
@@ -2987,8 +2993,8 @@ function renderAssociatedComplements() {
                 <button
                     type="button"
                     class="remove-associated-complement-button"
-                    data-id="${item.complementoId}"
-                    data-name="${complement.nome || ""}"
+                    data-id="${escapeHtml(item.complementoId)}"
+                    data-name="${escapeHtml(complement.nome || "")}"
                 >
                     Remover
                 </button>
@@ -3154,20 +3160,20 @@ async function loadAvailableComplements() {
                     <input
                         type="checkbox"
                         class="available-complement-checkbox"
-                        value="${complement.id}"
+                        value="${escapeHtml(complement.id)}"
                     >
 
 
                     <div class="available-complement-info">
 
                         <strong>
-                            ${complement.nome || "Sem nome"}
+                            ${escapeHtml(complement.nome || "Sem nome")}
                         </strong>
 
                         <span>
                             ${typeLabel}
-                            · mínimo ${complement.minimo ?? 0}
-                            · máximo ${complement.maximo ?? 1}
+                            · mínimo ${escapeHtml(complement.minimo ?? 0)}
+                            · máximo ${escapeHtml(complement.maximo ?? 1)}
                         </span>
 
                     </div>
@@ -3903,7 +3909,7 @@ function renderProductPizzaTypes(
                 <input
                     type="checkbox"
                     class="product-pizza-type-checkbox"
-                    value="${type.id}"
+                    value="${escapeHtml(type.id)}"
                     ${checked ? "checked" : ""}
                     ${
                         inactive && !checked
@@ -3992,7 +3998,7 @@ function renderProductPizzaFlavors(
                 <input
                     type="checkbox"
                     class="product-pizza-flavor-checkbox"
-                    value="${flavor.id}"
+                    value="${escapeHtml(flavor.id)}"
                     ${checked ? "checked" : ""}
                     ${
                         inactive && !checked
@@ -4103,6 +4109,33 @@ function getSelectedPizzaIds(
 
 
 /* ==================================================
+   VALIDACAO DE URL DE IMAGEM ADMINISTRATIVA
+   ================================================== */
+
+function getSafeAdminImageUrl(value) {
+
+    if (typeof value !== "string" || !value.trim()) {
+        return "";
+    }
+
+    try {
+        const url = new URL(value, window.location.href);
+
+        // Imagens administrativas devem usar HTTPS. Isso bloqueia esquemas
+        // como javascript: e data: caso um valor inválido chegue do Firestore.
+        if (url.protocol !== "https:") {
+            return "";
+        }
+
+        return url.href;
+    } catch {
+        return "";
+    }
+
+}
+
+
+/* ==================================================
    ESCAPA HTML
    ================================================== */
 
@@ -4111,7 +4144,7 @@ function escapeHtml(
 ) {
 
     return String(
-        value || ""
+        value ?? ""
     )
         .replace(
             /&/g,

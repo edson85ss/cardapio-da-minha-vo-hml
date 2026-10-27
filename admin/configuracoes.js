@@ -499,15 +499,24 @@ renderPaymentMethods();
             data.ativo !== false;
 
 
-        if (data.logoUrl) {
+        const safeLogoUrl =
+            getSafeConfigImageUrl(data.logoUrl);
+
+        if (safeLogoUrl) {
 
             storeLogoPreview.src =
-                data.logoUrl;
+                safeLogoUrl;
 
             storeLogoPreviewWrapper
                 .classList.add(
                     "visible"
                 );
+
+        } else {
+
+            storeLogoPreview.removeAttribute("src");
+            storeLogoPreviewWrapper
+                .classList.remove("visible");
 
         }
 
@@ -1039,7 +1048,7 @@ function renderPaymentMethods() {
             row.innerHTML = `
 
                 <span>
-                    ${method}
+                    ${escapeHtml(method)}
                 </span>
 
                 <button
@@ -1151,3 +1160,31 @@ addPaymentMethodButton.addEventListener(
 
     }
 );
+
+/* ==================================================
+   ESCAPA DADOS DINAMICOS ANTES DE INSERIR EM HTML
+   ================================================== */
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function getSafeConfigImageUrl(value) {
+    if (typeof value !== "string" || !value.trim()) {
+        return "";
+    }
+
+    try {
+        const url = new URL(value, window.location.href);
+        return url.protocol === "https:" ? url.href : "";
+    } catch {
+        return "";
+    }
+}
+

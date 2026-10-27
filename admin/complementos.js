@@ -439,14 +439,14 @@ async function loadComplements() {
                     <div class="admin-complement-info">
 
                         <h3>
-                            ${complement.nome || "Sem nome"}
+                            ${escapeHtml(complement.nome || "Sem nome")}
                         </h3>
 
                         <div class="admin-complement-meta">
 
                             ${typeLabel}
-                            · mínimo ${complement.minimo ?? 0}
-                            · máximo ${complement.maximo ?? 1}
+                            · mínimo ${escapeHtml(complement.minimo ?? 0)}
+                            · máximo ${escapeHtml(complement.maximo ?? 1)}
 
                         </div>
 
@@ -472,7 +472,7 @@ async function loadComplements() {
 						<button
 							type="button"
 							class="edit-product-button manage-options-button"
-							data-id="${documentSnapshot.id}"
+							data-id="${escapeHtml(documentSnapshot.id)}"
 						>
 							Opções
 						</button>
@@ -480,7 +480,7 @@ async function loadComplements() {
                         <button
                             type="button"
                             class="edit-product-button edit-complement-button"
-                            data-id="${documentSnapshot.id}"
+                            data-id="${escapeHtml(documentSnapshot.id)}"
                         >
                             Editar
                         </button>
@@ -489,8 +489,8 @@ async function loadComplements() {
                         <button
                             type="button"
                             class="delete-product-button delete-complement-button"
-                            data-id="${documentSnapshot.id}"
-                            data-name="${complement.nome || ""}"
+                            data-id="${escapeHtml(documentSnapshot.id)}"
+                            data-name="${escapeHtml(complement.nome || "")}"
                         >
                             Excluir
                         </button>
@@ -1373,7 +1373,7 @@ function renderOptions() {
                     <button
                         type="button"
                         class="option-order-button option-up-button"
-                        data-id="${option.id}"
+                        data-id="${escapeHtml(option.id)}"
                         ${index === 0 ? "disabled" : ""}
                         title="Mover para cima"
                     >
@@ -1384,7 +1384,7 @@ function renderOptions() {
                     <button
                         type="button"
                         class="option-order-button option-down-button"
-                        data-id="${option.id}"
+                        data-id="${escapeHtml(option.id)}"
                         ${
                             index === currentOptions.length - 1
                             ? "disabled"
@@ -1401,7 +1401,7 @@ function renderOptions() {
                 <div class="complement-option-info">
 
                     <h4>
-                        ${option.nome || "Sem nome"}
+                        ${escapeHtml(option.nome || "Sem nome")}
                     </h4>
 
                     <div class="complement-option-price">
@@ -1430,7 +1430,7 @@ function renderOptions() {
                     <button
                         type="button"
                         class="edit-product-button edit-option-button"
-                        data-id="${option.id}"
+                        data-id="${escapeHtml(option.id)}"
                     >
                         Editar
                     </button>
@@ -1439,8 +1439,8 @@ function renderOptions() {
                     <button
                         type="button"
                         class="delete-product-button delete-option-button"
-                        data-id="${option.id}"
-                        data-name="${option.nome || ""}"
+                        data-id="${escapeHtml(option.id)}"
+                        data-name="${escapeHtml(option.nome || "")}"
                     >
                         Excluir
                     </button>
@@ -2269,3 +2269,17 @@ async function complementIsAssociatedWithProduct(
     return false;
 
 }
+
+/* ==================================================
+   ESCAPA DADOS DINAMICOS ANTES DE INSERIR EM HTML
+   ================================================== */
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+

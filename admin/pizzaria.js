@@ -971,7 +971,7 @@ function renderPizzaFlavors() {
                     <button
                         type="button"
                         class="pizza-flavor-order-button"
-                        data-id="${flavor.id}"
+                        data-id="${escapeHtml(flavor.id)}"
                         data-direction="up"
                         ${
                             fullIndex === 0
@@ -987,7 +987,7 @@ function renderPizzaFlavors() {
                     <button
                         type="button"
                         class="pizza-flavor-order-button"
-                        data-id="${flavor.id}"
+                        data-id="${escapeHtml(flavor.id)}"
                         data-direction="down"
                         ${
                             fullIndex ===
@@ -1045,7 +1045,7 @@ function renderPizzaFlavors() {
                     <button
                         type="button"
                         class="secondary-button pizza-edit-flavor"
-                        data-id="${flavor.id}"
+                        data-id="${escapeHtml(flavor.id)}"
                     >
                         Editar
                     </button>
@@ -1054,7 +1054,7 @@ function renderPizzaFlavors() {
                     <button
                         type="button"
                         class="secondary-button pizza-toggle-flavor"
-                        data-id="${flavor.id}"
+                        data-id="${escapeHtml(flavor.id)}"
                     >
                         ${
                             flavor.ativo === false
@@ -1066,7 +1066,7 @@ function renderPizzaFlavors() {
                     <button
                         type="button"
                         class="delete-pizza-item-button pizza-delete-flavor"
-                        data-id="${flavor.id}"
+                        data-id="${escapeHtml(flavor.id)}"
                         aria-label="Excluir sabor de pizza"
                     >
                         Excluir
@@ -1188,7 +1188,7 @@ function renderPizzaTypes() {
                     <button
                         type="button"
                         class="pizza-type-order-button"
-                        data-id="${type.id}"
+                        data-id="${escapeHtml(type.id)}"
                         data-direction="up"
                         ${index === 0 ? "disabled" : ""}
                         title="Subir"
@@ -1199,7 +1199,7 @@ function renderPizzaTypes() {
                     <button
                         type="button"
                         class="pizza-type-order-button"
-                        data-id="${type.id}"
+                        data-id="${escapeHtml(type.id)}"
                         data-direction="down"
                         ${
                             index === pizzaTypes.length - 1
@@ -1246,7 +1246,7 @@ function renderPizzaTypes() {
                     <button
                         type="button"
                         class="secondary-button pizza-edit-type"
-                        data-id="${type.id}"
+                        data-id="${escapeHtml(type.id)}"
                     >
                         Editar
                     </button>
@@ -1255,7 +1255,7 @@ function renderPizzaTypes() {
                     <button
                         type="button"
                         class="secondary-button pizza-toggle-type"
-                        data-id="${type.id}"
+                        data-id="${escapeHtml(type.id)}"
                     >
                         ${
                             type.ativo === false
@@ -1267,7 +1267,7 @@ function renderPizzaTypes() {
                     <button
                         type="button"
                         class="delete-pizza-item-button pizza-delete-type"
-                        data-id="${type.id}"
+                        data-id="${escapeHtml(type.id)}"
                         aria-label="Excluir tipo de pizza"
                     >
                         Excluir
@@ -2091,7 +2091,7 @@ function normalizeName(
 ) {
 
     return String(
-        value || ""
+        value ?? ""
     )
         .trim()
         .toLocaleLowerCase(
@@ -2115,7 +2115,7 @@ function escapeHtml(
 ) {
 
     return String(
-        value || ""
+        value ?? ""
     )
         .replace(
             /&/g,
@@ -3016,7 +3016,7 @@ function renderPizzaFlavorTypeInputs(
                     <input
                         type="checkbox"
                         class="pizza-flavor-type-enabled"
-                        data-type-id="${type.id}"
+                        data-type-id="${escapeHtml(type.id)}"
                         ${
                             hasPrice
                                 ? "checked"
@@ -3042,7 +3042,7 @@ function renderPizzaFlavorTypeInputs(
                     <input
                         type="text"
                         class="pizza-flavor-price-input"
-                        data-type-id="${type.id}"
+                        data-type-id="${escapeHtml(type.id)}"
                         inputmode="decimal"
                         placeholder="0,00"
                         value="${
